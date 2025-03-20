@@ -4,6 +4,7 @@ import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
 import com.facebook.react.defaults.DefaultReactActivityDelegate
+import com.swmansion.gesturehandler.react.RNGestureHandlerEnabledRootView
 
 class MainActivity : ReactActivity() {
 
@@ -14,9 +15,13 @@ class MainActivity : ReactActivity() {
   override fun getMainComponentName(): String = "HotelBookingApp"
 
   /**
-   * Returns the instance of the [ReactActivityDelegate]. We use [DefaultReactActivityDelegate]
-   * which allows you to enable New Architecture with a single boolean flags [fabricEnabled]
+   * Returns the instance of the [ReactActivityDelegate]. We use [RNGestureHandlerEnabledRootView]
+   * to enable gesture handler in the root view.
    */
   override fun createReactActivityDelegate(): ReactActivityDelegate =
-      DefaultReactActivityDelegate(this, mainComponentName, fabricEnabled)
+      object : ReactActivityDelegate(this, mainComponentName) {
+          override fun createRootView(): RNGestureHandlerEnabledRootView {
+              return RNGestureHandlerEnabledRootView(this@MainActivity)
+          }
+      }
 }
