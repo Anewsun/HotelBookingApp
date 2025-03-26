@@ -5,22 +5,30 @@ import DatePicker from 'react-native-date-picker';
 
 const SearchBox = () => {
   // State lưu ngày nhận - trả phòng
-  const [checkInDate, setCheckInDate] = useState(null);
-  const [checkOutDate, setCheckOutDate] = useState(null);
+  const [checkInDate, setCheckInDate] = useState(new Date());
+  const [checkOutDate, setCheckOutDate] = useState(new Date());
   const [dateModalVisible, setDateModalVisible] = useState(false);
+  const [selectedDateType, setSelectedDateType] = useState('checkIn');
 
   // State lưu số lượng khách
   const [adults, setAdults] = useState(0);
   const [children, setChildren] = useState(0);
   const [guestModalVisible, setGuestModalVisible] = useState(false);
 
-  const formatDateRange = (start, end) => {
-    if (!start || !end) return "Chọn ngày";
-    const options = { day: "numeric", month: "long", year: "numeric" };
-    return `${start.toLocaleDateString("vi-VN", options)} - ${end.toLocaleDateString("vi-VN", options)}`;
-  };
+  const formatDate = (date) => {
+    if (!date) return "Chọn ngày";
+    const day = date.getDate();
+    const month = date.getMonth() + 1; // Tháng bắt đầu từ 0, nên cộng thêm 1
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };  
 
   const totalGuests = () => adults + children;
+
+  const openDatePicker = (type) => {
+    setSelectedDateType(type);
+    setDateModalVisible(true);
+  };
 
   return (
     <View style={styles.outerContainer}>
@@ -28,25 +36,33 @@ const SearchBox = () => {
         <Text style={styles.label}>Địa điểm</Text>
         <View style={styles.inputContainer}>
           <Icon name="location" size={20} color="#888" />
-          <TextInput style={styles.input} placeholder="Điểm đến" placeholderTextColor="black" />
+          <TextInput style={styles.input} placeholder="Điểm đến" placeholderTextColor="#666" />
         </View>
 
         <View style={styles.row}>
           <View style={styles.column}>
-            <Text style={styles.label}>Ngày</Text>
-            <TouchableOpacity style={styles.inputContainer} onPress={() => setDateModalVisible(true)}>
+            <Text style={styles.label}>Ngày đến</Text>
+            <TouchableOpacity style={styles.inputContainer} onPress={() => openDatePicker('checkIn')}>
               <Icon name="calendar" size={20} color="#888" />
-              <Text style={styles.input}>{formatDateRange(checkInDate, checkOutDate)}</Text>
+              <Text style={styles.input}>{formatDate(checkInDate)}</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.column}>
-            <Text style={styles.label}>Khách</Text>
-            <TouchableOpacity style={styles.inputContainer} onPress={() => setGuestModalVisible(true)}>
-              <Icon name="person" size={20} color="#888" />
-              <Text style={styles.input}>{totalGuests()} khách</Text>
+            <Text style={styles.label}>Ngày đi</Text>
+            <TouchableOpacity style={styles.inputContainer} onPress={() => openDatePicker('checkOut')}>
+              <Icon name="calendar" size={20} color="#888" />
+              <Text style={styles.input}>{formatDate(checkOutDate)}</Text>
             </TouchableOpacity>
           </View>
+        </View>
+
+        <View style={styles.column}>
+          <Text style={styles.label}>Khách</Text>
+          <TouchableOpacity style={styles.inputContainer} onPress={() => setGuestModalVisible(true)}>
+            <Icon name="person" size={20} color="#888" />
+            <Text style={styles.input}>{totalGuests()} khách</Text>
+          </TouchableOpacity>
         </View>
 
         <TouchableOpacity style={styles.searchButton}>
@@ -54,21 +70,22 @@ const SearchBox = () => {
         </TouchableOpacity>
       </View>
 
+      {/* Modal for DatePicker */}
       <Modal visible={dateModalVisible} transparent animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Chọn ngày</Text>
-            <Text style={styles.dateNote}>Ngày đến</Text>
+            <Text style={styles.dateNote}>{selectedDateType === 'checkIn' ? 'Ngày đến' : 'Ngày đi'}</Text>
             <DatePicker
               mode="date"
-              date={checkInDate || new Date()}
-              onDateChange={setCheckInDate}
-            />
-            <Text style={styles.dateNote}>Ngày đi</Text>
-            <DatePicker
-              mode="date"
-              date={checkOutDate || new Date()}
-              onDateChange={setCheckOutDate}
+              date={selectedDateType === 'checkIn' ? checkInDate : checkOutDate}
+              onDateChange={(date) => {
+                if (selectedDateType === 'checkIn') {
+                  setCheckInDate(date);
+                } else {
+                  setCheckOutDate(date);
+                }
+              }}
             />
             <TouchableOpacity style={styles.confirmButton} onPress={() => setDateModalVisible(false)}>
               <Text style={styles.confirmText}>Xác nhận</Text>
@@ -77,13 +94,13 @@ const SearchBox = () => {
         </View>
       </Modal>
 
+      {/* Modal for Guest Selection */}
       <Modal visible={guestModalVisible} transparent animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Chọn khách</Text>
 
-            {[
-              { label: "Người lớn", state: adults, setState: setAdults, note: "Từ 13 tuổi trở lên" },
+            {[{ label: "Người lớn", state: adults, setState: setAdults, note: "Từ 13 tuổi trở lên" },
               { label: "Trẻ em", state: children, setState: setChildren, note: "Từ 2 - 12 tuổi" },
             ].map(({ label, state, setState, note }) => (
               <View key={label} style={styles.rowBetween}>
@@ -115,122 +132,124 @@ const SearchBox = () => {
 
 const styles = StyleSheet.create({
   outerContainer: {
-    padding: 15,
-    left: 15,
-    borderWidth: 1,
-    borderColor: 'black',
-    borderRadius: 10,
-    maxWidth: '92%',
+    padding: 20,
+    borderRadius: 15,
+    backgroundColor: '#FFF',
     shadowColor: '#000',
-    shadowOffset: { width: 5, height: 5 },
-    shadowOpacity: 0.3,
-    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
     elevation: 8,
+    marginHorizontal: 10,
   },
   container: {
-    padding: 10
+    padding: 15,
   },
   label: {
     fontSize: 17,
-    fontWeight: 'bold',
-    marginBottom: 5
+    fontWeight: '600',
+    marginBottom: 5,
+    color: '#333',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 10
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  dateNote: {
+    fontSize: 17,
+    color: 'black',
+    fontWeight: 'bold'
   },
   input: {
     marginLeft: 10,
-    flex: 1
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
   },
   row: {
     flexDirection: 'row',
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
+    marginBottom: 5,
   },
   column: {
     flex: 1,
-    marginRight: 10
+    marginRight: 10,
   },
   searchButton: {
     backgroundColor: '#1167B1',
-    padding: 15,
+    paddingVertical: 12,
     borderRadius: 30,
     alignItems: 'center',
-    marginTop: 10
+    marginTop: 15,
   },
   searchText: {
     color: '#FFF',
     fontSize: 16,
-    fontWeight: 'bold'
+    fontWeight: 'bold',
   },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)'
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
-    backgroundColor: 'white',
-    margin: 20,
+    backgroundColor: '#FFF',
     padding: 20,
-    borderRadius: 10
+    borderRadius: 15,
+    marginHorizontal: 30,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center'
+    textAlign: 'center',
+    marginBottom: 15,
   },
   confirmButton: {
     backgroundColor: '#1167B1',
-    padding: 15,
+    paddingVertical: 12,
     borderRadius: 30,
     alignItems: 'center',
-    marginTop: 10
+    marginTop: 20,
   },
   confirmText: {
     color: 'white',
     fontSize: 18,
-    fontWeight: 'bold'
-  },
-  rowBetween: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginVertical: 10
+    fontWeight: 'bold',
   },
   guestLabel: {
-    fontSize: 18,
-    fontWeight: 'bold'
+    fontSize: 17,
+    fontWeight: 'bold',
+    marginBottom: 5,
   },
   guestNote: {
-    fontSize: 14,
-    color: 'gray'
-  },
-  dateNote: {
-    fontSize: 18,
-    color: 'black'
+    fontSize: 16,
+    color: '#666',
   },
   counterContainer: {
     flexDirection: 'row',
-    alignItems: 'center'
+    alignItems: 'center',
   },
   counterButton: {
-    backgroundColor: '#E0E0E0',
-    padding: 5,
+    backgroundColor: '#ddd',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 5,
-    marginHorizontal: 10
+    marginHorizontal: 8,
   },
   counterText: {
     fontSize: 18,
-    fontWeight: 'bold'
+    fontWeight: 'bold',
   },
   counterValue: {
-    fontSize: 16,
-    fontWeight: 'bold'
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
 

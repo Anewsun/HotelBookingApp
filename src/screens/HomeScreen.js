@@ -6,6 +6,7 @@ import HotelCard from '../components/HotelCard';
 import BottomNav from '../components/BottomNav';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Icon1 from 'react-native-vector-icons/FontAwesome6';
+import { useNavigation } from '@react-navigation/native';
 
 const hotels = [
   { id: 1, name: 'The Dreamland Villas', location: '8, Lê Lợi, Nha Trang', price: '340000 VND', rating: 4.8, image: require('../assets/images/hotel1.jpg') },
@@ -18,6 +19,7 @@ const hotels = [
 ];
 
 const HomeScreen = () => {
+  const navigation = useNavigation();
   const [currentPage, setCurrentPage] = useState(1);
   const hotelsPerPage = 6;
   const totalPages = Math.ceil(hotels.length / hotelsPerPage);
@@ -43,8 +45,7 @@ const HomeScreen = () => {
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
           <View style={styles.hotelContainer}>
-            <HotelCard hotel={item} />
-          </View>
+            <HotelCard hotel={item} onPress={() => navigation.navigate('Detail', { hotel: item })} />            </View>
         )}
         numColumns={2}
         columnWrapperStyle={styles.row}
@@ -109,7 +110,7 @@ const styles = StyleSheet.create({
     marginBottom: 15
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     margin: 20
   },

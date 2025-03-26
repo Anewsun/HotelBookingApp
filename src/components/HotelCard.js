@@ -2,9 +2,9 @@ import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
-const HotelCard = ({ hotel }) => {
+const HotelCard = ({ hotel, onPress }) => {
   return (
-    <TouchableOpacity style={styles.card}>
+    <TouchableOpacity style={styles.card} onPress={onPress}>
       <Image source={hotel.image} style={styles.image} />
       <TouchableOpacity style={styles.heartIcon}>
         <Icon name="heart" size={20} color="#fff" />
@@ -36,16 +36,11 @@ const styles = StyleSheet.create({
     width: 180,
     height: 250,
     marginRight: 10,
-    borderWidth: 2,
-    borderColor: '#000',
-    // Hiệu ứng bóng
     shadowColor: '#000',
-    shadowOffset: { width: 5, height: 5 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
     elevation: 8,
-    // Hiệu ứng nghiêng nhẹ
-    transform: [{ perspective: 1000 }, { rotateX: '5deg' }, { rotateY: '-5deg' }]
   },
   image: {
     width: '100%',
@@ -69,9 +64,11 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 16,
     fontWeight: 'bold',
+    color: 'black'
   },
   location: {
     fontSize: 15,
+    fontWeight: '400',
     color: 'black',
   },
   row: {
@@ -80,7 +77,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   price: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: 'bold',
     color: 'red',
   },
@@ -89,7 +86,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   ratingText: {
-    fontSize: 12,
+    fontSize: 15,
     marginLeft: 5,
   },
 });

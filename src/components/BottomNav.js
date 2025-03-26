@@ -31,8 +31,8 @@ const BottomNav = () => {
         <Text style={styles.navText}>Booking</Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={[styles.navItem, { backgroundColor: currentRouteName === 'ProfileScreen' ? '#1167B1' : 'white' }]}
-        onPress={() => navigation.navigate('ProfileScreen')}
+        style={[styles.navItem, { backgroundColor: currentRouteName === 'Profile' ? '#1167B1' : 'white' }]}
+        onPress={() => navigation.navigate('Profile')}
       >
         <Icon name="person-outline" size={34} />
         <Text style={styles.navText}>Profile</Text>
@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
   },
   navItem: {
     alignItems: 'center',
-    padding: 20,
+    padding: 15,
     borderRadius: 15,
   },
   navText: {
