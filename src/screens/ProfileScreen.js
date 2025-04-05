@@ -1,72 +1,77 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StatusBar, StyleSheet, TouchableOpacity, FlatList, Modal, Alert, SafeAreaView } from 'react-native';
 import Header from '../components/Header';
 import Feather from 'react-native-vector-icons/Feather';
 import BottomNav from '../components/BottomNav';
+import { useNavigation } from "@react-navigation/native";
+import { logout, getMe } from '../services/authService';
+import { useAuth } from '../contexts/AuthContext';
 
 const menuItems = [
-    { title: 'My profile', icon: 'user' },
-    { title: 'Lịch sử đơn hàng', icon: 'shopping-bag' },
-    { title: 'Cài đặt', icon: 'settings' },
-    { title: 'Liên hệ', icon: 'help-circle' },
-    { title: 'Chính sách bảo mật', icon: 'lock' },
-    { title: 'Đăng xuất', icon: 'log-out' },
+    { title: 'My Profile', icon: 'user', screen: 'MyProfile' },
+    { title: 'Lịch sử đặt phòng', icon: 'shopping-bag', screen: 'MyOrders' },
+    { title: 'Cài đặt', icon: 'settings', screen: 'Setting' },
+    { title: 'Liên hệ', icon: 'help-circle', screen: 'ContactUs' },
+    { title: 'Chính sách bảo mật', icon: 'lock', screen: 'PrivacyPolicy' },
+    { title: 'Đăng xuất', icon: 'log-out', action: 'logout' },
 ];
 
-const ProfileScreen = ({ navigation }) => {
+const ProfileScreen = () => {
+    const navigation = useNavigation();
+    const { user, refreshUserData, logout: logoutContext } = useAuth();
     const [logoutModalVisible, setLogoutModalVisible] = useState(false);
-    const [userName, setUserName] = useState('User');  // Hardcoded user name
-    const [userImageUrl, setUserImageUrl] = useState('https://hoanghamobile.com/tin-tuc/wp-content/uploads/2024/03/avatar-trang-68.jpg');  // Default image URL
+
+    const handleMenuPress = (item) => {
+        if (item.action === 'logout') {
+            setLogoutModalVisible(true);
+        } else if (item.screen) {
+            navigation.navigate(item.screen);
+        }
+    };
+
+    const handleLogout = async () => {
+        try {
+            await logout().catch(err => console.log('API logout error:', err));
+
+            // LogOut từ context - cập nhật isAuthenticated thành false
+            const success = await logoutContext();
+
+            if (!success) {
+                Alert.alert('Lỗi', 'Không thể đăng xuất. Vui lòng thử lại.');
+            }
+        } catch (error) {
+            console.log('❌ Lỗi đăng xuất:', error);
+            Alert.alert('Lỗi', 'Không thể đăng xuất. Vui lòng thử lại.');
+        }
+    };
 
     const renderItem = ({ item }) => (
-        <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => {
-                if (item.title === 'Cài đặt') {
-                    navigation.navigate('Setting');
-                } else if (item.title === 'Privacy Policy') {
-                    navigation.navigate('Chính sách bảo mật');
-                } else if (item.title === 'Liên hệ') {
-                    navigation.navigate('ContactUs');
-                } else if (item.title === 'Đăng xuất') {
-                    setLogoutModalVisible(true);
-                } else if (item.title === 'Lịch sử đơn hàng') {
-                    navigation.navigate('MyOrders');
-                } else if (item.title === 'My profile') {
-                    navigation.navigate('MyProfile');
-                }
-            }}
-        >
+        <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress(item)}>
             <View style={styles.menuIconContainer}>
-                <Feather name={item.icon} size={24} color={'black'} />
+                <Feather name={item.icon} size={24} color={"#1167B1"} />
             </View>
             <Text style={styles.menuText}>{item.title}</Text>
-            <Feather name="chevron-right" size={15} color={'black'} />
+            <Feather name="chevron-right" size={15} color={"#1167B1"} />
         </TouchableOpacity>
     );
 
-    const handleLogout = () => {
-        Alert.alert('Đăng xuất', 'Bạn đã đăng xuất thành công');
-        navigation.navigate('SignIn');
-    };
-
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor={'white'} />
+            <StatusBar barStyle="dark-content" backgroundColor="#f8f8f8" />
             <Header title="Profile" />
 
             <View style={styles.profileImageContainer}>
                 <Image
-                    source={{ uri: userImageUrl }}
+                    source={{ uri: user ? user.defaultAvatar : 'https://res.cloudinary.com/dssrbosuv/image/upload/v1728055710/samples/man-portrait.jpg' }}
                     style={styles.profileImage}
                 />
                 <TouchableOpacity style={styles.editIconContainer}>
-                    <Feather name={"edit-2"} size={15} color={'white'} />
+                    <Feather name="edit-2" size={15} color="white" />
                 </TouchableOpacity>
             </View>
 
             <View style={styles.nameContainer}>
-                <Text style={styles.name}>{userName}</Text>
+                <Text style={styles.name}>{user?.name || 'User'}</Text>
             </View>
 
             <FlatList
@@ -76,15 +81,16 @@ const ProfileScreen = ({ navigation }) => {
                 ItemSeparatorComponent={() => <View style={styles.separator} />}
             />
 
+            {/* Modal xác nhận đăng xuất */}
             <Modal
                 animationType="slide"
-                transparent={true}
+                transparent
                 visible={logoutModalVisible}
                 onRequestClose={() => setLogoutModalVisible(false)}
             >
                 <View style={styles.centeredView}>
                     <View style={styles.modalView}>
-                        <Text style={styles.modalText}>Bạn có chắc muốn đăng xuất không?</Text>
+                        <Text style={styles.modalText}>Bạn có chắc muốn đăng xuất?</Text>
                         <View style={styles.modalButtonsContainer}>
                             <TouchableOpacity
                                 style={[styles.button, styles.buttonCancel]}
@@ -105,6 +111,7 @@ const ProfileScreen = ({ navigation }) => {
                     </View>
                 </View>
             </Modal>
+
             <BottomNav />
         </SafeAreaView>
     );
@@ -113,17 +120,19 @@ const ProfileScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: 'white',
+        backgroundColor: '#f8f8f8',
+        paddingTop: 15,
     },
     profileImageContainer: {
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 'auto',
     },
     profileImage: {
         height: 80,
         width: 80,
         borderRadius: 40,
+        borderWidth: 2,
+        borderColor: '#1167B1',
     },
     editIconContainer: {
         position: 'absolute',
@@ -139,18 +148,27 @@ const styles = StyleSheet.create({
     nameContainer: {
         justifyContent: 'center',
         alignItems: 'center',
-        marginVertical: 'auto',
+        marginVertical: 10,
     },
     name: {
-        fontSize: 18,
-        color: 'black',
-        fontWeight: 'bold'
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#333',
     },
     menuItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 'auto',
-        paddingHorizontal: 'auto',
+        backgroundColor: 'white',
+        marginHorizontal: 10,
+        marginBottom: 10,
+        paddingVertical: 15,
+        paddingHorizontal: 20,
+        borderRadius: 30,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.1,
+        shadowRadius: 20,
+        elevation: 8,
     },
     menuIconContainer: {
         width: 30,
@@ -159,42 +177,39 @@ const styles = StyleSheet.create({
     },
     menuText: {
         flex: 1,
-        fontSize: 14,
-        color: 'black',
-        fontWeight: 'bold'
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#1167B1',
+        marginLeft: 10,
     },
     separator: {
-        height: 1,
-        backgroundColor: 'lightgray',
+        height: 10,
     },
     centeredView: {
         flex: 1,
-        justifyContent: "flex-end",
-        alignItems: "center",
+        justifyContent: 'flex-end',
+        alignItems: 'center',
         backgroundColor: 'rgba(0,0,0,0.5)',
     },
     modalView: {
         width: '100%',
-        backgroundColor: "white",
+        backgroundColor: 'white',
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         padding: 35,
-        alignItems: "center",
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 2
-        },
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,
         shadowRadius: 4,
-        elevation: 5
+        elevation: 5,
     },
     modalText: {
-        marginBottom: 15,
-        color: 'black',
+        fontSize: 20,
         fontWeight: 'bold',
-        textAlign: "center",
-        fontSize: 18
+        color: 'black',
+        textAlign: 'center',
+        marginBottom: 20,
     },
     modalButtonsContainer: {
         flexDirection: 'row',
@@ -202,27 +217,26 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     button: {
-        borderRadius: 20,
-        padding: 10,
         width: '48%',
+        padding: 12,
+        borderRadius: 30,
+        alignItems: 'center',
     },
     buttonCancel: {
         backgroundColor: 'gray',
-        borderWidth: 1,
-        borderColor: 'gray',
     },
     buttonLogout: {
         backgroundColor: '#1167B1',
     },
     textStyleCancel: {
+        fontSize: 16,
         color: 'white',
-        fontWeight: "bold",
-        textAlign: "center",
+        fontWeight: 'bold',
     },
     textStyleLogout: {
-        color: "white",
-        fontWeight: "bold",
-        textAlign: "center",
+        fontSize: 16,
+        color: 'white',
+        fontWeight: 'bold',
     },
 });
 

@@ -1,30 +1,25 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import Header from '../components/Header';
+import { forgotPassword } from '../services/authService';
 
 const SendEmailScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!email) {
       Alert.alert('Lỗi', 'Hãy nhập email của bạn.');
       return;
     }
-  
-    // Kiểm tra định dạng email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      Alert.alert('Email không hợp lệ', 'Hãy nhập email hợp lệ.');
-      return;
-    }
-  
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      Alert.alert('Email đã được gửi', 'Hãy check email của bạn để lấy lại mật khẩu.');
+
+    try {
+      const result = await forgotPassword(email);
+      Alert.alert('Thành công', 'Vui lòng kiểm tra email để đặt lại mật khẩu.');
       navigation.navigate('VerifyCode', { email });
-    }, 2000); // Giả lập thời gian gửi email
+    } catch (error) {
+      Alert.alert('Lỗi', error);
+    }
   };
 
   return (
@@ -83,7 +78,7 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 10,
     alignItems: 'center',
-    borderRadius: 30,  
+    borderRadius: 30,
     width: '100%',
   },
   input: {
@@ -96,7 +91,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     marginTop: 20,
-    borderRadius: 30,  
+    borderRadius: 30,
   },
   buttonText: {
     color: '#fff',

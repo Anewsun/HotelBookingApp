@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SearchBox from '../components/SearchBox';
@@ -7,6 +7,7 @@ import BottomNav from '../components/BottomNav';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Icon1 from 'react-native-vector-icons/FontAwesome6';
 import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../contexts/AuthContext';
 
 const hotels = [
   { id: 1, name: 'The Dreamland Villas', location: '8, Lê Lợi, Nha Trang', price: '340000 VND', rating: 4.8, image: require('../assets/images/hotel1.jpg') },
@@ -20,6 +21,7 @@ const hotels = [
 
 const HomeScreen = () => {
   const navigation = useNavigation();
+  const { user, refreshUserData } = useAuth();
   const [currentPage, setCurrentPage] = useState(1);
   const hotelsPerPage = 6;
   const totalPages = Math.ceil(hotels.length / hotelsPerPage);
@@ -32,7 +34,7 @@ const HomeScreen = () => {
         ListHeaderComponent={
           <>
             <View style={styles.header}>
-              <Text style={styles.name}>Chào LVNT!</Text>
+              <Text style={styles.name}>{user && user.name ? `Chào ${user.name}!` : 'Đang tải...'}</Text>
               <Icon name="hand-left-outline" size={24} color="gold" style={styles.icon} />
               <Icon1 name="bell" size={24} color="black" style={styles.bellIcon} />
             </View>
