@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import Header from '../components/Header';
-import { forgotPassword } from '../services/authService';
+import { sendOTP } from '../services/authService';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SendEmailScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -14,16 +15,19 @@ const SendEmailScreen = ({ navigation }) => {
     }
 
     try {
-      const result = await forgotPassword(email);
+      setLoading(true);
+      const result = await sendOTP(email);
       Alert.alert('Thành công', 'Vui lòng kiểm tra email để đặt lại mật khẩu.');
       navigation.navigate('VerifyCode', { email });
     } catch (error) {
-      Alert.alert('Lỗi', error);
+      Alert.alert('Lỗi', error.message || 'Có lỗi xảy ra');
+    } finally {
+      setLoading(false);
     }
-  };
+};
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Header title="Send Email" onBackPress={() => navigation.goBack()} showBackIcon={true} />
 
       <View style={styles.content}>
@@ -45,7 +49,7 @@ const SendEmailScreen = ({ navigation }) => {
           <Text style={styles.buttonText}>{loading ? 'Đang gửi...' : 'Gửi Email'}</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -59,7 +63,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     alignItems: 'center',
     padding: 20,
-    marginTop: 50,
+    marginTop: 40,
   },
   headerText: {
     fontSize: 24,
@@ -86,7 +90,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   button: {
-    backgroundColor: '#4A8B98',
+    backgroundColor: '#1167B1',
     padding: 15,
     width: '100%',
     alignItems: 'center',

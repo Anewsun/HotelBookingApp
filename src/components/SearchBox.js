@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import DatePicker from 'react-native-date-picker';
+import { useNavigation } from '@react-navigation/native';
 
 const SearchBox = () => {
+  const navigation = useNavigation();
   // State lưu ngày nhận - trả phòng
   const [checkInDate, setCheckInDate] = useState(new Date());
   const [checkOutDate, setCheckOutDate] = useState(new Date());
@@ -65,7 +67,7 @@ const SearchBox = () => {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.searchButton}>
+        <TouchableOpacity style={styles.searchButton} onPress={() => navigation.navigate('SearchResult')} >
           <Text style={styles.searchText}>Tìm kiếm</Text>
         </TouchableOpacity>
       </View>

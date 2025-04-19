@@ -137,7 +137,7 @@ const SignInScreen = ({ navigation }) => {
         />
       </View>
 
-      <TouchableOpacity onPress={() => navigation.navigate('VerifyCode')} style={styles.forgotPassword}>
+      <TouchableOpacity onPress={() => navigation.navigate('SendEmail')} style={styles.forgotPassword}>
         <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
       </TouchableOpacity>
 

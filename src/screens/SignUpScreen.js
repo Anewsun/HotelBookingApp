@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, TextInput, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, TextInput, Alert, ActivityIndicator } from 'react-native';
 import InputField from '../components/InputField';
 import { useNavigation } from '@react-navigation/native';
 import { register } from '../services/authService';
@@ -10,6 +10,7 @@ const SignUpScreen = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const toggleShowPassword = () => {
         setShowPassword(!showPassword);
@@ -18,19 +19,21 @@ const SignUpScreen = () => {
     const handleRegister = async () => {
         console.log("🚀 handleRegister() called");
         console.log("📦 Data input:", { name, email, password });
+        setIsLoading(true);
     
         try {
             const result = await register(name, email, password);
             console.log("✅ Register success:", result);
     
-            Alert.alert('Thành công', 'Đăng ký thành công');
+            Alert.alert('Đăng ký thành công', 'Hãy mở gmail lên và bấm xác nhận');
             navigation.navigate('SignIn');
         } catch (error) {
             console.log("❌ Register error:", error.message);
-            console.warn("⚠️ Alert Message:", error.message);
             setTimeout(() => {
                 Alert.alert("Lỗi", error.message || "Đăng ký thất bại");
             }, 100);
+        } finally {
+            setIsLoading(false);
         }
     };      
 
@@ -61,8 +64,16 @@ const SignUpScreen = () => {
                 />
             </View>
 
-            <TouchableOpacity style={styles.registerButton} onPress={handleRegister} >
-                <Text style={styles.registerText}>Đăng ký</Text>
+            <TouchableOpacity 
+                style={[styles.registerButton, isLoading && { opacity: 0.7 }]} 
+                onPress={handleRegister} 
+                disabled={isLoading}
+            >
+                {isLoading ? (
+                    <ActivityIndicator color="white" />
+                ) : (
+                    <Text style={styles.registerText}>Đăng ký</Text>
+                )}
             </TouchableOpacity>
 
             <Text style={styles.footerText}>

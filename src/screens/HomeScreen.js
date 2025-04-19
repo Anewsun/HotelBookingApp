@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SearchBox from '../components/SearchBox';
@@ -6,31 +6,92 @@ import HotelCard from '../components/HotelCard';
 import BottomNav from '../components/BottomNav';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Icon1 from 'react-native-vector-icons/FontAwesome6';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
-
-const hotels = [
-  { id: 1, name: 'The Dreamland Villas', location: '8, Lê Lợi, Nha Trang', price: '340000 VND', rating: 4.8, image: require('../assets/images/hotel1.jpg') },
-  { id: 2, name: 'Khách sạn Paradise', location: '56/7, Ngô Quyền, Vũng Tàu', price: '370000 VND', rating: 4.7, image: require('../assets/images/hotel2.jpg') },
-  { id: 3, name: 'Khách sạn Sunrise', location: '123, Trần Phú, Đà Nẵng', price: '400000 VND', rating: 4.9, image: require('../assets/images/hotel3.jpg') },
-  { id: 4, name: 'Khách sạn Ocean View', location: '45, Nguyễn Văn Cừ, Nha Trang', price: '450000 VND', rating: 4.6, image: require('../assets/images/hotel4.jpg') },
-  { id: 5, name: 'Khách sạn Luxury', location: '78, Lê Thánh Tôn, TP.HCM', price: '500000 VND', rating: 4.5, image: require('../assets/images/hotel5.jpg') },
-  { id: 6, name: 'Khách sạn Royal', location: '90, Trần Hưng Đạo, Hà Nội', price: '550000 VND', rating: 4.4, image: require('../assets/images/hotel6.jpg') },
-  { id: 7, name: 'Khách sạn Diamond', location: '12, Lê Duẩn, Nha Trang', price: '600000 VND', rating: 4.3, image: require('../assets/images/hotel7.jpg') },
-];
+import { fetchHotels } from '../services/hotelService';
+import { getFavorites, addFavorite, removeFavorite } from '../services/userService';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
   const { user, refreshUserData } = useAuth();
+  const [refreshing, setRefreshing] = useState(false);
+  const [hotels, setHotels] = useState([]);
+  const [favoriteIds, setFavoriteIds] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const hotelsPerPage = 6;
+
   const totalPages = Math.ceil(hotels.length / hotelsPerPage);
 
   const paginatedHotels = hotels.slice((currentPage - 1) * hotelsPerPage, currentPage * hotelsPerPage);
 
+  const loadHotels = async () => {
+    try {
+      const data = await fetchHotels();
+      setHotels(data);
+    } catch (error) {
+      console.error('Failed to fetch hotels:', error);
+    }
+  };
+
+  useEffect(() => {
+    loadHotels();  // Load data lần đầu tiên khi màn hình được render lần đầu.
+  }, []);
+
+  // Đảm bảo khi màn hình quay lại, data sẽ được reload
+  useFocusEffect(
+    useCallback(() => {
+      loadHotels();
+    }, [])
+  );
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const data = await fetchHotels();
+      setHotels(data);
+    } catch (error) {
+      console.error('Failed to fetch hotels:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handlePressHotel = (hotel) => {
+    navigation.navigate('Detail', { hotelId: hotel._id });
+  };
+
+  const fetchFavorites = async () => {
+    try {
+      const data = await getFavorites();
+      setFavoriteIds(data.map(h => h._id));
+    } catch (e) {
+      console.log('❌ Lỗi fetch favorites:', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchFavorites();
+  }, []);
+
+  const handleToggleFavorite = async (hotelId) => {
+    try {
+      if (favoriteIds.includes(hotelId)) {
+        await removeFavorite(hotelId);
+        setFavoriteIds(prev => prev.filter(id => id !== hotelId));
+      } else {
+        await addFavorite(hotelId);
+        setFavoriteIds(prev => [...prev, hotelId]);
+      }
+    } catch (err) {
+      console.error('❌ Toggle favorite failed:', err);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
+        refreshing={refreshing}
+        onRefresh={onRefresh}
         ListHeaderComponent={
           <>
             <View style={styles.header}>
@@ -44,10 +105,11 @@ const HomeScreen = () => {
           </>
         }
         data={paginatedHotels}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item._id.toString()}
         renderItem={({ item }) => (
           <View style={styles.hotelContainer}>
-            <HotelCard hotel={item} onPress={() => navigation.navigate('Detail', { hotel: item })} />            </View>
+            <HotelCard hotel={item} onPress={() => handlePressHotel(item)} isFavorite={favoriteIds.includes(item._id)} onToggleFavorite={() => handleToggleFavorite(item._id)} />
+          </View>
         )}
         numColumns={2}
         columnWrapperStyle={styles.row}

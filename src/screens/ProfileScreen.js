@@ -3,8 +3,10 @@ import { View, Text, Image, StatusBar, StyleSheet, TouchableOpacity, FlatList, M
 import Header from '../components/Header';
 import Feather from 'react-native-vector-icons/Feather';
 import BottomNav from '../components/BottomNav';
+import { launchImageLibrary } from 'react-native-image-picker';
 import { useNavigation } from "@react-navigation/native";
 import { logout, getMe } from '../services/authService';
+import { uploadAvatar } from '../services/userService';
 import { useAuth } from '../contexts/AuthContext';
 
 const menuItems = [
@@ -18,6 +20,7 @@ const menuItems = [
 
 const ProfileScreen = () => {
     const navigation = useNavigation();
+    const [avatarUrl, setAvatarUrl] = useState(null);
     const { user, refreshUserData, logout: logoutContext } = useAuth();
     const [logoutModalVisible, setLogoutModalVisible] = useState(false);
 
@@ -28,6 +31,39 @@ const ProfileScreen = () => {
             navigation.navigate(item.screen);
         }
     };
+
+    const handleChangeAvatar = () => {
+        launchImageLibrary(
+            {
+                mediaType: 'photo',
+                quality: 0.7,
+                selectionLimit: 1,
+            },
+            async (response) => {
+                if (response.didCancel) {
+                    console.log('❌ Người dùng đã huỷ chọn ảnh');
+                    return;
+                } else if (response.errorCode) {
+                    console.log('❌ Lỗi chọn ảnh:', response.errorMessage);
+                    Alert.alert('Lỗi', response.errorMessage || 'Không thể mở thư viện ảnh.');
+                    return;
+                } else if (response.assets && response.assets.length > 0) {
+                    const selectedImage = response.assets[0];
+    
+                    try {
+                        const newAvatar = await uploadAvatar(selectedImage);
+    
+                        setAvatarUrl(newAvatar.url);
+                        await refreshUserData();
+                        Alert.alert('Thành công', 'Cập nhật ảnh đại diện thành công!');
+                    } catch (error) {
+                        console.log('❌ Lỗi upload avatar:', error);
+                        Alert.alert('Lỗi', error.message || 'Không thể cập nhật ảnh đại diện.');
+                    }
+                }
+            }
+        );
+    };    
 
     const handleLogout = async () => {
         try {
@@ -62,10 +98,10 @@ const ProfileScreen = () => {
 
             <View style={styles.profileImageContainer}>
                 <Image
-                    source={{ uri: user ? user.defaultAvatar : 'https://res.cloudinary.com/dssrbosuv/image/upload/v1728055710/samples/man-portrait.jpg' }}
+                    source={{ uri: avatarUrl || (user ? user.defaultAvatar : 'https://res.cloudinary.com/dssrbosuv/image/upload/v1728055710/samples/man-portrait.jpg') }}
                     style={styles.profileImage}
                 />
-                <TouchableOpacity style={styles.editIconContainer}>
+                <TouchableOpacity style={styles.editIconContainer} onPress={handleChangeAvatar}>
                     <Feather name="edit-2" size={15} color="white" />
                 </TouchableOpacity>
             </View>

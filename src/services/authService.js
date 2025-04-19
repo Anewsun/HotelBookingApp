@@ -90,11 +90,29 @@ export const loginWithFacebook = async () => {
     }
 };
 
-export const forgotPassword = async (email) => {
+export const sendOTP = async (email) => {
     try {
-        const response = await axios.post(`${API_URL}/forgot-password`, { email });
+        const response = await axios.post(`${API_URL}/password/forgot`, { email });
         return response.data;
     } catch (error) {
         throw error.response?.data || "Lỗi khi gửi email đặt lại mật khẩu";
+    }
+};
+
+export const verifyOTP = async (email, otp) => {
+    try {
+        const response = await axios.post(`${API_URL}/password/verify-otp`, { email, otp });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data?.message || "Lỗi xác thực OTP";
+    }
+};
+
+export const resetPassword = async (email, otp, newPassword) => {
+    try {
+        const response = await axios.post(`${API_URL}/password/reset`, { email, otp, password: newPassword });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data?.message || "Lỗi đặt lại mật khẩu";
     }
 };
