@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^1.24.0",
+    "@react-native-community/checkbox": "^0.5.17",
     "@react-native-community/slider": "^4.5.6",
     "@react-native-firebase/app": "^21.12.2",
     "@react-native-firebase/auth": "^21.12.2",
@@ -25,6 +26,7 @@
     "react-native-gesture-handler": "^2.24.0",
     "react-native-image-picker": "^8.2.0",
     "react-native-inappbrowser-reborn": "^3.7.0",
+    "react-native-maps": "^1.22.6",
     "react-native-safe-area-context": "^5.3.0",
     "react-native-screens": "^4.9.1",
     "react-native-vector-icons": "^10.2.0"
