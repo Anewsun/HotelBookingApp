@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, TextInput } from 'react-native';
 import Header from '../components/Header';
-import { verifyEmail } from '../services/authService';
+import { verifyOTP, sendOTP } from '../services/authService';
 
 const VerifyCodeScreen = ({ navigation, route }) => {
   const [code, setCode] = useState('');
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const textInputRef = useRef(null);
 
   useEffect(() => {
     if (route.params?.email) {
@@ -16,14 +17,14 @@ const VerifyCodeScreen = ({ navigation, route }) => {
 
   const handleChangeText = (value) => {
     const sanitizedValue = value.replace(/[^0-9]/g, '');
-    if (sanitizedValue.length <= 4) {
+    if (sanitizedValue.length <= 6) {
       setCode(sanitizedValue);
     }
   };
 
   const handleVerify = async () => {
-    if (code.length !== 4) {
-      Alert.alert('Lỗi', 'Vui lòng nhập đủ 4 số của mã xác nhận');
+    if (code.length !== 6) {
+      Alert.alert('Lỗi', 'Vui lòng nhập đủ 6 số của mã xác nhận');
       return;
     }
 
@@ -34,13 +35,9 @@ const VerifyCodeScreen = ({ navigation, route }) => {
 
     setIsLoading(true);
     try {
-      const result = await verifyEmail(email, code);
+      const result = await verifyOTP(email, code);
       console.log("✅ Verification success:", result);
-      Alert.alert(
-        'Thành công', 
-        'Email đã được xác thực thành công',
-        [{ text: 'OK', onPress: () => navigation.navigate('SignIn') }]
-      );
+      navigation.navigate('NewPassword', { email: route.params.email, otp: code });
     } catch (error) {
       console.log("❌ Verification error:", error);
       Alert.alert('Lỗi', typeof error === 'string' ? error : 'Xác thực thất bại, vui lòng thử lại');
@@ -54,7 +51,16 @@ const VerifyCodeScreen = ({ navigation, route }) => {
       Alert.alert('Lỗi', 'Không tìm thấy email, vui lòng thử lại');
       return;
     }
-    Alert.alert('Thông báo', 'Chức năng gửi lại mã đang được phát triển');
+
+    try {
+      setIsLoading(true);
+      await sendOTP(email);
+      Alert.alert('Thành công', 'Mã OTP mới đã được gửi đến email của bạn');
+    } catch (error) {
+      Alert.alert('Lỗi', error.message || 'Gửi lại mã thất bại, vui lòng thử lại');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -63,34 +69,52 @@ const VerifyCodeScreen = ({ navigation, route }) => {
       <Text style={styles.subText}>Hãy nhập mã code chúng tôi gửi bạn qua email</Text>
       <Text style={styles.emailText}>{email || 'your-email@example.com'}</Text>
 
+      <View style={styles.codeContainer}>
+        <TouchableOpacity
+          activeOpacity={1}
+          style={styles.touchableWrapper}
+          onPress={() => textInputRef.current.focus()}
+        >
+          {Array(6).fill('').map((_, index) => (
+            <View
+              key={index}
+              style={[
+                styles.inputBox,
+                code[index] && styles.filledInputBox
+              ]}
+            >
+              <Text style={styles.inputText}>{code[index] || ''}</Text>
+            </View>
+          ))}
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.codeInputContainer}>
         <TextInput
+          ref={textInputRef}
           style={styles.codeInput}
           value={code}
           onChangeText={handleChangeText}
           keyboardType="number-pad"
-          maxLength={4}
+          maxLength={6}
           autoFocus
         />
       </View>
 
-      <View style={styles.codeContainer}>
-        {Array(4).fill('').map((_, index) => (
-          <View key={index} style={styles.inputBox}>
-            <Text style={styles.inputText}>{code[index] || ''}</Text>
-          </View>
-        ))}
-      </View>
-
       <View style={styles.resendContainer}>
         <Text style={styles.resendText}>Không nhận được OTP? </Text>
-        <TouchableOpacity onPress={handleResendCode}>
-          <Text style={styles.resendLink}>Gửi lại code</Text>
+        <TouchableOpacity
+          onPress={handleResendCode}
+          disabled={isLoading}
+        >
+          <Text style={styles.resendLink}>
+            {isLoading ? 'Đang gửi...' : 'Gửi lại code'}
+          </Text>
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity 
-        style={[styles.button, isLoading && styles.buttonDisabled]} 
+      <TouchableOpacity
+        style={[styles.button, isLoading && styles.buttonDisabled]}
         onPress={handleVerify}
         disabled={isLoading}
       >
@@ -121,29 +145,41 @@ const styles = StyleSheet.create({
   },
   codeInputContainer: {
     position: 'absolute',
-    opacity: 0,
-    height: 0,
+    opacity: 0.01,
+    height: 60,
     width: '100%',
+    zIndex: 1,// Đảm bảo nằm trên cùng
   },
   codeInput: {
-    height: 0,
-    width: 0,
+    flex: 1,
+    fontSize: 24,
   },
   codeContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '80%',
+    width: '90%',
     alignSelf: 'center',
     marginVertical: 35,
+    height: 60
+  },
+  touchableWrapper: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
   },
   inputBox: {
     borderWidth: 1,
     borderColor: '#000',
-    width: 50,
+    backgroundColor: 'white',
+    width: 40,
     height: 50,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
+    marginHorizontal: 5,
+  },
+  filledInputBox: {
+    backgroundColor: '#f0f0f0',
   },
   inputText: {
     fontSize: 24,

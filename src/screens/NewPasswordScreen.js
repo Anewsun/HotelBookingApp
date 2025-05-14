@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Header from '../components/Header';
+import { resetPassword } from '../services/authService';
 
-const NewPasswordScreen = () => {
+const NewPasswordScreen = ({ route }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -11,7 +12,7 @@ const NewPasswordScreen = () => {
 
   const navigation = useNavigation();
 
-  const handleCreatePassword = () => {
+  const handleCreatePassword = async () => {
     if (password !== confirmPassword) {
       Alert.alert('Chú ý', 'Mật khẩu phải giống nhau.');
       return;
@@ -22,8 +23,18 @@ const NewPasswordScreen = () => {
       return;
     }
 
-    Alert.alert('Thành công', 'Mật khẩu đã được đặt lại.');
-    navigation.navigate('SignIn');
+    try {
+      // Lấy email và OTP từ route.params
+      const { email, otp } = route.params;
+
+      // Gọi API reset password
+      const result = await resetPassword(email, otp, password);
+
+      Alert.alert('Thành công', 'Mật khẩu đã được đặt lại.');
+      navigation.navigate('SignIn');
+    } catch (error) {
+      Alert.alert('Lỗi', error.message || 'Đặt lại mật khẩu thất bại');
+    }
   };
 
   const toggleShowPassword = () => {
@@ -43,7 +54,7 @@ const NewPasswordScreen = () => {
         <TextInput
           style={styles.input}
           secureTextEntry={!showPassword}
-          placeholder="Mật khẩu"
+          placeholder="Mật khẩu mới"
           value={password}
           onChangeText={setPassword}
         />
@@ -61,7 +72,7 @@ const NewPasswordScreen = () => {
         <TextInput
           style={styles.input}
           secureTextEntry={!showConfirmPassword}
-          placeholder="Xác nhận mật khẩu"
+          placeholder="Xác nhận mật khẩu mới"
           value={confirmPassword}
           onChangeText={setConfirmPassword}
         />
