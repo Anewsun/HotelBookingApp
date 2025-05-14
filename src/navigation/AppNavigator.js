@@ -9,6 +9,7 @@ import FilterScreen from "../screens/FilterScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import HotelDetailScreen from "../screens/HotelDetailScreen";
 import SearchResultScreen from "../screens/SearchResultScreen";
+import BookingSreen from "../screens/BookingScreen";
 
 import { useAuth } from "../contexts/AuthContext";
 import { createStackNavigator } from "@react-navigation/stack";
@@ -39,6 +40,7 @@ const AppNavigator = () => {
           <Stack.Screen name="Profile" component={ProfileScreen} />
           <Stack.Screen name="Detail" component={HotelDetailScreen} />
           <Stack.Screen name="SearchResult" component={SearchResultScreen} />
+          <Stack.Screen name="Booking" component={BookingSreen} />
         </>
       ) : (
         <>

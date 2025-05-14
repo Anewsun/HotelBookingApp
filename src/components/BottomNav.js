@@ -24,8 +24,8 @@ const BottomNav = () => {
         <Text style={styles.navText}>Favorite</Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={[styles.navItem, { backgroundColor: currentRouteName === 'BookingScreen' ? '#1167B1' : 'white' }]}
-        onPress={() => navigation.navigate('BookingScreen')}
+        style={[styles.navItem, { backgroundColor: currentRouteName === 'Booking' ? '#1167B1' : 'white' }]}
+        onPress={() => navigation.navigate('Booking')}
       >
         <Icon name="calendar-outline" size={34} />
         <Text style={styles.navText}>Booking</Text>
