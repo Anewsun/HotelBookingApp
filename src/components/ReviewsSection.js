@@ -1,5 +1,6 @@
-import React from "react";
-import { View, Text, FlatList, StyleSheet, Image, Dimensions } from "react-native";
+import React, { useState } from "react";
+import { View, Text, FlatList, StyleSheet, Image, Dimensions, TouchableOpacity } from "react-native";
+import Icon from 'react-native-vector-icons/FontAwesome5';
 
 const { width } = Dimensions.get('window');
 const MAX_BAR_WIDTH = width * 0.25;
@@ -35,8 +36,12 @@ const reviews = [
 ];
 
 const ReviewsSection = () => {
+    const [showAllReviews, setShowAllReviews] = useState(false);
+    const initialReviewCount = 2;
+
     const totalReviews = reviews.length;
     const averageRating = (reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews).toFixed(1);
+    const displayedReviews = showAllReviews ? reviews : reviews.slice(0, initialReviewCount);
 
     const starCounts = [1, 2, 3, 4, 5].map(star => reviews.filter(review => review.rating === star).length);
 
@@ -69,7 +74,7 @@ const ReviewsSection = () => {
                 </View>
             </View>
             <FlatList
-                data={reviews}
+                data={displayedReviews}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
                     <View style={styles.reviewItem}>
@@ -97,6 +102,22 @@ const ReviewsSection = () => {
                     </View>
                 )}
             />
+
+            {totalReviews > initialReviewCount && (
+                <TouchableOpacity
+                    style={styles.toggleReviewsButton}
+                    onPress={() => setShowAllReviews(!showAllReviews)}
+                >
+                    <Text style={styles.toggleReviewsText}>
+                        {showAllReviews ? 'Thu gọn' : `Xem thêm ${totalReviews - initialReviewCount} đánh giá khác`}
+                    </Text>
+                    <Icon
+                        name={showAllReviews ? "chevron-up" : "chevron-down"}
+                        size={16}
+                        color="white"
+                    />
+                </TouchableOpacity>
+            )}
         </View>
     );
 };
@@ -224,6 +245,21 @@ const styles = StyleSheet.create({
         height: 50,
         borderRadius: 5,
         marginRight: 5,
+    },
+    toggleReviewsButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 12,
+        marginTop: 8,
+        backgroundColor: 'gray',
+        borderRadius: 25,
+    },
+    toggleReviewsText: {
+        color: 'white',
+        fontSize: 15,
+        fontWeight: '500',
+        marginRight: 6,
     },
 });
 

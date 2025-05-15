@@ -5,8 +5,8 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import HotelHeader from "../components/HotelHeader";
 import RoomTypeSelection from "../components/RoomTypeSelection";
 import ReviewsSection from "../components/ReviewsSection";
-import { useFavorite } from '../contexts/FavoriteContext';
 import { fetchHotelById, fetchAllAmenities } from '../services/hotelService';
+import { fetchRoomsByHotelId } from '../services/roomService';
 import { getAmenityIcon } from '../utils/AmenityIcons';
 
 const starIcon = require('../assets/images/star.png');
@@ -20,18 +20,24 @@ const HotelDetailScreen = () => {
   const [loading, setLoading] = useState(true);
   const [showFullDesc, setShowFullDesc] = useState(false);
   const [selectedRoomIndexes, setSelectedRoomIndexes] = useState([]);
-  const { favoriteIds, toggleFavorite } = useFavorite();
 
   useEffect(() => {
     const loadData = async () => {
       try {
         // Fetch song song hotel data và amenities
-        const [hotelData, amenitiesData] = await Promise.all([
+        const [hotelData, amenitiesData, roomsData] = await Promise.all([
           fetchHotelById(hotelId),
-          fetchAllAmenities() // Hàm này cần được thêm vào hotelService
+          fetchAllAmenities(),
+          fetchRoomsByHotelId(hotelId).catch(e => {
+            console.log('Fallback to empty rooms due to error:', e);
+            return []; // Trả về mảng rỗng nếu có lỗi
+          })
         ]);
 
-        setHotel(hotelData);
+        setHotel({
+          ...hotelData,
+          rooms: roomsData
+        });
         setAllAmenities(amenitiesData);
 
         // Lọc amenities của khách sạn
@@ -42,7 +48,10 @@ const HotelDetailScreen = () => {
           setHotelAmenities(filteredAmenities);
         }
       } catch (error) {
-        console.error('Error loading data:', error);
+        console.error('Full error details:', {
+          error: error.response?.data || error.message,
+          stack: error.stack
+        });
       } finally {
         setLoading(false);
       }
@@ -126,7 +135,7 @@ const HotelDetailScreen = () => {
           </View>
         )}
         ListFooterComponent={
-          <View style={{ height: 100 }} />
+          <View style={{ height: 30 }} />
         }
       />
 

@@ -1,45 +1,50 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Dimensions } from "react-native";
 import Icon from 'react-native-vector-icons/FontAwesome5';
-import { rooms } from './RoomData';
+import { getAmenityIcon } from '../utils/AmenityIcons';
 
 const { width: viewportWidth } = Dimensions.get('window');
 
-const features = [
-  { name: 'Cấm hút thuốc', icon: 'smoking-ban' },
-  { name: 'Wifi', icon: 'wifi' },
-  { name: 'Máy lạnh', icon: 'wind' },
-  { name: 'Free bữa sáng', icon: 'bread-slice' },
-  { name: 'Bồn tắm', icon: 'bath' },
-];
-
-const RoomTypeSelection = ({ selectedRoomIndexes = [], onSelectedRoomsChange = () => { } }) => {
+const RoomTypeSelection = ({ rooms = [], selectedRoomIndexes = [], onSelectedRoomsChange = () => { } }) => {
   const [expandedRoom, setExpandedRoom] = useState(null);
+  const [showAllRooms, setShowAllRooms] = useState(false);
+  const initialRoomCount = 2;
+  const displayedRooms = showAllRooms ? rooms : rooms.slice(0, initialRoomCount);
 
   const toggleRoomDetails = (index) => {
     setExpandedRoom(expandedRoom === index ? null : index);
   };
 
   const handleRoomSelect = (index) => {
+    if (rooms[index].status !== 'available') return;
+
     const updated = selectedRoomIndexes.includes(index)
       ? selectedRoomIndexes.filter(i => i !== index)
       : [...selectedRoomIndexes, index];
     onSelectedRoomsChange(updated);
   };
 
-  const getFeatureIcon = (featureName) => {
-    const feature = features.find(f => f.name === featureName);
-    return feature ? feature.icon : null;
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN');
   };
 
-  const getStatusStyle = (status) => {
+  const getStatusText = (status) => {
     switch (status) {
-      case 'Trống':
-        return { backgroundColor: '#4CAF50', color: '#fff' };
-      case 'Đã đặt':
-        return { backgroundColor: '#2196F3', color: '#fff' };
-      case 'Đang bảo trì':
-        return { backgroundColor: '#F44336', color: '#fff' };
+      case 'available': return 'Trống';
+      case 'booked': return 'Đã đặt';
+      case 'maintenance': return 'Đang dọn phòng';
+      default: return status;
+    }
+  };
+
+  const getStatusStyle = (statusText) => {
+    switch (statusText) {
+      case 'Trống': return { backgroundColor: '#4CAF50', color: '#fff' };
+      case 'Đã đặt': return { backgroundColor: '#2196F3', color: '#fff' };
+      case 'Đang dọn phòng': return { backgroundColor: '#F44336', color: '#fff' };
+      default: return {};
     }
   };
 
@@ -50,108 +55,149 @@ const RoomTypeSelection = ({ selectedRoomIndexes = [], onSelectedRoomsChange = (
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Chọn phòng</Text>
-      {rooms.map((room, index) => (
-        <View key={index} style={[styles.roomBox, selectedRoomIndexes.includes(index) && styles.selectedRoom]}>
-          <View style={[styles.roomContent, selectedRoomIndexes.includes(index) && styles.selectedRoomBorder]}>
-            <ScrollView
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              style={styles.imageScrollView}
-            >
-              {room.images.map((img, index) => (
-                <Image
-                  key={index}
-                  source={img}
-                  style={styles.roomImage}
-                />
-              ))}
-            </ScrollView>
 
-            <View style={styles.roomInfo}>
-              <View style={styles.roomHeader}>
-                <Text style={styles.roomTitle}>{room.name}</Text>
-                <TouchableOpacity onPress={() => toggleRoomDetails(index)}>
-                  <Icon name={expandedRoom === index ? "chevron-up" : "chevron-down"} size={20} />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.featuresContainer}>
-                {room.features.map((feature, idx) => (
-                  <View key={idx} style={styles.featureItem}>
-                    <Icon name={getFeatureIcon(feature)} size={16} color="#555" />
-                    <Text style={styles.featureText}>{feature}</Text>
-                  </View>
-                ))}
-              </View>
-
-              <View style={styles.priceAndCheckbox}>
-                <View>
-                  {room.discount > 0 && (
-                    <Text style={styles.originalPrice}>{formatPrice(room.price)} VNĐ</Text>
-                  )}
-                  <Text style={styles.roomPrice}>
-                    {formatPrice(room.discount > 0 ? room.price * (1 - room.discount/100) : room.price)} VNĐ
-                    <Text style={styles.perNight}> /ngày</Text>
-                  </Text>
-                </View>
-
-                <TouchableOpacity onPress={() => handleRoomSelect(index)}>
-                  <View style={styles.checkbox}>
-                    <Icon
-                      name={selectedRoomIndexes.includes(index) ? "check-square" : "square"}
-                      size={24}
-                      color={selectedRoomIndexes.includes(index) ? '#2196F3' : '#aaa'}
+      {displayedRooms.length === 0 ? (
+        <Text style={styles.noRoomsText}>Không có phòng nào</Text>
+      ) : (
+        displayedRooms.map((room, index) => (
+          <View key={room._id || index} style={[
+            styles.roomBox,
+            selectedRoomIndexes.includes(index) && styles.selectedRoom,
+            room.status !== 'available' && styles.disabledRoom
+          ]}>
+            <View style={[styles.roomContent, selectedRoomIndexes.includes(index) && styles.selectedRoomBorder]}>
+              {room.images?.length > 0 && (
+                <ScrollView
+                  horizontal
+                  pagingEnabled
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.imageScrollView}
+                >
+                  {room.images.map((img, imgIndex) => (
+                    <Image
+                      key={img._id || imgIndex}
+                      source={{ uri: img.url }}
+                      style={styles.roomImage}
                     />
-                  </View>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-
-          {expandedRoom === index && (
-            <View style={styles.detailsContainer}>
-              <Text style={styles.detailsTitle}>Mô tả</Text>
-              <Text style={styles.detailsText}>{room.description}</Text>
-
-              <View style={styles.infoContainer}>
-                <Text style={styles.detailsTitle}>Thông tin chi tiết phòng</Text>
-                <View style={styles.infoRow}>
-                  <Icon name="building" size={20} color="#555" />
-                  <Text style={styles.detailsText}>Tầng: {room.floor}</Text>
-                </View>
-                <View style={styles.infoRow}>
-                  <Icon name="chart-area" size={20} color="#555" />
-                  <Text style={styles.detailsText}>Diện tích: {room.acreage} m²</Text>
-                </View>
-                <View style={styles.infoRow}>
-                  <Icon name="bed" size={20} color="#555" />
-                  <Text style={styles.detailsText}>Loại giường: {room.bedType}</Text>
-                </View>
-                <View style={styles.infoRow}>
-                  <Icon name="user-friends" size={20} color="#555" />
-                  <Text style={styles.detailsText}>Số lượng khách tối đa: {room.maxGuests}</Text>
-                </View>
-              </View>
-
-              {room.discount > 0 && (
-                <View style={styles.promotionContainer}>
-                  <Text style={styles.detailsTitle}>Khuyến mãi</Text>
-                  <Text style={styles.detailsText}>Giảm giá: <Text style={styles.discount}>{room.discount}%</Text></Text>
-                  <Text style={styles.detailsText}>Thời gian: {room.discountStart} đến {room.discountEnd}</Text>
-                </View>
+                  ))}
+                </ScrollView>
               )}
 
-              <View style={styles.statusContainer}>
-                <Text style={styles.detailsTitle}>Trạng thái</Text>
-                <Text style={[styles.detailsTextStatus, getStatusStyle(room.status)]}>
-                  {room.status}
-                </Text>
+              <View style={styles.roomInfo}>
+                <View style={styles.roomHeader}>
+                  <Text style={styles.roomTitle}>{room.roomType}</Text>
+                  <TouchableOpacity onPress={() => toggleRoomDetails(index)}>
+                    <Icon name={expandedRoom === index ? "chevron-up" : "chevron-down"} size={20} />
+                  </TouchableOpacity>
+                </View>
+
+                {room.amenities?.length > 0 && (
+                  <View style={styles.featuresContainer}>
+                    {room.amenities?.map((amenity, idx) => (
+                      <View key={amenity._id || idx} style={styles.featureItem}>
+                        {getAmenityIcon(amenity.icon)}
+                        <Text style={styles.featureText}>{amenity.name}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                <View style={styles.priceAndCheckbox}>
+                  <View>
+                    {room.discountPercent > 0 && (
+                      <Text style={styles.originalPrice}>{formatPrice(room.price)} VNĐ</Text>
+                    )}
+                    <Text style={styles.roomPrice}>
+                      {formatPrice(room.discountPercent > 0 ?
+                        room.price * (1 - room.discountPercent / 100) :
+                        room.price)} VNĐ
+                      <Text style={styles.perNight}> /ngày</Text>
+                    </Text>
+
+                    <View style={styles.statusContainer}>
+                      <Text style={styles.detailsTitle}>Trạng thái</Text>
+                      <Text style={[styles.detailsTextStatus, getStatusStyle(getStatusText(room.status))]}>
+                        {getStatusText(room.status)}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {room.status === 'available' && (
+                    <TouchableOpacity onPress={() => handleRoomSelect(index)}>
+                      <View style={styles.checkbox}>
+                        <Icon
+                          name={selectedRoomIndexes.includes(index) ? "check-square" : "square"}
+                          size={24}
+                          color={selectedRoomIndexes.includes(index) ? '#2196F3' : '#aaa'}
+                        />
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
             </View>
-          )}
-        </View>
-      ))}
+
+            {expandedRoom === index && (
+              <View style={styles.detailsContainer}>
+                {room.description && (
+                  <>
+                    <Text style={styles.detailsTitle}>Mô tả</Text>
+                    <Text style={styles.detailsText}>{room.description}</Text>
+                  </>
+                )}
+
+                <View style={styles.infoContainer}>
+                  <Text style={styles.detailsTitle}>Thông tin chi tiết phòng</Text>
+                  <View style={styles.infoRow}>
+                    <Icon name="building" size={20} color="#555" />
+                    <Text style={styles.detailsText}>Tầng: {room.floor}</Text>
+                  </View>
+                  <View style={styles.infoRow}>
+                    <Icon name="chart-area" size={20} color="#555" />
+                    <Text style={styles.detailsText}>Diện tích: {room.squareMeters} m²</Text>
+                  </View>
+                  <View style={styles.infoRow}>
+                    <Icon name="bed" size={20} color="#555" />
+                    <Text style={styles.detailsText}>Loại giường: {room.bedType}</Text>
+                  </View>
+                  <View style={styles.infoRow}>
+                    <Icon name="user-friends" size={20} color="#555" />
+                    <Text style={styles.detailsText}>Số lượng khách tối đa: {room.capacity}</Text>
+                  </View>
+                </View>
+
+                {room.discountPercent > 0 && (
+                  <View style={styles.promotionContainer}>
+                    <Text style={styles.detailsTitle}>Khuyến mãi</Text>
+                    <Text style={styles.detailsText}>
+                      Giảm giá: <Text style={styles.discount}>{room.discountPercent}%</Text>
+                    </Text>
+                    <Text style={styles.detailsText}>
+                      Thời gian: {formatDate(room.discountStartDate)} đến {formatDate(room.discountEndDate)}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
+        ))
+      )}
+
+      {rooms.length > initialRoomCount && (
+        <TouchableOpacity
+          style={styles.toggleRoomsButton}
+          onPress={() => setShowAllRooms(!showAllRooms)}
+        >
+          <Text style={styles.toggleRoomsText}>
+            {showAllRooms ? 'Thu gọn' : `Xem thêm (${rooms.length - initialRoomCount})`}
+          </Text>
+          <Icon
+            name={showAllRooms ? "chevron-up" : "chevron-down"}
+            size={16}
+            color="white"
+          />
+        </TouchableOpacity>
+      )}
     </ScrollView>
   );
 };
@@ -241,6 +287,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#555",
   },
+  noRoomsText: {
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 16,
+    color: '#666'
+  },
   checkbox: {
     width: 30,
     height: 30,
@@ -272,6 +324,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 5,
+    marginTop: 10
   },
   detailsTextStatus: {
     fontSize: 14,
@@ -318,6 +371,33 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: 'normal',
     color: 'black',
+  },
+  disabledRoom: {
+    opacity: 0.7,
+    backgroundColor: '#f5f5f5',
+  },
+  roomStatus: {
+    fontSize: 15,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+    marginTop: 5,
+    alignSelf: 'flex-start',
+  },
+  toggleRoomsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    marginTop: 8,
+    backgroundColor: 'gray',
+    borderRadius: 25,
+  },
+  toggleRoomsText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '500',
+    marginRight: 6,
   },
 });
 
