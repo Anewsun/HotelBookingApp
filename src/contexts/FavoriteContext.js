@@ -16,11 +16,26 @@ export const FavoriteProvider = ({ children }) => {
         setFavoriteIds([]);
         return;
       }
-      
-      const data = await getFavorites();
-      setFavoriteIds(data.map(item => item._id));
+
+      try {
+        const data = await getFavorites();
+        setFavoriteIds(data.map(item => item._id));
+      } catch (error) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        console.error('Error loading favorites:', err);
+
+        if (error.response?.status === 401) {
+          try {
+            await logout();
+          } catch (logoutError) {
+            console.error('Logout failed:',
+              logoutError instanceof Error ? logoutError : new Error(String(logoutError)));
+          }
+        }
+      }
     } catch (error) {
-      console.error('Error loading favorites:', error);
+      console.error('Unexpected error in loadFavorites:',
+        error instanceof Error ? error : new Error(String(error)));
     }
   };
 
@@ -30,13 +45,13 @@ export const FavoriteProvider = ({ children }) => {
 
   const toggleFavorite = async (hotelId) => {
     if (!isAuthenticated) return; // Không làm gì nếu chưa đăng nhập
-    
+
     try {
       // Optimistic update
       const newFavorites = favoriteIds.includes(hotelId)
         ? favoriteIds.filter(id => id !== hotelId)
         : [...favoriteIds, hotelId];
-      
+
       setFavoriteIds(newFavorites);
 
       // Gọi API

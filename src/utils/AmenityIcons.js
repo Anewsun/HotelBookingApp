@@ -1,11 +1,11 @@
 import React from 'react';
-import Icon from 'react-native-vector-icons/FontAwesome';
+import Icon from 'react-native-vector-icons/FontAwesome5';
 
 export const getAmenityIcon = (icon) => {
   switch (icon) {
     // Hotel amenities
     case "pool-icon":
-      return <Icon name="water" size={25} color="#000" />;
+      return <Icon name="swimming-pool" size={25} color="#000" />;
     case "gym-icon":
       return <Icon name="dumbbell" size={25} color="#000" />;
     case "restaurant-icon":
@@ -23,19 +23,19 @@ export const getAmenityIcon = (icon) => {
     case "conference-icon":
       return <Icon name="chalkboard-teacher" size={25} color="#000" />;
     case "tennis-icon":
-      return <Icon name="sports-tennis" size={25} color="#000" />;
+      return <Icon name="table-tennis" size={25} color="#000" />;
     case "playground-icon":
-      return <Icon name="play-circle" size={25} color="#000" />;
+      return <Icon name="campground" size={25} color="#000" />;
     case "shuttle-icon":
-      return <Icon name="airplane" size={25} color="#000" />;
+      return <Icon name="shuttle-van" size={25} color="#000" />;
     case "reception-icon":
-      return <Icon name="receipt" size={25} color="#000" />;
+      return <Icon name="people-arrows" size={25} color="#000" />;
     case "elevator-icon":
       return <Icon name="building" size={25} color="#000" />;
     case "smoking-icon":
       return <Icon name="smoking" size={25} color="#000" />;
     case "room-service-icon":
-      return <Icon name="bell" size={25} color="#000" />;
+      return <Icon name="concierge-bell" size={25} color="#000" />;
 
     // Room amenities
     case "wifi-icon":
@@ -55,13 +55,13 @@ export const getAmenityIcon = (icon) => {
     case "desk-icon":
       return <Icon name="desktop" size={25} color="#000" />;
     case "wardrobe-icon":
-      return <Icon name="closet" size={25} color="#000" />;
+      return <Icon name="door-closed" size={25} color="#000" />;
     case "dressing-table-icon":
       return <Icon name="table" size={25} color="#000" />;
     case "phone-icon":
       return <Icon name="phone" size={25} color="#000" />;
     case "safe-icon":
-      return <Icon name="lock" size={25} color="#000" />;
+      return <Icon name="vector-square" size={25} color="#000" />;
     case "balcony-icon":
       return <Icon name="sun" size={25} color="#000" />;
     case "fridge-icon":

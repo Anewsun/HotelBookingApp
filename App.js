@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { FavoriteProvider } from './src/contexts/FavoriteContext';
 import { AuthProvider } from './src/contexts/AuthContext';
 import AppNavigator from './src/navigation/AppNavigator';
+import { navigationRef } from './src/navigation/RootNavigation';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -20,13 +21,13 @@ const queryClient = new QueryClient({
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <NavigationContainer>
-        <AuthProvider>
+      <AuthProvider>
+        <NavigationContainer ref={navigationRef}>
           <FavoriteProvider>
             <AppNavigator />
           </FavoriteProvider>
-        </AuthProvider>
-      </NavigationContainer>
+        </NavigationContainer>
+      </AuthProvider>
     </QueryClientProvider>
   );
 };

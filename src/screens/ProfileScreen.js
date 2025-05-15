@@ -33,48 +33,33 @@ const ProfileScreen = () => {
     };
 
     const handleChangeAvatar = () => {
-        launchImageLibrary(
-            {
-                mediaType: 'photo',
-                quality: 0.7,
-                selectionLimit: 1,
-            },
-            async (response) => {
-                if (response.didCancel) {
-                    console.log('❌ Người dùng đã huỷ chọn ảnh');
-                    return;
-                } else if (response.errorCode) {
-                    console.log('❌ Lỗi chọn ảnh:', response.errorMessage);
-                    Alert.alert('Lỗi', response.errorMessage || 'Không thể mở thư viện ảnh.');
-                    return;
-                } else if (response.assets && response.assets.length > 0) {
-                    const selectedImage = response.assets[0];
-    
-                    try {
-                        const newAvatar = await uploadAvatar(selectedImage);
-    
-                        setAvatarUrl(newAvatar.url);
-                        await refreshUserData();
-                        Alert.alert('Thành công', 'Cập nhật ảnh đại diện thành công!');
-                    } catch (error) {
-                        console.log('❌ Lỗi upload avatar:', error);
-                        Alert.alert('Lỗi', error.message || 'Không thể cập nhật ảnh đại diện.');
-                    }
-                }
+        const options = {
+            mediaType: 'photo',
+            quality: 0.8,
+        };
+
+        launchImageLibrary(options, async (response) => {
+            console.log('Image Picker Result:', response);
+
+            if (response.didCancel) return;
+            if (response.errorCode || !response.assets) {
+                Alert.alert('Lỗi', 'Không thể mở thư viện ảnh.');
+                return;
             }
-        );
-    };    
+
+            const selectedImage = response.assets[0];
+            await uploadAvatar(selectedImage);
+            await refreshUserData();
+            Alert.alert("Thành công", "Cập nhật ảnh đại diện thành công!");
+        });
+    };
 
     const handleLogout = async () => {
         try {
             await logout().catch(err => console.log('API logout error:', err));
 
             // LogOut từ context - cập nhật isAuthenticated thành false
-            const success = await logoutContext();
-
-            if (!success) {
-                Alert.alert('Lỗi', 'Không thể đăng xuất. Vui lòng thử lại.');
-            }
+            await logoutContext();
         } catch (error) {
             console.log('❌ Lỗi đăng xuất:', error);
             Alert.alert('Lỗi', 'Không thể đăng xuất. Vui lòng thử lại.');

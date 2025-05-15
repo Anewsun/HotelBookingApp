@@ -6,41 +6,49 @@ import HotelHeader from "../components/HotelHeader";
 import RoomTypeSelection from "../components/RoomTypeSelection";
 import ReviewsSection from "../components/ReviewsSection";
 import { useFavorite } from '../contexts/FavoriteContext';
-import { fetchHotelById } from '../services/hotelService';
+import { fetchHotelById, fetchAllAmenities } from '../services/hotelService';
+import { getAmenityIcon } from '../utils/AmenityIcons';
 
 const starIcon = require('../assets/images/star.png');
-
-const FACILITIES = [
-  { name: 'Wifi', icon: 'wifi' },
-  { name: 'Điều hoà', icon: 'snowflake-o' },
-  { name: 'Gym', icon: 'heart' },
-  { name: 'Bãi biển', icon: 'umbrella' },
-  { name: 'Hồ bơi', icon: 'bath' },
-];
 
 const HotelDetailScreen = () => {
   const route = useRoute();
   const { hotelId } = route.params;
   const [hotel, setHotel] = useState(null);
+  const [allAmenities, setAllAmenities] = useState([]);
+  const [hotelAmenities, setHotelAmenities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showFullDesc, setShowFullDesc] = useState(false);
   const [selectedRoomIndexes, setSelectedRoomIndexes] = useState([]);
   const { favoriteIds, toggleFavorite } = useFavorite();
-  const isFavorite = favoriteIds.includes(hotelId);
 
   useEffect(() => {
-    const loadHotel = async () => {
+    const loadData = async () => {
       try {
-        const data = await fetchHotelById(hotelId);
-        setHotel(data);
+        // Fetch song song hotel data và amenities
+        const [hotelData, amenitiesData] = await Promise.all([
+          fetchHotelById(hotelId),
+          fetchAllAmenities() // Hàm này cần được thêm vào hotelService
+        ]);
+
+        setHotel(hotelData);
+        setAllAmenities(amenitiesData);
+
+        // Lọc amenities của khách sạn
+        if (hotelData.amenities && amenitiesData.length > 0) {
+          const filteredAmenities = amenitiesData.filter(amenity =>
+            hotelData.amenities.includes(amenity._id)
+          );
+          setHotelAmenities(filteredAmenities);
+        }
       } catch (error) {
-        console.error('Error loading hotel:', error);
+        console.error('Error loading data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    loadHotel();
+    loadData();
   }, [hotelId]);
 
   const handleSelectedRoomsChange = (selectedIndexes) => {
@@ -77,22 +85,24 @@ const HotelDetailScreen = () => {
                 </View>
               </View>
 
-              <View style={styles.facilitiesSection}>
-                <Text style={styles.facilitiesTitle}>Các tiện nghi</Text>
-                <FlatList
-                  data={FACILITIES}
-                  keyExtractor={(item, index) => index.toString()}
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.facilityIcons}
-                  renderItem={({ item }) => (
-                    <View style={styles.facilityIconContainer}>
-                      <Icon name={item.icon} size={30} color="black" />
-                      <Text style={styles.facilityName}>{item.name}</Text>
-                    </View>
-                  )}
-                />
-              </View>
+              {hotelAmenities.length > 0 && (
+                <View style={styles.facilitiesSection}>
+                  <Text style={styles.facilitiesTitle}>Các tiện nghi</Text>
+                  <FlatList
+                    data={hotelAmenities}
+                    keyExtractor={(item) => item._id.toString()}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.facilityIcons}
+                    renderItem={({ item }) => (
+                      <View style={styles.facilityIconContainer}>
+                        {getAmenityIcon(item.icon)}
+                        <Text style={styles.facilityName}>{item.name}</Text>
+                      </View>
+                    )}
+                  />
+                </View>
+              )}
 
               <View style={styles.descriptionSection}>
                 <Text style={styles.descriptionTitle}>Miêu tả</Text>

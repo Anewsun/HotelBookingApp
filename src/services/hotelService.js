@@ -22,3 +22,14 @@ export const fetchHotelById = async (hotelId) => {
     throw error;
   }
 };
+
+export const fetchAllAmenities = async () => {
+  try {
+    const response = await fetch('http://10.0.2.2:5000/api/amenities');
+    const data = await response.json();
+    return data.data;
+  } catch (error) {
+    console.error('Error fetching amenities:', error);
+    return [];
+  }
+};
