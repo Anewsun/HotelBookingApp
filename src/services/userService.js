@@ -28,16 +28,24 @@ export const uploadAvatar = async (file) => {
 };
 
 const getAuthHeader = async () => {
-    const token = await AsyncStorage.getItem('token');
-    return {
-        headers: { Authorization: `Bearer ${token}` }
-    };
+  const token = await AsyncStorage.getItem('token');
+  return {
+    headers: { 
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  };
 };
 
 export const getFavorites = async () => {
+  try {
     const config = await getAuthHeader();
-    const res = await axios.get(`${API_URL}/favorites`, config);
-    return res.data.data;
+    const response = await axios.get(`${API_URL}/favorites`, config);
+    return response.data.data;
+  } catch (error) {
+    console.error('Error getting favorites:', error);
+    throw error;
+  }
 };
 
 export const addFavorite = async (hotelId) => {

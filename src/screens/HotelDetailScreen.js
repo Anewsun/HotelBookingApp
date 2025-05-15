@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
-import { View, Text, SafeAreaView, ScrollView, StyleSheet, Image, TouchableOpacity, FlatList } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, SafeAreaView, StyleSheet, Image, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
+import { useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import HotelHeader from "../components/HotelHeader";
 import RoomTypeSelection from "../components/RoomTypeSelection";
 import ReviewsSection from "../components/ReviewsSection";
-import { rooms } from '../components/RoomData';
+import { useFavorite } from '../contexts/FavoriteContext';
+import { fetchHotelById } from '../services/hotelService';
 
 const starIcon = require('../assets/images/star.png');
 
@@ -17,15 +19,39 @@ const FACILITIES = [
 ];
 
 const HotelDetailScreen = () => {
+  const route = useRoute();
+  const { hotelId } = route.params;
+  const [hotel, setHotel] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [showFullDesc, setShowFullDesc] = useState(false);
   const [selectedRoomIndexes, setSelectedRoomIndexes] = useState([]);
-  const description = "Khách sạn Biển Xanh nằm ngay trung tâm thành phố Nha Trang, chỉ cách bãi biển vài bước chân. Khách sạn có phòng nghỉ hiện đại, tiện nghi đầy đủ và dịch vụ thân thiện.";
+  const { favoriteIds, toggleFavorite } = useFavorite();
+  const isFavorite = favoriteIds.includes(hotelId);
+
+  useEffect(() => {
+    const loadHotel = async () => {
+      try {
+        const data = await fetchHotelById(hotelId);
+        setHotel(data);
+      } catch (error) {
+        console.error('Error loading hotel:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadHotel();
+  }, [hotelId]);
 
   const handleSelectedRoomsChange = (selectedIndexes) => {
     setSelectedRoomIndexes(selectedIndexes);
   };
 
-  const totalPrice = selectedRoomIndexes.reduce((sum, index) => sum + rooms[index].price, 0);
+  if (loading || !hotel) {
+    return <ActivityIndicator size="large" />;
+  }
+
+  const totalPrice = selectedRoomIndexes.reduce((sum, index) => sum + hotel.rooms[index].price, 0);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -34,17 +60,19 @@ const HotelDetailScreen = () => {
         keyExtractor={() => 'hotel-detail'}
         renderItem={() => (
           <View>
-            <HotelHeader />
+            <HotelHeader
+              hotel={hotel}
+            />
             <View style={styles.container}>
               <View style={styles.hotelInfo}>
-                <Text style={styles.hotelName}>Khách sạn Biển Xanh</Text>
+                <Text style={styles.hotelName}>{hotel.name}</Text>
                 <View style={styles.addressRow}>
                   <Icon name="map-marker" size={25} color="black" />
-                  <Text style={styles.hotelAddress}>123 Đường Trần Phú, Phường Lộc Thọ, TP. Nha Trang, Khánh Hòa</Text>
+                  <Text style={styles.hotelAddress}>{hotel.address}</Text>
                 </View>
                 <View style={styles.ratingContainer}>
                   <Image source={starIcon} style={styles.starIcon} />
-                  <Text style={styles.rating}>4.7</Text>
+                  <Text style={styles.rating}>{hotel.rating}</Text>
                   <Text style={styles.reviewCount}>(3 đánh giá)</Text>
                 </View>
               </View>
@@ -72,19 +100,23 @@ const HotelDetailScreen = () => {
                   style={styles.descriptionText}
                   numberOfLines={showFullDesc ? 0 : 2}
                 >
-                  {description}
+                  {hotel.description}
                 </Text>
                 <TouchableOpacity onPress={() => setShowFullDesc(!showFullDesc)}>
                   <Text style={styles.readMore}>{showFullDesc ? 'Thu gọn' : 'Xem thêm'}</Text>
                 </TouchableOpacity>
               </View>
-              <RoomTypeSelection selectedRoomIndexes={selectedRoomIndexes} onSelectedRoomsChange={handleSelectedRoomsChange} />
+              <RoomTypeSelection
+                rooms={hotel.rooms}
+                selectedRoomIndexes={selectedRoomIndexes}
+                onSelectedRoomsChange={handleSelectedRoomsChange}
+              />
               <ReviewsSection />
             </View>
           </View>
         )}
         ListFooterComponent={
-          <View style={{ height: 100 }} /> // để không bị che bởi booking section
+          <View style={{ height: 100 }} />
         }
       />
 

@@ -3,21 +3,14 @@ import React, { useRef, useState, useEffect } from 'react';
 import Ionicons from "react-native-vector-icons/Ionicons";
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
+import { useFavorite } from '../contexts/FavoriteContext';
 
 const { width } = Dimensions.get('window');
 
-const HeaderHotelDetail = ({ showFavoriteIcon, isWished, toggleWishlist }) => {
-    const [wishlistState, setWishlistState] = useState(isWished);
+const HeaderHotelDetail = ({ showFavoriteIcon, hotelId }) => {
     const navigation = useNavigation();
-
-    useEffect(() => {
-        setWishlistState(isWished);
-    }, [isWished]);
-
-    const handleWishlistToggle = () => {
-        toggleWishlist();
-        setWishlistState(!wishlistState);
-    };
+    const { favoriteIds, toggleFavorite } = useFavorite();
+    const isFavorite = favoriteIds.includes(hotelId);
 
     return (
         <View style={styles.header}>
@@ -25,24 +18,23 @@ const HeaderHotelDetail = ({ showFavoriteIcon, isWished, toggleWishlist }) => {
                 <Ionicons name={'arrow-back'} color={'black'} size={20} />
             </TouchableOpacity>
             {showFavoriteIcon && (
-                <TouchableOpacity style={styles.favoriteIconContainer} onPress={handleWishlistToggle}>
-                    <Icon name={'heart'} color={wishlistState ? 'red' : 'gray'} size={20} />
+                <TouchableOpacity style={styles.favoriteIconContainer} onPress={() => toggleFavorite(hotelId)}>
+                    <Icon name={'heart'} color={isFavorite ? 'red' : 'gray'} size={20} />
                 </TouchableOpacity>
             )}
         </View>
     );
 };
 
-const HotelHeader = ({ isWished, toggleWishlist }) => {
+const HotelHeader = ({ hotel }) => {
     const scrollX = useRef(new Animated.Value(0)).current;
     const [index, setIndex] = useState(0);
 
-    const localImages = [
-        require('../assets/images/hotel1.jpg'),
-        require('../assets/images/hotel2.jpg'),
-        require('../assets/images/hotel3.jpg'),
-        require('../assets/images/hotel4.jpg'),
-    ];
+    const images = hotel?.images?.length > 0
+        ? hotel.images.map(img => ({ uri: img.url }))
+        : hotel?.featuredImage?.url
+            ? [{ uri: hotel.featuredImage.url }]
+            : [require('../assets/images/hotel1.jpg')];
 
     const handleonViewableItemsChanged = useRef(({ viewableItems }) => {
         const firstItem = viewableItems[0];
@@ -54,12 +46,6 @@ const HotelHeader = ({ isWished, toggleWishlist }) => {
     const viewabilityConfig = useRef({
         itemVisiblePercentThreshold: 50,
     }).current;
-
-    const SlideItem = ({ item }) => (
-        <View style={styles.slideContainer}>
-            <Image source={item} style={styles.slideImage} resizeMode="cover" />
-        </View>
-    );
 
     const Pagination = ({ data, scrollX }) => {
         const dotPosition = Animated.divide(scrollX, width);
@@ -82,12 +68,15 @@ const HotelHeader = ({ isWished, toggleWishlist }) => {
         <View>
             <HeaderHotelDetail
                 showFavoriteIcon={true}
-                isWished={isWished}
-                toggleWishlist={toggleWishlist}
+                hotelId={hotel._id}
             />
             <FlatList
-                data={localImages}
-                renderItem={({ item }) => <SlideItem item={item} />}
+                data={images}
+                renderItem={({ item }) => (
+                    <View style={styles.slideContainer}>
+                        <Image source={item} style={styles.slideImage} resizeMode="cover" />
+                    </View>
+                )}
                 horizontal
                 pagingEnabled
                 snapToAlignment="center"
@@ -101,7 +90,7 @@ const HotelHeader = ({ isWished, toggleWishlist }) => {
                 decelerationRate="fast"
                 keyExtractor={(_, index) => index.toString()}
             />
-            <Pagination data={localImages} scrollX={scrollX} />
+            <Pagination data={images} scrollX={scrollX} />
         </View>
     );
 };

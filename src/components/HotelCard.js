@@ -1,8 +1,12 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import { useFavorite } from '../contexts/FavoriteContext';
 
-const HotelCard = ({ hotel, onPress, isFavorite, onToggleFavorite }) => {
+const HotelCard = ({ hotel, onPress }) => {
+  const { favoriteIds, toggleFavorite } = useFavorite();
+  const isFavorite = favoriteIds.includes(hotel._id);
+
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
       <Image source={{ uri: hotel.featuredImage.url }} style={styles.image} />
@@ -13,7 +17,7 @@ const HotelCard = ({ hotel, onPress, isFavorite, onToggleFavorite }) => {
         </View>
       )}
 
-      <TouchableOpacity style={styles.heartIcon} onPress={onToggleFavorite}>
+      <TouchableOpacity style={styles.heartIcon} onPress={() => toggleFavorite(hotel._id)}>
         <Icon name="heart" size={20} color={isFavorite ? 'red' : '#fff'} />
       </TouchableOpacity>
 

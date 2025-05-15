@@ -13,15 +13,25 @@ import BookingSreen from "../screens/BookingScreen";
 
 import { useAuth } from "../contexts/AuthContext";
 import { createStackNavigator } from "@react-navigation/stack";
-import React from "react";
+import React, { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
+import { useNavigation } from '@react-navigation/native';
 
 const Stack = createStackNavigator();
 
 const AppNavigator = () => {
-  const { isLoading, isAuthenticated } = useAuth();
+  const { isLoading, isAuthenticated, user } = useAuth();
+  const navigation = useNavigation();
 
-  // Loading state
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'SignIn' }],
+      });
+    }
+  }, [isLoading, isAuthenticated, navigation]);
+
   if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>

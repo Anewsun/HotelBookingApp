@@ -1,36 +1,29 @@
 import React, { useEffect, useState } from 'react';
-import { View, FlatList, StyleSheet, Text } from 'react-native';
+import { View, FlatList, StyleSheet, Text, ActivityIndicator } from 'react-native';
 import HotelCard from '../components/HotelCard';
 import BottomNav from '../components/BottomNav';
 import Header from '../components/Header';
 import { useNavigation } from '@react-navigation/native';
-import { getFavorites, removeFavorite } from '../services/userService';
+import { useFavorite } from '../contexts/FavoriteContext';
+import { useHotels } from '../hooks/useHotels';
 
 const FavoriteScreen = () => {
     const navigation = useNavigation();
-    const [favorites, setFavorites] = useState([]);
+    const { favoriteIds, toggleFavorite } = useFavorite();
+    const { data: hotels = [], isLoading, isError } = useHotels();
+    const favorites = hotels.filter(hotel => favoriteIds.includes(hotel._id));
 
-    const fetchFavorites = async () => {
-        try {
-            const data = await getFavorites();
-            setFavorites(data);
-        } catch (err) {
-            console.error('Lỗi lấy danh sách yêu thích:', err);
-        }
+    const handlePressHotel = (hotel) => {
+        navigation.navigate('Detail', { hotelId: hotel._id });
     };
 
-    useEffect(() => {
-        fetchFavorites();
-    }, []);
+    if (isLoading) {
+        return <ActivityIndicator size="large" />;
+    }
 
-    const handleToggleFavorite = async (hotelId) => {
-        try {
-            await removeFavorite(hotelId);
-            setFavorites((prev) => prev.filter(h => h._id !== hotelId));
-        } catch (err) {
-            console.error('Lỗi xóa yêu thích:', err);
-        }
-    };
+    if (isError) {
+        return <Text>Lỗi khi tải dữ liệu</Text>;
+    }
 
     return (
         <View style={styles.container}>
@@ -49,8 +42,9 @@ const FavoriteScreen = () => {
                     renderItem={({ item }) => (
                         <HotelCard
                             hotel={item}
+                            onPress={() => handlePressHotel(item)}
                             isFavorite={true}
-                            onToggleFavorite={() => handleToggleFavorite(item._id)}
+                            onToggleFavorite={() => toggleFavorite(item._id)}
                         />
                     )}
                     numColumns={2}
@@ -68,7 +62,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F8F8F8',
-        paddingHorizontal: 15,
         paddingTop: 20
     },
     listContainer: {
@@ -76,7 +69,8 @@ const styles = StyleSheet.create({
     },
     row: {
         justifyContent: 'space-between',
-        marginBottom: 15
+        marginBottom: 15,
+        paddingHorizontal: 10,
     },
     emptyContainer: {
         flex: 1,
@@ -89,6 +83,11 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: 'gray',
     },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center'
+    }
 });
 
 export default FavoriteScreen;

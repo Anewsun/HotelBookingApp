@@ -1,12 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
+import BottomNav from '../components/BottomNav';
 
 const BookingCard = ({ booking }) => {
   return (
     <View style={styles.cardContainer}>
       {/* Hình ảnh phòng bên trái */}
       <Image
-        source={{ uri: booking.roomImage }}
+        source={booking.roomImage}
         style={styles.roomImage}
         resizeMode="cover"
       />
@@ -103,7 +104,7 @@ const BookingScreen = () => {
         phone: '0988123456',
       },
       room: 'Phòng Standard - Tầng 2',
-      roomImage: 'https://images.unsplash.com/photo-1501117716987-c8e48a5dc850?auto=format&fit=crop&w=300&q=60',
+      roomImage: require('../assets/images/hotel2.jpg'),
       checkIn: new Date('2024-08-10T14:00:00'),
       checkOut: new Date('2024-08-15T12:00:00'),
       specialRequests: {
@@ -126,6 +127,7 @@ const BookingScreen = () => {
       {bookings.map((booking) => (
         <BookingCard key={booking.id} booking={booking} />
       ))}
+      <BottomNav />
     </ScrollView>
   );
 };

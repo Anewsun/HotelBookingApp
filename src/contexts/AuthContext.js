@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getMe } from '../services/authService';
 
@@ -9,6 +10,7 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
+    const [isReady, setIsReady] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -49,6 +51,26 @@ export const AuthProvider = ({ children }) => {
 
         loadUser();
     }, []);
+
+    useEffect(() => {
+        const bootstrapAsync = async () => {
+            try {
+                const token = await AsyncStorage.getItem('token');
+                if (token) {
+                    // Verify token và lấy user info
+                    setUser({ token });
+                }
+            } finally {
+                setIsReady(true);
+            }
+        };
+
+        bootstrapAsync();
+    }, []);
+
+    if (!isReady) {
+        return <ActivityIndicator size="large" />;
+    }
 
     // Các functions xử lý authentication
     const login = async (userData) => {

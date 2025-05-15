@@ -1,91 +1,55 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SearchBox from '../components/SearchBox';
 import HotelCard from '../components/HotelCard';
 import BottomNav from '../components/BottomNav';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Icon1 from 'react-native-vector-icons/FontAwesome6';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
+import { useFavorite } from '../contexts/FavoriteContext';
 import { useAuth } from '../contexts/AuthContext';
-import { fetchHotels } from '../services/hotelService';
-import { getFavorites, addFavorite, removeFavorite } from '../services/userService';
+import { useHotels } from '../hooks/useHotels';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
-  const { user, refreshUserData } = useAuth();
+  const { data: hotels = [], isLoading, isError, refetch } = useHotels();
+  const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
-  const [hotels, setHotels] = useState([]);
-  const [favoriteIds, setFavoriteIds] = useState([]);
+  const { favoriteIds, toggleFavorite } = useFavorite();
   const [currentPage, setCurrentPage] = useState(1);
   const hotelsPerPage = 6;
 
   const totalPages = Math.ceil(hotels.length / hotelsPerPage);
-
   const paginatedHotels = hotels.slice((currentPage - 1) * hotelsPerPage, currentPage * hotelsPerPage);
-
-  const loadHotels = async () => {
-    try {
-      const data = await fetchHotels();
-      setHotels(data);
-    } catch (error) {
-      console.error('Failed to fetch hotels:', error);
-    }
-  };
-
-  useEffect(() => {
-    loadHotels();  // Load data lần đầu tiên khi màn hình được render lần đầu.
-  }, []);
-
-  // Đảm bảo khi màn hình quay lại, data sẽ được reload
-  useFocusEffect(
-    useCallback(() => {
-      loadHotels();
-    }, [])
-  );
 
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      const data = await fetchHotels();
-      setHotels(data);
-    } catch (error) {
-      console.error('Failed to fetch hotels:', error);
+      await refetch();
     } finally {
       setRefreshing(false);
     }
   };
 
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [])
+  );
+
   const handlePressHotel = (hotel) => {
     navigation.navigate('Detail', { hotelId: hotel._id });
   };
 
-  const fetchFavorites = async () => {
-    try {
-      const data = await getFavorites();
-      setFavoriteIds(data.map(h => h._id));
-    } catch (e) {
-      console.log('❌ Lỗi fetch favorites:', e);
-    }
-  };
+  if (isLoading) {
+    return <ActivityIndicator size="large" />;
+  }
 
-  useEffect(() => {
-    fetchFavorites();
-  }, []);
-
-  const handleToggleFavorite = async (hotelId) => {
-    try {
-      if (favoriteIds.includes(hotelId)) {
-        await removeFavorite(hotelId);
-        setFavoriteIds(prev => prev.filter(id => id !== hotelId));
-      } else {
-        await addFavorite(hotelId);
-        setFavoriteIds(prev => [...prev, hotelId]);
-      }
-    } catch (err) {
-      console.error('❌ Toggle favorite failed:', err);
-    }
-  };
+  if (isError) {
+    return <Text>Error loading hotels</Text>;
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -108,7 +72,12 @@ const HomeScreen = () => {
         keyExtractor={(item) => item._id.toString()}
         renderItem={({ item }) => (
           <View style={styles.hotelContainer}>
-            <HotelCard hotel={item} onPress={() => handlePressHotel(item)} isFavorite={favoriteIds.includes(item._id)} onToggleFavorite={() => handleToggleFavorite(item._id)} />
+            <HotelCard
+              hotel={item}
+              onPress={() => handlePressHotel(item)}
+              isFavorite={favoriteIds.includes(item._id)}
+              onToggleFavorite={() => toggleFavorite(item._id)}
+            />
           </View>
         )}
         numColumns={2}
