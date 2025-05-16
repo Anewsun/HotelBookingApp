@@ -114,7 +114,7 @@ const ReviewsSection = () => {
                     <Icon
                         name={showAllReviews ? "chevron-up" : "chevron-down"}
                         size={16}
-                        color="white"
+                        color="black"
                     />
                 </TouchableOpacity>
             )}
@@ -252,11 +252,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         padding: 12,
         marginTop: 8,
-        backgroundColor: 'gray',
+        backgroundColor: '#8ab4f8',
         borderRadius: 25,
     },
     toggleReviewsText: {
-        color: 'white',
+        color: 'black',
         fontSize: 15,
         fontWeight: '500',
         marginRight: 6,

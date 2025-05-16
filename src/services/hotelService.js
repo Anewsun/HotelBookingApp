@@ -33,3 +33,32 @@ export const fetchAllAmenities = async () => {
     return [];
   }
 };
+
+export const fetchHotelsWithFilters = async (filters) => {
+  try {
+    const params = {
+      minPrice: filters.minPrice,
+      maxPrice: filters.maxPrice,
+      rating: filters.rating,
+      amenities: filters.amenities,
+      sort: filters.sort || '-rating' // Giá trị mặc định nếu không có sort
+    };
+
+    const response = await axios.get(API_URL, { params });
+
+    // Trường hợp 1: API trả về { data: { data: [...] } }
+    if (response.data && Array.isArray(response.data.data)) {
+      return response.data.data;
+    }
+    // Trường hợp 2: API trả về { data: [...] } trực tiếp
+    else if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    // Trường hợp không có dữ liệu
+    return [];
+    
+  } catch (error) {
+    console.error('Fetch hotels error:', error);
+    throw new Error(error.response?.data?.message || 'Không thể tải danh sách khách sạn');
+  }
+};

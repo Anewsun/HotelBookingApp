@@ -61,7 +61,7 @@ const FavoriteScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8F8F8',
+        backgroundColor: '#f0f4ff',
         paddingTop: 20
     },
     listContainer: {

@@ -85,7 +85,7 @@ const RoomTypeSelection = ({ rooms = [], selectedRoomIndexes = [], onSelectedRoo
 
               <View style={styles.roomInfo}>
                 <View style={styles.roomHeader}>
-                  <Text style={styles.roomTitle}>{room.roomType}</Text>
+                  <Text style={styles.roomTitle}>{room.name}</Text>
                   <TouchableOpacity onPress={() => toggleRoomDetails(index)}>
                     <Icon name={expandedRoom === index ? "chevron-up" : "chevron-down"} size={20} />
                   </TouchableOpacity>
@@ -155,6 +155,10 @@ const RoomTypeSelection = ({ rooms = [], selectedRoomIndexes = [], onSelectedRoo
                   <View style={styles.infoRow}>
                     <Icon name="chart-area" size={20} color="#555" />
                     <Text style={styles.detailsText}>Diện tích: {room.squareMeters} m²</Text>
+                  </View>
+                  <View style={styles.infoRow}>
+                    <Icon name="door-closed" size={20} color="#555" />
+                    <Text style={styles.detailsText}>Loại phòng: {room.roomType}</Text>
                   </View>
                   <View style={styles.infoRow}>
                     <Icon name="bed" size={20} color="#555" />
@@ -249,7 +253,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   roomTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#333",
   },
@@ -308,13 +312,13 @@ const styles = StyleSheet.create({
     borderColor: "#eee",
   },
   detailsTitle: {
-    fontSize: 16,
+    fontSize: 19,
     fontWeight: 'bold',
     color: "#333",
     marginBottom: 8,
   },
   detailsText: {
-    fontSize: 14,
+    fontSize: 16,
     color: "black",
     marginBottom: 8,
     lineHeight: 20,

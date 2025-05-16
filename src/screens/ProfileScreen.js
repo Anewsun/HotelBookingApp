@@ -43,7 +43,7 @@ const ProfileScreen = () => {
 
             if (response.didCancel) return;
             if (response.errorCode || !response.assets) {
-                Alert.alert('Lỗi', 'Không thể mở thư viện ảnh.');
+                Alert.alert('Thông báo', 'Chưa phát triển trên app, hãy dùng website của chúng tôi để đổi avatar');
                 return;
             }
 
@@ -141,7 +141,7 @@ const ProfileScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f8f8',
+        backgroundColor: '#f0f4ff',
         paddingTop: 15,
     },
     profileImageContainer: {

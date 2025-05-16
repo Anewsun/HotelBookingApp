@@ -105,7 +105,7 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white'
+    backgroundColor: '#f0f4ff'
   },
   header: {
     flexDirection: 'row',

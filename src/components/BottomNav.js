@@ -14,14 +14,14 @@ const BottomNav = () => {
         onPress={() => navigation.navigate('Home')}
       >
         <Icon name="home-outline" size={34} />
-        <Text style={styles.navText}>Home</Text>
+        <Text style={styles.navText}>Trang chủ</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.navItem, { backgroundColor: currentRouteName === 'Fav' ? '#1167B1' : 'white' }]}
         onPress={() => navigation.navigate('Fav')}
       >
         <Icon name="heart-outline" size={34} />
-        <Text style={styles.navText}>Favorite</Text>
+        <Text style={styles.navText}>Yêu thích</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.navItem, { backgroundColor: currentRouteName === 'Booking' ? '#1167B1' : 'white' }]}

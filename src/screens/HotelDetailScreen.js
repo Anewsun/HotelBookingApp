@@ -64,6 +64,25 @@ const HotelDetailScreen = () => {
     setSelectedRoomIndexes(selectedIndexes);
   };
 
+  const renderPolicyItem = (label, value, iconName) => {
+    return (
+      <View style={styles.policyRow}>
+        <View style={styles.rowContainer}>
+          <View style={styles.leftCell}>
+            <View style={styles.labelContent}>
+              <Icon name={iconName} size={16} color="#fff" style={styles.policyIcon} />
+              <Text style={styles.policyLabel}>{label}</Text>
+            </View>
+          </View>
+          <View style={styles.divider} />
+          <View style={styles.rightCell}>
+            <Text style={styles.policyValue}>{value}</Text>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   if (loading || !hotel) {
     return <ActivityIndicator size="large" />;
   }
@@ -122,9 +141,32 @@ const HotelDetailScreen = () => {
                   {hotel.description}
                 </Text>
                 <TouchableOpacity onPress={() => setShowFullDesc(!showFullDesc)}>
-                  <Text style={styles.readMore}>{showFullDesc ? 'Thu gọn' : 'Xem thêm'}</Text>
+                  <Text style={styles.readMore}>{showFullDesc ? 'Thu gọn' : 'Xem thêm ...'}</Text>
                 </TouchableOpacity>
               </View>
+
+              <Text style={styles.sectionTitle}>Chính sách khách sạn</Text>
+              <View style={styles.policiesSection}>
+                <View style={styles.policiesContainer}>
+                  {renderPolicyItem('Giờ nhận phòng', hotel.policies.checkInTime, 'sign-in')}
+                  {renderPolicyItem('Giờ trả phòng', hotel.policies.checkOutTime, 'sign-out')}
+                  {renderPolicyItem('Chính sách hủy phòng',
+                    hotel.policies.cancellationPolicy === "24h-full-refund" ? "Hoàn tiền 100% nếu hủy trước 24h" :
+                      hotel.policies.cancellationPolicy === "24h-half-refund" ? "Hoàn tiền 50% nếu hủy trước 24h" :
+                        "Không hoàn tiền khi hủy phòng",
+                    'undo')}
+                  {renderPolicyItem('Chính sách trẻ em',
+                    hotel.policies.childrenPolicy === "yes" ? "Cho phép" : "Không cho phép",
+                    'child')}
+                  {renderPolicyItem('Chính sách thú cưng',
+                    hotel.policies.petPolicy === "yes" ? "Cho phép" : "Không cho phép",
+                    'paw')}
+                  {renderPolicyItem('Chính sách hút thuốc',
+                    hotel.policies.smokingPolicy === "yes" ? "Cho phép" : "Không cho phép",
+                    'fire')}
+                </View>
+              </View>
+
               <RoomTypeSelection
                 rooms={hotel.rooms}
                 selectedRoomIndexes={selectedRoomIndexes}
@@ -271,6 +313,72 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 20,
     fontWeight: '600',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'black',
+    marginBottom: 15,
+  },
+  policiesSection: {
+    marginVertical: 8,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  policiesContainer: {
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  policyRow: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  rowContainer: {
+    flexDirection: 'row',
+    minHeight: 50,
+  },
+  leftCell: {
+    flex: 1,
+    backgroundColor: '#1a73e8',
+    justifyContent: 'center',
+  },
+  rightCell: {
+    flex: 1,
+    backgroundColor: '#8ab4f8',
+    padding: 10,
+    justifyContent: 'center',
+  },
+  divider: {
+    width: 1,
+    backgroundColor: '#fff',
+    marginVertical: 0, // Đảm bảo không có margin dọc
+  },
+  labelContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  policyIcon: {
+    marginRight: 10,
+    marginLeft: 5
+  },
+  policyLabel: {
+    fontSize: 15,
+    color: '#fff',
+    fontWeight: '500',
+  },
+  policyValue: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#1a3e8c',
+    textAlign: 'right',
   },
 });
 
