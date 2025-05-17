@@ -24,34 +24,65 @@ export const getRoomDetails = async (roomId) => {
   }
 };
 
-export const searchRooms = async (params) => {
+// export const searchRooms = async (params) => {
+//   try {
+//     const response = await axios.get(`${API_URL}/rooms/search`, {
+//       params: {
+//         locationName: params.locationName,
+//         checkIn: params.checkIn,
+//         checkOut: params.checkOut,
+//         capacity: params.capacity,
+//         sort: params.sort || '-rating',
+//         page: params.page || 1,
+//         limit: params.limit || 10,
+//       },
+//     });
+
+//     // Nếu thành công trả data bình thường
+//     if (response.data && response.data.success) {
+//       return {
+//         data: response.data.data || [],
+//         total: response.data.total || 0,
+//         pagination: response.data.pagination || { currentPage: 1, totalPages: 1 },
+//       };
+//     } else {
+//       // Nếu API trả lỗi nhưng status không phải 200
+//       throw new Error(response.data.message || 'Lỗi không xác định từ server');
+//     }
+//   } catch (error) {
+//     // Log lỗi chi tiết
+//     console.error('Fetch error:', error.response?.data || error.message || error);
+//     throw error;
+//   }
+// };
+
+export const getAvailableRoomsByHotel = async (hotelId, params) => {
   try {
-    const response = await axios.get(`${API_URL}/rooms/search`, {
+    const response = await axios.get(`${API_URL}/hotels/${hotelId}/rooms/available`, {
       params: {
-        locationName: params.locationName,
-        checkIn: params.checkIn,
-        checkOut: params.checkOut,
-        capacity: params.capacity,
-        sort: params.sort || '-rating',
+        checkIn: params.checkIn || getDefaultDates().checkIn,
+        checkOut: params.checkOut || getDefaultDates().checkOut,
+        capacity: params.capacity || 1,
+        minPrice: params.minPrice,
+        maxPrice: params.maxPrice,
+        roomType: params.roomType,
+        amenities: params.amenities,
+        sort: params.sort || 'price',
         page: params.page || 1,
-        limit: params.limit || 10,
-      },
+        limit: params.limit || 10
+      }
     });
 
-    // Nếu thành công trả data bình thường
     if (response.data && response.data.success) {
       return {
         data: response.data.data || [],
         total: response.data.total || 0,
         pagination: response.data.pagination || { currentPage: 1, totalPages: 1 },
       };
-    } else {
-      // Nếu API trả lỗi nhưng status không phải 200
-      throw new Error(response.data.message || 'Lỗi không xác định từ server');
     }
+    throw new Error(response.data.message || 'Không có dữ liệu trả về');
   } catch (error) {
-    // Log lỗi chi tiết
-    console.error('Fetch error:', error.response?.data || error.message || error);
+    console.error('Get available rooms error:', error.response?.data || error.message);
     throw error;
   }
 };

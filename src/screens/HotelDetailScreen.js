@@ -6,40 +6,46 @@ import HotelHeader from "../components/HotelHeader";
 import RoomTypeSelection from "../components/RoomTypeSelection";
 import ReviewsSection from "../components/ReviewsSection";
 import { fetchHotelById, fetchAllAmenities } from '../services/hotelService';
-import { fetchRoomsByHotelId } from '../services/roomService';
+import { getAvailableRoomsByHotel } from '../services/roomService';
 import { getAmenityIcon } from '../utils/AmenityIcons';
 
 const starIcon = require('../assets/images/star.png');
 
 const HotelDetailScreen = () => {
   const route = useRoute();
-  const { hotelId } = route.params;
+  const { hotelId, searchParams } = route.params;
   const [hotel, setHotel] = useState(null);
   const [allAmenities, setAllAmenities] = useState([]);
   const [hotelAmenities, setHotelAmenities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showFullDesc, setShowFullDesc] = useState(false);
   const [selectedRoomIndexes, setSelectedRoomIndexes] = useState([]);
+  const [availableRooms, setAvailableRooms] = useState([]);
 
   useEffect(() => {
     const loadData = async () => {
       try {
+        setLoading(true);
+        const searchParams = route.params?.searchParams || {
+          checkIn: new Date().toISOString().split('T')[0],
+          checkOut: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+          capacity: 2
+        };
         // Fetch song song hotel data và amenities
-        const [hotelData, amenitiesData, roomsData] = await Promise.all([
+        const [hotelData, amenitiesData, roomsResponse] = await Promise.all([
           fetchHotelById(hotelId),
           fetchAllAmenities(),
-          fetchRoomsByHotelId(hotelId).catch(e => {
-            console.log('Fallback to empty rooms due to error:', e);
-            return []; // Trả về mảng rỗng nếu có lỗi
-          })
+          getAvailableRoomsByHotel(hotelId, searchParams)
         ]);
 
-        setHotel({
-          ...hotelData,
-          rooms: roomsData
-        });
+        setHotel(hotelData);
         setAllAmenities(amenitiesData);
-
+        if (roomsResponse && roomsResponse.data) {
+          setAvailableRooms(roomsResponse.data);
+        } else {
+          console.log('No rooms data returned from API');
+          setAvailableRooms([]);
+        }
         // Lọc amenities của khách sạn
         if (hotelData.amenities && amenitiesData.length > 0) {
           const filteredAmenities = amenitiesData.filter(amenity =>
@@ -58,7 +64,12 @@ const HotelDetailScreen = () => {
     };
 
     loadData();
-  }, [hotelId]);
+  }, [hotelId, route.params?.searchParams]);
+
+  useEffect(() => {
+    // Reset selected rooms khi availableRooms thay đổi
+    setSelectedRoomIndexes([]);
+  }, [availableRooms]);
 
   const handleSelectedRoomsChange = (selectedIndexes) => {
     setSelectedRoomIndexes(selectedIndexes);
@@ -87,7 +98,18 @@ const HotelDetailScreen = () => {
     return <ActivityIndicator size="large" />;
   }
 
-  const totalPrice = selectedRoomIndexes.reduce((sum, index) => sum + hotel.rooms[index].price, 0);
+  const totalPrice = selectedRoomIndexes.reduce((sum, index) => {
+    const room = availableRooms[index];
+    if (!room) return sum;
+
+    // Kiểm tra điều kiện giảm giá
+    const hasDiscount = room.discountPercent > 0 && room.discountedPrice;
+
+    // Lấy giá đúng (ưu tiên discountedPrice nếu có discount hợp lệ)
+    const price = hasDiscount ? room.discountedPrice : room.price;
+
+    return sum + (price || 0);
+  }, 0);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -168,9 +190,10 @@ const HotelDetailScreen = () => {
               </View>
 
               <RoomTypeSelection
-                rooms={hotel.rooms}
+                rooms={availableRooms}
                 selectedRoomIndexes={selectedRoomIndexes}
                 onSelectedRoomsChange={handleSelectedRoomsChange}
+                searchParams={route.params.searchParams || null}
               />
               <ReviewsSection />
             </View>

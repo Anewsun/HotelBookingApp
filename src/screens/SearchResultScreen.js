@@ -5,8 +5,8 @@ import Icon2 from 'react-native-vector-icons/MaterialIcons';
 import HotelCard from '../components/HotelCard';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { searchRooms } from '../services/roomService';
-import { fetchHotelsWithFilters } from '../services/hotelService';
+import { fetchHotelsWithFilters, searchHotelsWithAvailableRooms } from '../services/hotelService';
+import { useFavorite } from '../contexts/FavoriteContext';
 
 const SearchResultScreen = () => {
     const route = useRoute();
@@ -16,6 +16,7 @@ const SearchResultScreen = () => {
     const [searchParams, setSearchParams] = useState(route.params?.searchParams || null);
     const [location, setLocation] = useState(searchParams?.locationName || '');
     const [searchTimeout, setSearchTimeout] = useState(null);
+    const { favoriteIds, toggleFavorite } = useFavorite();
     const navigation = useNavigation();
 
     const fetchData = async (params) => {
@@ -26,19 +27,36 @@ const SearchResultScreen = () => {
             let results = [];
 
             if (params) {
-                const response = await searchRooms(params);
+                const response = await searchHotelsWithAvailableRooms({
+                    locationName: params.locationName,
+                    checkIn: params.checkIn,
+                    checkOut: params.checkOut,
+                    capacity: params.capacity,
+                    sort: params.sort || '-rating'
+                });
                 results = response.data;
             }
             else if (route.params?.filters) {
-                const { minPrice, maxPrice, rating, hotelAmenities = [], roomAmenities = [] } = route.params.filters;
+                const {
+                    minPrice,
+                    maxPrice,
+                    minDiscountPercent,
+                    rating,
+                    hotelAmenities = [],
+                    roomAmenities = []
+                } = route.params.filters;
+
                 const filters = {
                     minPrice,
                     maxPrice,
+                    minDiscountPercent,
                     rating,
                     amenities: [...hotelAmenities, ...roomAmenities].join(','),
-                    sort: '-rating'
+                    sort: route.params.filters.sort || '-createdAt'
                 };
-                results = await fetchHotelsWithFilters(filters);
+
+                const response = await fetchHotelsWithFilters(filters);
+                results = response.data || [];
             }
 
             setHotels(Array.isArray(results) ? results : []);
@@ -58,7 +76,7 @@ const SearchResultScreen = () => {
             setLocation(route.params.searchParams.locationName);
             fetchData(route.params.searchParams);
         }
-    }, [route.params]); // Chỉ phụ thuộc vào route.params
+    }, [route.params]);
 
     const handleSearch = () => {
         if (searchTimeout) {
@@ -78,7 +96,7 @@ const SearchResultScreen = () => {
 
             setSearchParams(newSearchParams);
             fetchData(newSearchParams);
-        }, 500)); // Delay 500ms
+        }, 500));
     };
 
     if (loading) {
@@ -88,6 +106,20 @@ const SearchResultScreen = () => {
             </View>
         );
     }
+
+    const navigateToHotelDetail = (hotelId) => {
+        if (!searchParams) return;
+
+        navigation.navigate('Detail', {
+            hotelId,
+            searchParams: {
+                checkIn: searchParams.checkIn,
+                checkOut: searchParams.checkOut,
+                capacity: searchParams.capacity,
+                fromSearch: true
+            }
+        });
+    };
 
     if (error) {
         return (
@@ -163,8 +195,15 @@ const SearchResultScreen = () => {
             <Text style={styles.countSearch}>{hotels.length} kết quả được tìm thấy</Text>
             <FlatList
                 data={hotels}
-                keyExtractor={(item) => item._id || item.id}
-                renderItem={({ item }) => <HotelCard hotel={item} />}
+                keyExtractor={(item) => item._id}
+                renderItem={({ item }) => (
+                    <HotelCard
+                        hotel={item}
+                        isFavorite={favoriteIds.includes(item._id)}
+                        onFavoritePress={() => toggleFavorite(item._id)}
+                        onPress={() => navigateToHotelDetail(item._id)}
+                    />
+                )}
                 numColumns={2}
                 columnWrapperStyle={styles.row}
                 contentContainerStyle={styles.listContainer}

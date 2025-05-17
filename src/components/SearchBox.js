@@ -44,7 +44,8 @@ const SearchBox = () => {
         locationName: location,
         checkIn: checkInDate.toLocaleDateString('en-CA'), // Format: YYYY-MM-DD
         checkOut: checkOutDate.toLocaleDateString('en-CA'),
-        capacity: totalGuests()
+        capacity: totalGuests(),
+        fromSearch: true
       }
     });
   };

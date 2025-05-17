@@ -41,7 +41,7 @@ export const fetchHotelsWithFilters = async (filters) => {
       maxPrice: filters.maxPrice,
       rating: filters.rating,
       amenities: filters.amenities,
-      sort: filters.sort || '-rating' // Giá trị mặc định nếu không có sort
+      sort: filters.sort || '-price'
     };
 
     const response = await axios.get(API_URL, { params });
@@ -56,9 +56,43 @@ export const fetchHotelsWithFilters = async (filters) => {
     }
     // Trường hợp không có dữ liệu
     return [];
-    
+
   } catch (error) {
     console.error('Fetch hotels error:', error);
     throw new Error(error.response?.data?.message || 'Không thể tải danh sách khách sạn');
+  }
+};
+
+export const searchHotelsWithAvailableRooms = async (params) => {
+  try {
+    const response = await axios.get(`${API_URL}/search`, {
+      params: {
+        locationName: params.locationName,
+        checkIn: params.checkIn,
+        checkOut: params.checkOut,
+        capacity: params.capacity,
+        hotelName: params.hotelName,
+        minPrice: params.minPrice,
+        maxPrice: params.maxPrice,
+        roomType: params.roomType,
+        amenities: params.amenities,
+        sort: params.sort || '-rating',
+        page: params.page || 1,
+        limit: params.limit || 10
+      },
+      timeout: 10000
+    });
+
+    if (response.data && response.data.success) {
+      return {
+        data: response.data.data || [],
+        total: response.data.total || 0,
+        pagination: response.data.pagination || { currentPage: 1, totalPages: 1 },
+      };
+    }
+    throw new Error(response.data.message || 'Lỗi server');
+  } catch (error) {
+    console.error('Search hotels error:', error.response?.data || error.message);
+    throw error;
   }
 };

@@ -9,6 +9,7 @@ import { fetchAllAmenities } from '../services/hotelService';
 
 const FilterScreen = ({ navigation, route }) => {
   const [priceRange, setPriceRange] = useState({ min: 0, max: 5000000 });
+  const [discountRange, setDiscountRange] = useState(0);
   const [selectedRating, setSelectedRating] = useState(0);
   const [selectedHotelAmenities, setSelectedHotelAmenities] = useState([]);
   const [selectedRoomAmenities, setSelectedRoomAmenities] = useState([]);
@@ -28,7 +29,7 @@ const FilterScreen = ({ navigation, route }) => {
         setLoading(false);
       }
     };
-    
+
     fetchAmenities();
   }, []);
 
@@ -41,6 +42,7 @@ const FilterScreen = ({ navigation, route }) => {
       filters: {
         minPrice: priceRange.min,
         maxPrice: priceRange.max,
+        minDiscountPercent: discountRange,
         rating: selectedRating,
         hotelAmenities: selectedHotelAmenities,
         roomAmenities: selectedRoomAmenities,
@@ -51,15 +53,15 @@ const FilterScreen = ({ navigation, route }) => {
 
   const toggleAmenity = (amenityId, type) => {
     if (type === 'hotel') {
-      setSelectedHotelAmenities(prev => 
-        prev.includes(amenityId) 
-          ? prev.filter(id => id !== amenityId) 
+      setSelectedHotelAmenities(prev =>
+        prev.includes(amenityId)
+          ? prev.filter(id => id !== amenityId)
           : [...prev, amenityId]
       );
     } else {
-      setSelectedRoomAmenities(prev => 
-        prev.includes(amenityId) 
-          ? prev.filter(id => id !== amenityId) 
+      setSelectedRoomAmenities(prev =>
+        prev.includes(amenityId)
+          ? prev.filter(id => id !== amenityId)
           : [...prev, amenityId]
       );
     }
@@ -83,13 +85,13 @@ const FilterScreen = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header 
-        title={`Bộ lọc (${(selectedRating ? 1 : 0) + selectedHotelAmenities.length + selectedRoomAmenities.length})`} 
-        onBackPress={() => navigation.goBack()} 
-        showBackIcon={true} 
+      <Header
+        title={`Bộ lọc (${(selectedRating ? 1 : 0) + selectedHotelAmenities.length + selectedRoomAmenities.length})`}
+        onBackPress={() => navigation.goBack()}
+        showBackIcon={true}
       />
 
-      <ScrollView 
+      <ScrollView
         style={styles.content}
         contentContainerStyle={styles.scrollContent}
       >
@@ -137,6 +139,19 @@ const FilterScreen = ({ navigation, route }) => {
             keyboardType="numeric"
           />
         </View>
+
+        {/* % Giảm giá */}
+        <Text style={styles.sectionTitle}>Giảm giá tối thiểu (%)</Text>
+        <Slider
+          minimumValue={0}
+          maximumValue={100}
+          step={5}
+          minimumTrackTintColor="#1E90FF"
+          maximumTrackTintColor="#D3D3D3"
+          value={discountRange}
+          onValueChange={setDiscountRange}
+        />
+        <Text style={styles.discountText}>{discountRange}%</Text>
 
         {/* Sắp xếp */}
         <Text style={styles.sectionTitle}>Sắp xếp theo</Text>
@@ -201,14 +216,14 @@ const FilterScreen = ({ navigation, route }) => {
       </ScrollView>
 
       <View style={styles.actionButtons}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.resetButton}
           onPress={resetFilters}
         >
           <Text style={styles.resetButtonText}>Đặt lại</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.applyButton} 
+        <TouchableOpacity
+          style={styles.applyButton}
           onPress={handleApplyFilters}
         >
           <Text style={styles.applyButtonText}>Áp dụng</Text>
@@ -360,6 +375,13 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
+  discountText: {
+    textAlign: 'center',
+    fontSize: 16,
+    color: '#FF385C',
+    fontWeight: 'bold',
+    marginBottom: 16,
+  }
 });
 
 export default FilterScreen;

@@ -1,60 +1,113 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Dimensions } from "react-native";
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import { getAmenityIcon } from '../utils/AmenityIcons';
 
 const { width: viewportWidth } = Dimensions.get('window');
 
-const RoomTypeSelection = ({ rooms = [], selectedRoomIndexes = [], onSelectedRoomsChange = () => { } }) => {
-  const [expandedRoom, setExpandedRoom] = useState(null);
+const RoomTypeSelection = ({
+  rooms = [],
+  selectedRoomIndexes = [],
+  onSelectedRoomsChange = () => { },
+  searchParams = null
+}) => {
+  const [expandedRooms, setExpandedRooms] = useState([]);
   const [showAllRooms, setShowAllRooms] = useState(false);
   const initialRoomCount = 2;
   const displayedRooms = showAllRooms ? rooms : rooms.slice(0, initialRoomCount);
+  const [localSelectedIndexes, setLocalSelectedIndexes] = useState(selectedRoomIndexes);
 
-  const toggleRoomDetails = (index) => {
-    setExpandedRoom(expandedRoom === index ? null : index);
-  };
+  // Kiểm tra chế độ tìm kiếm
+  const isSearchMode = searchParams?.checkIn && searchParams?.checkOut && searchParams?.capacity;
+
+  useEffect(() => {
+    setLocalSelectedIndexes(selectedRoomIndexes);
+  }, [selectedRoomIndexes]);
 
   const handleRoomSelect = (index) => {
-    if (rooms[index].status !== 'available') return;
+    if (!isSearchMode && rooms[index].status !== 'available') return;
 
-    const updated = selectedRoomIndexes.includes(index)
-      ? selectedRoomIndexes.filter(i => i !== index)
-      : [...selectedRoomIndexes, index];
+    const updated = localSelectedIndexes.includes(index)
+      ? localSelectedIndexes.filter(i => i !== index)
+      : [...localSelectedIndexes, index];
+
     onSelectedRoomsChange(updated);
+
+    onSelectedRoomsChange(updated);
+  };
+
+  const formatPrice = (room) => {
+    const hasDiscount = room.discountPercent > 0 && room.discountedPrice;
+
+    return {
+      original: room.price?.toLocaleString('vi-VN') || '0',
+      discounted: hasDiscount
+        ? room.discountedPrice?.toLocaleString('vi-VN')
+        : room.price?.toLocaleString('vi-VN'),
+      hasDiscount: !!hasDiscount
+    };
+  };
+
+  const toggleRoomDetails = (index) => {
+    setExpandedRooms(prev => {
+      const currentExpanded = Array.isArray(prev) ? prev : [];
+      return currentExpanded.includes(index)
+        ? currentExpanded.filter(i => i !== index)
+        : [...currentExpanded, index];
+    });
+  };
+
+  const renderSearchInfo = () => {
+    if (!searchParams || !searchParams.fromSearch) return null;
+
+    return (
+      <View style={styles.searchInfoContainer}>
+        <Text style={styles.searchInfoText}>
+          <Icon name="calendar-alt" size={14} color="black" /> {searchParams.checkIn} → {searchParams.checkOut}
+        </Text>
+        <Text style={styles.searchInfoText}>
+          <Icon name="users" size={14} color="black" /> {searchParams.capacity} người
+        </Text>
+      </View>
+    );
   };
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN');
+    return date.toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
   };
 
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'available': return 'Trống';
-      case 'booked': return 'Đã đặt';
-      case 'maintenance': return 'Đang dọn phòng';
-      default: return status;
-    }
-  };
+  const renderRoomPrice = (room) => {
+    const priceInfo = formatPrice(room);
 
-  const getStatusStyle = (statusText) => {
-    switch (statusText) {
-      case 'Trống': return { backgroundColor: '#4CAF50', color: '#fff' };
-      case 'Đã đặt': return { backgroundColor: '#2196F3', color: '#fff' };
-      case 'Đang dọn phòng': return { backgroundColor: '#F44336', color: '#fff' };
-      default: return {};
-    }
-  };
-
-  const formatPrice = (price) => {
-    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    return (
+      <View>
+        {priceInfo.hasDiscount && (
+          <>
+            <Text style={styles.originalPrice}>{priceInfo.original} VNĐ</Text>
+            <View style={styles.discountBadge}>
+              <Text style={styles.discountText}>-{room.discountPercent}%</Text>
+            </View>
+          </>
+        )}
+        <Text style={styles.roomPrice}>
+          {priceInfo.discounted} VNĐ
+          <Text style={styles.perNight}> /đêm</Text>
+        </Text>
+      </View>
+    );
   };
 
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Chọn phòng</Text>
+
+      {renderSearchInfo()}
 
       {displayedRooms.length === 0 ? (
         <Text style={styles.noRoomsText}>Không có phòng nào</Text>
@@ -62,10 +115,10 @@ const RoomTypeSelection = ({ rooms = [], selectedRoomIndexes = [], onSelectedRoo
         displayedRooms.map((room, index) => (
           <View key={room._id || index} style={[
             styles.roomBox,
-            selectedRoomIndexes.includes(index) && styles.selectedRoom,
-            room.status !== 'available' && styles.disabledRoom
+            localSelectedIndexes.includes(index) && styles.selectedRoom,
+            (!isSearchMode && room.status !== 'available') && styles.disabledRoom
           ]}>
-            <View style={[styles.roomContent, selectedRoomIndexes.includes(index) && styles.selectedRoomBorder]}>
+            <View style={[styles.roomContent, localSelectedIndexes.includes(index) && styles.selectedRoomBorder]}>
               {room.images?.length > 0 && (
                 <ScrollView
                   horizontal
@@ -87,57 +140,42 @@ const RoomTypeSelection = ({ rooms = [], selectedRoomIndexes = [], onSelectedRoo
                 <View style={styles.roomHeader}>
                   <Text style={styles.roomTitle}>{room.name}</Text>
                   <TouchableOpacity onPress={() => toggleRoomDetails(index)}>
-                    <Icon name={expandedRoom === index ? "chevron-up" : "chevron-down"} size={20} />
+                    <Icon name={expandedRooms.includes(index) ? "chevron-up" : "chevron-down"} size={20} />
                   </TouchableOpacity>
                 </View>
 
-                {room.amenities?.length > 0 && (
+                {room.amenities?.length > 0 ? (
                   <View style={styles.featuresContainer}>
-                    {room.amenities?.map((amenity, idx) => (
-                      <View key={amenity._id || idx} style={styles.featureItem}>
-                        {getAmenityIcon(amenity.icon)}
-                        <Text style={styles.featureText}>{amenity.name}</Text>
-                      </View>
-                    ))}
+                    {room.amenities.map((amenity, idx) => {
+                      return (
+                        <View key={amenity._id || idx} style={styles.featureItem}>
+                          {getAmenityIcon(amenity.icon)}
+                          <Text style={styles.featureText}>{amenity.name}</Text>
+                        </View>
+                      );
+                    })}
                   </View>
-                )}
+                ) : null}
 
                 <View style={styles.priceAndCheckbox}>
-                  <View>
-                    {room.discountPercent > 0 && (
-                      <Text style={styles.originalPrice}>{formatPrice(room.price)} VNĐ</Text>
-                    )}
-                    <Text style={styles.roomPrice}>
-                      {formatPrice(room.discountPercent > 0 ?
-                        room.price * (1 - room.discountPercent / 100) :
-                        room.price)} VNĐ
-                      <Text style={styles.perNight}> /ngày</Text>
-                    </Text>
-
-                    <View style={styles.statusContainer}>
-                      <Text style={styles.detailsTitle}>Trạng thái</Text>
-                      <Text style={[styles.detailsTextStatus, getStatusStyle(getStatusText(room.status))]}>
-                        {getStatusText(room.status)}
-                      </Text>
+                  {renderRoomPrice(room)}
+                  <TouchableOpacity onPress={() => handleRoomSelect(index)} disabled={!isSearchMode && room.status !== 'available'}>
+                    <View style={styles.checkbox}>
+                      <Icon
+                        name={localSelectedIndexes.includes(index) ? "check-square" : "square"}
+                        size={24}
+                        color={
+                          (!isSearchMode && room.status !== 'available') ? '#ddd' :
+                            localSelectedIndexes.includes(index) ? '#2196F3' : '#aaa'
+                        }
+                      />
                     </View>
-                  </View>
-
-                  {room.status === 'available' && (
-                    <TouchableOpacity onPress={() => handleRoomSelect(index)}>
-                      <View style={styles.checkbox}>
-                        <Icon
-                          name={selectedRoomIndexes.includes(index) ? "check-square" : "square"}
-                          size={24}
-                          color={selectedRoomIndexes.includes(index) ? '#2196F3' : '#aaa'}
-                        />
-                      </View>
-                    </TouchableOpacity>
-                  )}
+                  </TouchableOpacity>
                 </View>
               </View>
             </View>
 
-            {expandedRoom === index && (
+            {expandedRooms.includes(index) && (
               <View style={styles.detailsContainer}>
                 {room.description && (
                   <>
@@ -324,19 +362,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     fontWeight: '500'
   },
-  statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 5,
-    marginTop: 10
-  },
-  detailsTextStatus: {
-    fontSize: 14,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 5,
-    marginLeft: 10,
-  },
   infoContainer: {
     marginBottom: 15,
   },
@@ -361,6 +386,10 @@ const styles = StyleSheet.create({
     marginTop: 3,
     alignSelf: 'flex-start',
   },
+  discountText: {
+    fontSize: 18,
+    color: 'red',
+  },
   originalPrice: {
     fontSize: 16,
     color: '#888',
@@ -380,14 +409,6 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     backgroundColor: '#f5f5f5',
   },
-  roomStatus: {
-    fontSize: 15,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 4,
-    marginTop: 5,
-    alignSelf: 'flex-start',
-  },
   toggleRoomsButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -402,6 +423,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     marginRight: 6,
+  },
+  searchInfoContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+    paddingHorizontal: 10,
+  },
+  searchInfoText: {
+    fontSize: 14,
+    color: '#555',
+    alignItems: 'center',
+  },
+  discountBadge: {
+    backgroundColor: '#FFEBEE',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    alignSelf: 'flex-start',
+    marginBottom: 3,
   },
 });
 

@@ -40,7 +40,15 @@ const HomeScreen = () => {
   );
 
   const handlePressHotel = (hotel) => {
-    navigation.navigate('Detail', { hotelId: hotel._id });
+    navigation.navigate('Detail', {
+      hotelId: hotel._id,
+      searchParams: { 
+      checkIn: new Date().toLocaleDateString('en-CA'),
+      checkOut: new Date(Date.now() + 86400000).toLocaleDateString('en-CA'),
+      capacity: 1,
+      fromSearch: false
+    }
+  });
   };
 
   if (isLoading) {
