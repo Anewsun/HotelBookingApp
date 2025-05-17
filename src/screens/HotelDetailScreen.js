@@ -95,7 +95,11 @@ const HotelDetailScreen = () => {
   };
 
   if (loading || !hotel) {
-    return <ActivityIndicator size="large" />;
+    return (
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
   }
 
   const totalPrice = selectedRoomIndexes.reduce((sum, index) => {

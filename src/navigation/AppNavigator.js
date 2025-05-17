@@ -11,6 +11,7 @@ import HotelDetailScreen from "../screens/HotelDetailScreen";
 import SearchResultScreen from "../screens/SearchResultScreen";
 import BookingSreen from "../screens/BookingScreen";
 import BookingDetailScreen from '../screens/BookingDetailScreen';
+import NotificationScreen from "../screens/NotificationsScreen";
 
 import { useAuth } from "../contexts/AuthContext";
 import { createStackNavigator } from "@react-navigation/stack";
@@ -39,6 +40,7 @@ const AppStack = () => (
     <Stack.Screen name="SearchResult" component={SearchResultScreen} />
     <Stack.Screen name="Booking" component={BookingSreen} />
     <Stack.Screen name="BookingDetail" component={BookingDetailScreen} />
+    <Stack.Screen name="Notification" component={NotificationScreen} />
   </Stack.Navigator>
 );
 

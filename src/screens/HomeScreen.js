@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,6 +11,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useFavorite } from '../contexts/FavoriteContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useHotels } from '../hooks/useHotels';
+import useNotifications from '../hooks/useNotifications';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -19,6 +20,8 @@ const HomeScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const { favoriteIds, toggleFavorite } = useFavorite();
   const [currentPage, setCurrentPage] = useState(1);
+  const { notifications } = useNotifications(user?.accessToken);
+  const [hasUnread, setHasUnread] = useState(false);
   const hotelsPerPage = 6;
 
   const totalPages = Math.ceil(hotels.length / hotelsPerPage);
@@ -33,6 +36,11 @@ const HomeScreen = () => {
     }
   };
 
+  useEffect(() => {
+    const unread = notifications.some(noti => noti.status === 'unread');
+    setHasUnread(unread);
+  }, [notifications]);
+
   useFocusEffect(
     useCallback(() => {
       refetch();
@@ -42,17 +50,21 @@ const HomeScreen = () => {
   const handlePressHotel = (hotel) => {
     navigation.navigate('Detail', {
       hotelId: hotel._id,
-      searchParams: { 
-      checkIn: new Date().toLocaleDateString('en-CA'),
-      checkOut: new Date(Date.now() + 86400000).toLocaleDateString('en-CA'),
-      capacity: 1,
-      fromSearch: false
-    }
-  });
+      searchParams: {
+        checkIn: new Date().toLocaleDateString('en-CA'),
+        checkOut: new Date(Date.now() + 86400000).toLocaleDateString('en-CA'),
+        capacity: 1,
+        fromSearch: false
+      }
+    });
   };
 
   if (isLoading) {
-    return <ActivityIndicator size="large" />;
+    return (
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
   }
 
   if (isError) {
@@ -69,7 +81,17 @@ const HomeScreen = () => {
             <View style={styles.header}>
               <Text style={styles.name}>{user && user.name ? `Chào ${user.name}!` : 'Đang tải...'}</Text>
               <Icon name="hand-left-outline" size={24} color="gold" style={styles.icon} />
-              <Icon1 name="bell" size={24} color="black" style={styles.bellIcon} />
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Notification')}
+                style={styles.notificationButton}
+              >
+                <Icon1 name="bell" size={24} color="red" style={styles.bellIcon} />
+                {hasUnread && (
+                  <View style={styles.notificationBadge}>
+                    <Text style={styles.badgeText}>!</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
             </View>
             <Text style={styles.title}>Bắt đầu đặt phòng ngay nào!</Text>
             <SearchBox />
@@ -170,6 +192,26 @@ const styles = StyleSheet.create({
   },
   pageButtonText: {
     fontSize: 16
+  },
+  notificationButton: {
+    position: 'relative',
+    marginRight: 30,
+  },
+  notificationBadge: {
+    position: 'absolute',
+    right: -5,
+    top: -5,
+    backgroundColor: 'red',
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 12,
   },
 });
 
