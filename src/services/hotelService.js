@@ -67,16 +67,19 @@ export const searchHotelsWithAvailableRooms = async (params) => {
     }
     return {
       data: [],
-      error: response.data.message || 'Lỗi server'
+      error: 'Không tìm thấy khách sạn phù hợp'
     };
   } catch (error) {
-    console.error('Search hotels error:', error.response?.data || error.message);
-    throw {
-      response: {
-        status: error.response?.status,
-        data: error.response?.data
-      },
-      message: error.message
+    if (error.response?.status === 404) {
+      return {
+        data: [],
+        error: 'Không tìm thấy địa điểm du lịch này'
+      };
+    }
+    // Các lỗi khác
+    return {
+      data: [],
+      error: error.response?.data?.message || error.message || 'Lỗi khi tải dữ liệu'
     };
   }
 };

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Modal } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Icon2 from 'react-native-vector-icons/MaterialIcons';
 import HotelCard from '../components/HotelCard';
@@ -7,6 +7,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { searchHotelsWithAvailableRooms } from '../services/hotelService';
 import { useFavorite } from '../contexts/FavoriteContext';
+import { getLocations } from '../services/locationService';
 
 const SearchResultScreen = () => {
     const route = useRoute();
@@ -16,9 +17,26 @@ const SearchResultScreen = () => {
     const [searchParams, setSearchParams] = useState(route.params?.searchParams || null);
     const [currentFilters, setCurrentFilters] = useState(route.params?.filters || null);
     const [location, setLocation] = useState(searchParams?.locationName || '');
+    const [locationId, setLocationId] = useState(searchParams?.locationId || null);
     const [searchTimeout, setSearchTimeout] = useState(null);
+    const [locationsList, setLocationsList] = useState([]);
+    const [filteredLocations, setFilteredLocations] = useState([]);
+    const [showLocationDropdown, setShowLocationDropdown] = useState(false);
     const { favoriteIds, toggleFavorite } = useFavorite();
     const navigation = useNavigation();
+
+    useEffect(() => {
+        const fetchLocations = async () => {
+            try {
+                const data = await getLocations();
+                setLocationsList(data);
+                setFilteredLocations(data);
+            } catch (error) {
+                console.error('Error fetching locations:', error);
+            }
+        };
+        fetchLocations();
+    }, []);
 
     const fetchData = useCallback(async (params = {}) => {
         try {
@@ -33,20 +51,17 @@ const SearchResultScreen = () => {
 
             console.log('API Params:', combinedParams);
             const response = await searchHotelsWithAvailableRooms(combinedParams);
-            if (!response.data || response.data.length === 0) {
+            if (response.error) {
+                setError(response.error);
                 setHotels([]);
-                setError(combinedParams.locationName
-                    ? 'Không tìm thấy khách sạn phù hợp'
-                    : 'Vui lòng nhập địa điểm');
             } else {
                 setHotels(response.data);
-                setError(null);
+                setError(response.data.length === 0 ? 'Không tìm thấy khách sạn phù hợp' : null);
             }
 
         } catch (err) {
             console.error('Fetch error:', err);
-            const errorMessage = err.response?.data?.message || err.message || 'Lỗi khi tải dữ liệu';
-            setError(errorMessage);
+            setError('Đã xảy ra lỗi khi tải dữ liệu');
             setHotels([]);
         } finally {
             setLoading(false);
@@ -58,6 +73,7 @@ const SearchResultScreen = () => {
         if (route.params?.searchParams) {
             setSearchParams(route.params.searchParams);
             setLocation(route.params.searchParams.locationName);
+            setLocationId(route.params.searchParams.locationId);
             setCurrentFilters(route.params.filters || null);
         }
     }, [route.params]);
@@ -68,6 +84,25 @@ const SearchResultScreen = () => {
             fetchData();
         }
     }, [searchParams, currentFilters]);
+
+    const handleLocationSearch = (text) => {
+        setLocation(text);
+        if (text.length > 0) {
+            const filtered = locationsList.filter(item =>
+                item.name.toLowerCase().includes(text.toLowerCase())
+            );
+            setFilteredLocations(filtered);
+        } else {
+            setFilteredLocations(locationsList);
+        }
+        setShowLocationDropdown(true);
+    };
+
+    const selectLocation = (selectedLocation) => {
+        setLocation(selectedLocation.name);
+        setLocationId(selectedLocation._id);
+        setShowLocationDropdown(false);
+    };
 
     const handleSearch = () => {
         if (searchTimeout) {
@@ -82,13 +117,24 @@ const SearchResultScreen = () => {
                         return;
                     }
 
+                    const isValidLocation = locationsList.some(
+                        loc => loc.name.toLowerCase() === location.toLowerCase()
+                    );
+
+                    if (!isValidLocation) {
+                        setError('Không tìm thấy địa điểm du lịch này');
+                        setHotels([]);
+                        return;
+                    }
+
                     const newSearchParams = {
                         ...searchParams,
                         locationName: location,
+                        locationId: locationId
                     };
 
                     setSearchParams(newSearchParams);
-                    setLocation(location);
+                    //setLocation(location);
                     await fetchData({
                         ...newSearchParams,
                         ...(currentFilters || {}),
@@ -124,19 +170,22 @@ const SearchResultScreen = () => {
     };
 
     if (error || !hotels || hotels.length === 0) {
-        const isLocationError = error?.includes('Không tìm thấy địa điểm') ||
-            error?.includes('Vui lòng nhập');
+        const isLocationError = [
+            'Không tìm thấy địa điểm du lịch này',
+            'Vui lòng chọn địa điểm',
+            'Không tìm thấy phòng phù hợp ở địa điểm này'
+        ].includes(error);
 
         return (
             <SafeAreaView style={styles.errorContainer}>
                 <View style={styles.errorContent}>
                     <Icon2
-                        name={isLocationError ? "warning-outline" : "search-off"}
+                        name={isLocationError ? "location-off" : "search-off"}
                         size={60}
-                        color={isLocationError ? "#ff6b6b" : "black"}
+                        color="#FF385C"
                     />
                     <Text style={styles.errorTitle}>
-                        {isLocationError ? 'Đã xảy ra lỗi' : 'Không tìm thấy kết quả'}
+                        {isLocationError ? 'Địa điểm không tồn tại' : 'Không tìm thấy kết quả'}
                     </Text>
                     <Text style={styles.errorText}>
                         {error || 'Hãy thử điều chỉnh tiêu chí tìm kiếm của bạn'}
@@ -144,27 +193,10 @@ const SearchResultScreen = () => {
 
                     <TouchableOpacity
                         style={styles.retryButton}
-                        onPress={() => {
-                            if (searchParams && !isLocationError) {
-                                fetchData();
-                            } else {
-                                navigation.goBack();
-                            }
-                        }}
+                        onPress={() => navigation.goBack()}
                     >
-                        <Text style={styles.retryButtonText}>
-                            {isLocationError ? 'Quay lại trang tìm kiếm' : 'Tải lại'}
-                        </Text>
+                        <Text style={styles.retryButtonText}>Quay lại tìm kiếm</Text>
                     </TouchableOpacity>
-
-                    {!isLocationError && (
-                        <TouchableOpacity
-                            style={styles.backButton}
-                            onPress={() => navigation.goBack()}
-                        >
-                            <Text style={styles.backButtonText}>Quay lại tìm kiếm</Text>
-                        </TouchableOpacity>
-                    )}
                 </View>
             </SafeAreaView>
         );
@@ -182,11 +214,12 @@ const SearchResultScreen = () => {
                 <View style={styles.searchContainer}>
                     <Icon name="search" size={20} color="#888" style={styles.searchIcon} />
                     <TextInput
-                        placeholder="Tìm kiếm"
+                        placeholder="Tìm kiếm địa điểm"
                         style={styles.searchInput}
                         value={location}
-                        onChangeText={setLocation}
+                        onChangeText={handleLocationSearch}
                         onSubmitEditing={handleSearch}
+                        onFocus={() => setShowLocationDropdown(true)}
                     />
                     <TouchableOpacity onPress={handleSearch}>
                         <Text style={styles.searchButtonText}>Tìm</Text>
@@ -194,7 +227,11 @@ const SearchResultScreen = () => {
                     <TouchableOpacity
                         style={styles.filterButton}
                         onPress={() => navigation.navigate('Filter', {
-                            searchParams,
+                            searchParams: {
+                                ...searchParams,
+                                locationId,
+                                locationName: location
+                            },
                             filters: currentFilters
                         })}
                     >
@@ -202,6 +239,38 @@ const SearchResultScreen = () => {
                     </TouchableOpacity>
                 </View>
             </View>
+
+            {showLocationDropdown && (
+                <Modal
+                    transparent
+                    visible={showLocationDropdown}
+                    onRequestClose={() => setShowLocationDropdown(false)}
+                >
+                    <TouchableOpacity
+                        style={styles.dropdownOverlay}
+                        activeOpacity={1}
+                        onPress={() => setShowLocationDropdown(false)}
+                    >
+                        <View style={styles.dropdownContainer}>
+                            <FlatList
+                                data={filteredLocations}
+                                keyExtractor={(item) => item._id}
+                                renderItem={({ item }) => (
+                                    <TouchableOpacity
+                                        style={styles.dropdownItem}
+                                        onPress={() => selectLocation(item)}
+                                    >
+                                        <Text style={styles.dropdownItemText}>{item.name}</Text>
+                                    </TouchableOpacity>
+                                )}
+                                ItemSeparatorComponent={() => <View style={styles.separator} />}
+                                keyboardShouldPersistTaps="handled"
+                            />
+                        </View>
+                    </TouchableOpacity>
+                </Modal>
+            )}
+
             <Text style={styles.countSearch}>{hotels.length} kết quả được tìm thấy</Text>
             <FlatList
                 data={hotels}
@@ -362,6 +431,27 @@ const styles = StyleSheet.create({
         color: 'blue',
         fontWeight: 'bold',
         paddingHorizontal: 10,
+    },
+    dropdownOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        padding: 20,
+    },
+    dropdownContainer: {
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        maxHeight: 300,
+    },
+    dropdownItem: {
+        padding: 15,
+    },
+    dropdownItemText: {
+        fontSize: 16,
+    },
+    separator: {
+        height: 1,
+        backgroundColor: '#eee',
     },
 });
 
