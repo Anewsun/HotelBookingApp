@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, SafeAreaView, StyleSheet, Image, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
-import { useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import HotelHeader from "../components/HotelHeader";
 import RoomTypeSelection from "../components/RoomTypeSelection";
@@ -19,8 +19,9 @@ const HotelDetailScreen = () => {
   const [hotelAmenities, setHotelAmenities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showFullDesc, setShowFullDesc] = useState(false);
-  const [selectedRoomIndexes, setSelectedRoomIndexes] = useState([]);
+  const [selectedRoomIndex, setSelectedRoomIndex] = useState(null);
   const [availableRooms, setAvailableRooms] = useState([]);
+  const navigation = useNavigation();
 
   useEffect(() => {
     const loadData = async () => {
@@ -68,11 +69,11 @@ const HotelDetailScreen = () => {
 
   useEffect(() => {
     // Reset selected rooms khi availableRooms thay đổi
-    setSelectedRoomIndexes([]);
+    setSelectedRoomIndex(null);
   }, [availableRooms]);
 
-  const handleSelectedRoomsChange = (selectedIndexes) => {
-    setSelectedRoomIndexes(selectedIndexes);
+  const handleSelectedRoomChange = (selectedIndex) => {
+    setSelectedRoomIndex(selectedIndex);
   };
 
   const renderPolicyItem = (label, value, iconName) => {
@@ -102,18 +103,9 @@ const HotelDetailScreen = () => {
     );
   }
 
-  const totalPrice = selectedRoomIndexes.reduce((sum, index) => {
-    const room = availableRooms[index];
-    if (!room) return sum;
-
-    // Kiểm tra điều kiện giảm giá
-    const hasDiscount = room.discountPercent > 0 && room.discountedPrice;
-
-    // Lấy giá đúng (ưu tiên discountedPrice nếu có discount hợp lệ)
-    const price = hasDiscount ? room.discountedPrice : room.price;
-
-    return sum + (price || 0);
-  }, 0);
+  const totalPrice = selectedRoomIndex !== null
+    ? (availableRooms[selectedRoomIndex]?.discountedPrice || availableRooms[selectedRoomIndex]?.price || 0)
+    : 0;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -195,8 +187,8 @@ const HotelDetailScreen = () => {
 
               <RoomTypeSelection
                 rooms={availableRooms}
-                selectedRoomIndexes={selectedRoomIndexes}
-                onSelectedRoomsChange={handleSelectedRoomsChange}
+                selectedRoomIndex={selectedRoomIndex}
+                onSelectedRoomChange={handleSelectedRoomChange}
                 searchParams={route.params.searchParams || null}
               />
               <ReviewsSection />
@@ -210,9 +202,21 @@ const HotelDetailScreen = () => {
 
       <View style={styles.bookingSection}>
         <View style={styles.bookingPriceWrapper}>
-          <Text style={styles.price}>{totalPrice.toLocaleString()} VNĐ/ngày</Text>
+          {selectedRoomIndex !== null && availableRooms[selectedRoomIndex]?.discountPercent > 0 && (
+            <Text style={styles.originalPrice}>
+              {availableRooms[selectedRoomIndex].price.toLocaleString()} VNĐ
+            </Text>
+          )}
+          <Text style={styles.price}>
+            {totalPrice.toLocaleString()} VNĐ
+            {selectedRoomIndex !== null && <Text style={styles.perNight}>/đêm</Text>}
+          </Text>
         </View>
-        <TouchableOpacity style={styles.bookNowButton}>
+        <TouchableOpacity
+          style={[styles.bookNowButton, selectedRoomIndex === null && styles.disabledButton]}
+          onPress={() => selectedRoomIndex !== null && navigation.navigate('PaymentStep')}
+          disabled={selectedRoomIndex === null}
+        >
           <Text style={styles.bookNowText}>Đặt phòng ngay</Text>
         </TouchableOpacity>
       </View>
@@ -406,6 +410,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1a3e8c',
     textAlign: 'right',
+  },
+  originalPrice: {
+    fontSize: 16,
+    color: '#888',
+    textDecorationLine: 'line-through',
+    marginRight: 5,
+  },
+  disabledButton: {
+    backgroundColor: '#cccccc',
   },
 });
 

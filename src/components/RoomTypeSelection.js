@@ -7,33 +7,30 @@ const { width: viewportWidth } = Dimensions.get('window');
 
 const RoomTypeSelection = ({
   rooms = [],
-  selectedRoomIndexes = [],
-  onSelectedRoomsChange = () => { },
+  selectedRoomIndex = null,
+  onSelectedRoomChange = () => { },
   searchParams = null
 }) => {
   const [expandedRooms, setExpandedRooms] = useState([]);
   const [showAllRooms, setShowAllRooms] = useState(false);
   const initialRoomCount = 2;
   const displayedRooms = showAllRooms ? rooms : rooms.slice(0, initialRoomCount);
-  const [localSelectedIndexes, setLocalSelectedIndexes] = useState(selectedRoomIndexes);
+  const [localSelectedIndex, setLocalSelectedIndex] = useState(selectedRoomIndex);
 
   // Kiểm tra chế độ tìm kiếm
   const isSearchMode = searchParams?.checkIn && searchParams?.checkOut && searchParams?.capacity;
 
   useEffect(() => {
-    setLocalSelectedIndexes(selectedRoomIndexes);
-  }, [selectedRoomIndexes]);
+    setLocalSelectedIndex(selectedRoomIndex);
+  }, [selectedRoomIndex]);
 
   const handleRoomSelect = (index) => {
     if (!isSearchMode && rooms[index].status !== 'available') return;
 
-    const updated = localSelectedIndexes.includes(index)
-      ? localSelectedIndexes.filter(i => i !== index)
-      : [...localSelectedIndexes, index];
+    const newIndex = localSelectedIndex === index ? null : index;
 
-    onSelectedRoomsChange(updated);
-
-    onSelectedRoomsChange(updated);
+    setLocalSelectedIndex(newIndex);
+    onSelectedRoomChange(newIndex);
   };
 
   const formatPrice = (room) => {
@@ -115,10 +112,10 @@ const RoomTypeSelection = ({
         displayedRooms.map((room, index) => (
           <View key={room._id || index} style={[
             styles.roomBox,
-            localSelectedIndexes.includes(index) && styles.selectedRoom,
+            localSelectedIndex === index && styles.selectedRoom,
             (!isSearchMode && room.status !== 'available') && styles.disabledRoom
           ]}>
-            <View style={[styles.roomContent, localSelectedIndexes.includes(index) && styles.selectedRoomBorder]}>
+            <View style={[styles.roomContent, localSelectedIndex === index && styles.selectedRoomBorder]}>
               {room.images?.length > 0 && (
                 <ScrollView
                   horizontal
@@ -162,11 +159,11 @@ const RoomTypeSelection = ({
                   <TouchableOpacity onPress={() => handleRoomSelect(index)} disabled={!isSearchMode && room.status !== 'available'}>
                     <View style={styles.checkbox}>
                       <Icon
-                        name={localSelectedIndexes.includes(index) ? "check-square" : "square"}
+                        name={localSelectedIndex === index ? "check-square" : "square"}
                         size={24}
                         color={
                           (!isSearchMode && room.status !== 'available') ? '#ddd' :
-                            localSelectedIndexes.includes(index) ? '#2196F3' : '#aaa'
+                            localSelectedIndex === index ? '#2196F3' : '#aaa'
                         }
                       />
                     </View>

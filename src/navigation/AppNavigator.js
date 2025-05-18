@@ -12,6 +12,10 @@ import SearchResultScreen from "../screens/SearchResultScreen";
 import BookingSreen from "../screens/BookingScreen";
 import BookingDetailScreen from '../screens/BookingDetailScreen';
 import NotificationScreen from "../screens/NotificationsScreen";
+import ConfirmationScreen from "../screens/ConfirmationScreen";
+import PaymentScreen from "../screens/PaymentScreen";
+import PaymentStepScreen from "../screens/PaymentStepScreen";
+import AddInformationScreen from "../screens/AddInformationScreen";
 
 import { useAuth } from "../contexts/AuthContext";
 import { createStackNavigator } from "@react-navigation/stack";
@@ -41,6 +45,10 @@ const AppStack = () => (
     <Stack.Screen name="Booking" component={BookingSreen} />
     <Stack.Screen name="BookingDetail" component={BookingDetailScreen} />
     <Stack.Screen name="Notification" component={NotificationScreen} />
+    <Stack.Screen name="Confirm" component={ConfirmationScreen} />
+    <Stack.Screen name="Payment" component={PaymentScreen} />
+    <Stack.Screen name="PaymentStep" component={PaymentStepScreen} />
+    <Stack.Screen name="AddInformation" component={AddInformationScreen} />
   </Stack.Navigator>
 );
 

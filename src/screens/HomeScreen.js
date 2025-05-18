@@ -68,7 +68,7 @@ const HomeScreen = () => {
   }
 
   if (isError) {
-    return <Text>Error loading hotels</Text>;
+    return <Text>Lỗi loading khách sạn</Text>;
   }
 
   return (

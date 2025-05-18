@@ -8,7 +8,7 @@ import { getAmenityIcon } from '../utils/AmenityIcons';
 import { fetchAllAmenities } from '../services/hotelService';
 
 const FilterScreen = ({ navigation, route }) => {
-  const [priceRange, setPriceRange] = useState({ min: 0, max: 5000000 });
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 10000000 });
   const [selectedRoomType, setSelectedRoomType] = useState(null);
   const [selectedRoomAmenities, setSelectedRoomAmenities] = useState([]);
   const [selectedRating, setSelectedRating] = useState(0);
@@ -99,7 +99,7 @@ const FilterScreen = ({ navigation, route }) => {
         <Text style={styles.sectionTitle}>Khoảng giá (VND)</Text>
         <Slider
           minimumValue={0}
-          maximumValue={5000000}
+          maximumValue={10000000}
           step={100000}
           minimumTrackTintColor="#1E90FF"
           maximumTrackTintColor="#D3D3D3"
