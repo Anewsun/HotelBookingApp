@@ -9,15 +9,12 @@ import { fetchAllAmenities } from '../services/hotelService';
 
 const FilterScreen = ({ navigation, route }) => {
   const [priceRange, setPriceRange] = useState({ min: 0, max: 5000000 });
-  const [discountRange, setDiscountRange] = useState(0);
-  const [selectedRating, setSelectedRating] = useState(0);
-  const [selectedHotelAmenities, setSelectedHotelAmenities] = useState([]);
+  const [selectedRoomType, setSelectedRoomType] = useState(null);
   const [selectedRoomAmenities, setSelectedRoomAmenities] = useState([]);
-  const [sortOption, setSortOption] = useState('-rating');
+  const [selectedRating, setSelectedRating] = useState(0);
   const [amenities, setAmenities] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Lấy danh sách tiện nghi từ API
   useEffect(() => {
     const fetchAmenities = async () => {
       try {
@@ -29,50 +26,42 @@ const FilterScreen = ({ navigation, route }) => {
         setLoading(false);
       }
     };
-
     fetchAmenities();
   }, []);
 
-  // Phân loại tiện nghi
-  const hotelAmenities = amenities.filter(a => a.type === 'hotel');
   const roomAmenities = amenities.filter(a => a.type === 'room');
 
   const handleApplyFilters = () => {
     navigation.navigate('SearchResult', {
+      searchParams: route.params?.searchParams,
       filters: {
         minPrice: priceRange.min,
         maxPrice: priceRange.max,
-        minDiscountPercent: discountRange,
-        rating: selectedRating,
-        hotelAmenities: selectedHotelAmenities,
-        roomAmenities: selectedRoomAmenities,
-        sort: sortOption
+        rating: selectedRating || 1,
+        amenities: selectedRoomAmenities.length > 0 ? selectedRoomAmenities : undefined,
+        roomType: selectedRoomType,
       }
     });
+    console.log('FilterScreen received:', route.params?.searchParams);
   };
 
-  const toggleAmenity = (amenityId, type) => {
-    if (type === 'hotel') {
-      setSelectedHotelAmenities(prev =>
-        prev.includes(amenityId)
-          ? prev.filter(id => id !== amenityId)
-          : [...prev, amenityId]
-      );
-    } else {
-      setSelectedRoomAmenities(prev =>
-        prev.includes(amenityId)
-          ? prev.filter(id => id !== amenityId)
-          : [...prev, amenityId]
-      );
-    }
+  const selectRoomType = (type) => {
+    setSelectedRoomType(prev => prev === type ? null : type);
+  };
+
+  const toggleRoomAmenity = (amenityId) => {
+    setSelectedRoomAmenities(prev =>
+      prev.includes(amenityId)
+        ? prev.filter(id => id !== amenityId)
+        : [...prev, amenityId]
+    );
   };
 
   const resetFilters = () => {
     setPriceRange({ min: 0, max: 5000000 });
     setSelectedRating(0);
-    setSelectedHotelAmenities([]);
+    setSelectedRoomType(null);
     setSelectedRoomAmenities([]);
-    setSortOption('-rating');
   };
 
   if (loading) {
@@ -86,25 +75,18 @@ const FilterScreen = ({ navigation, route }) => {
   return (
     <SafeAreaView style={styles.container}>
       <Header
-        title={`Bộ lọc (${(selectedRating ? 1 : 0) + selectedHotelAmenities.length + selectedRoomAmenities.length})`}
+        title={`Bộ lọc (${(selectedRating ? 1 : 0) + selectedRoomAmenities.length})`}
         onBackPress={() => navigation.goBack()}
         showBackIcon={true}
       />
 
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Lọc theo sao */}
+      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.sectionTitle}>Đánh giá sao</Text>
         <View style={styles.ratingContainer}>
           {[5, 4, 3, 2, 1].map(rating => (
             <TouchableOpacity
               key={rating}
-              style={[
-                styles.ratingButton,
-                selectedRating === rating && styles.selectedRating
-              ]}
+              style={[styles.ratingButton, selectedRating === rating && styles.selectedRating]}
               onPress={() => setSelectedRating(prev => prev === rating ? 0 : rating)}
             >
               <Text style={styles.ratingText}>{rating}+</Text>
@@ -140,56 +122,15 @@ const FilterScreen = ({ navigation, route }) => {
           />
         </View>
 
-        {/* % Giảm giá */}
-        <Text style={styles.sectionTitle}>Giảm giá tối thiểu (%)</Text>
-        <Slider
-          minimumValue={0}
-          maximumValue={100}
-          step={5}
-          minimumTrackTintColor="#1E90FF"
-          maximumTrackTintColor="#D3D3D3"
-          value={discountRange}
-          onValueChange={setDiscountRange}
-        />
-        <Text style={styles.discountText}>{discountRange}%</Text>
-
-        {/* Sắp xếp */}
-        <Text style={styles.sectionTitle}>Sắp xếp theo</Text>
-        <View style={styles.sortOptionsContainer}>
-          <TouchableOpacity
-            style={[styles.sortOption, sortOption === '-rating' && styles.selectedSortOption]}
-            onPress={() => setSortOption('-rating')}
-          >
-            <Text>Đánh giá cao</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.sortOption, sortOption === 'price' && styles.selectedSortOption]}
-            onPress={() => setSortOption('price')}
-          >
-            <Text>Giá thấp</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.sortOption, sortOption === '-price' && styles.selectedSortOption]}
-            onPress={() => setSortOption('-price')}
-          >
-            <Text>Giá cao</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Tiện nghi khách sạn */}
-        <Text style={styles.sectionTitle}>Tiện nghi khách sạn</Text>
+        <Text style={styles.sectionTitle}>Loại phòng</Text>
         <View style={styles.amenitiesContainer}>
-          {hotelAmenities.map(item => (
+          {['Standard', 'Superior', 'Deluxe', 'Suite', 'Family'].map(type => (
             <TouchableOpacity
-              key={item._id}
-              style={[
-                styles.amenityButton,
-                selectedHotelAmenities.includes(item._id) && styles.selectedAmenity
-              ]}
-              onPress={() => toggleAmenity(item._id, 'hotel')}
+              key={type}
+              style={[styles.amenityButton, selectedRoomType === type && styles.selectedAmenity]}
+              onPress={() => selectRoomType(type)}
             >
-              {getAmenityIcon(item.icon)}
-              <Text style={styles.amenityText}>{item.name}</Text>
+              <Text style={styles.amenityText}>{type}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -204,7 +145,7 @@ const FilterScreen = ({ navigation, route }) => {
                 styles.amenityButton,
                 selectedRoomAmenities.includes(item._id) && styles.selectedAmenity
               ]}
-              onPress={() => toggleAmenity(item._id, 'room')}
+              onPress={() => toggleRoomAmenity(item._id)}
             >
               {getAmenityIcon(item.icon)}
               <Text style={styles.amenityText}>{item.name}</Text>
@@ -216,16 +157,10 @@ const FilterScreen = ({ navigation, route }) => {
       </ScrollView>
 
       <View style={styles.actionButtons}>
-        <TouchableOpacity
-          style={styles.resetButton}
-          onPress={resetFilters}
-        >
+        <TouchableOpacity style={styles.resetButton} onPress={resetFilters}>
           <Text style={styles.resetButtonText}>Đặt lại</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.applyButton}
-          onPress={handleApplyFilters}
-        >
+        <TouchableOpacity style={styles.applyButton} onPress={handleApplyFilters}>
           <Text style={styles.applyButtonText}>Áp dụng</Text>
         </TouchableOpacity>
       </View>
@@ -294,24 +229,6 @@ const styles = StyleSheet.create({
   toText: {
     color: '#666',
   },
-  sortOptionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-    gap: 8,
-  },
-  sortOption: {
-    flex: 1,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  selectedSortOption: {
-    backgroundColor: '#E3F2FD',
-    borderColor: '#1E90FF',
-  },
   amenitiesContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -333,9 +250,9 @@ const styles = StyleSheet.create({
   },
   amenityText: {
     marginTop: 4,
-    fontSize: 12,
+    fontSize: 14,
     textAlign: 'center',
-    color: '#333',
+    color: 'black',
   },
   actionButtons: {
     position: 'absolute',
@@ -375,13 +292,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
-  discountText: {
-    textAlign: 'center',
-    fontSize: 16,
-    color: '#FF385C',
-    fontWeight: 'bold',
-    marginBottom: 16,
-  }
 });
 
 export default FilterScreen;

@@ -58,7 +58,7 @@ const SearchBox = () => {
           <Icon name="location" size={20} color="#888" />
           <TextInput
             style={styles.input}
-            placeholder="Điểm đến"
+            placeholder="Điểm đến(ví dụ Vũng Tàu, ...)"
             placeholderTextColor="#666"
             value={location}
             onChangeText={setLocation}

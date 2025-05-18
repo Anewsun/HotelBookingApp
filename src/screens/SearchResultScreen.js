@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Icon2 from 'react-native-vector-icons/MaterialIcons';
 import HotelCard from '../components/HotelCard';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { fetchHotelsWithFilters, searchHotelsWithAvailableRooms } from '../services/hotelService';
+import { searchHotelsWithAvailableRooms } from '../services/hotelService';
 import { useFavorite } from '../contexts/FavoriteContext';
 
 const SearchResultScreen = () => {
@@ -14,89 +14,91 @@ const SearchResultScreen = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchParams, setSearchParams] = useState(route.params?.searchParams || null);
+    const [currentFilters, setCurrentFilters] = useState(route.params?.filters || null);
     const [location, setLocation] = useState(searchParams?.locationName || '');
     const [searchTimeout, setSearchTimeout] = useState(null);
     const { favoriteIds, toggleFavorite } = useFavorite();
     const navigation = useNavigation();
 
-    const fetchData = async (params) => {
+    const fetchData = useCallback(async (params = {}) => {
         try {
             setLoading(true);
             setError(null);
 
-            let results = [];
+            const combinedParams = {
+                ...searchParams,
+                ...currentFilters,
+                ...params
+            };
 
-            if (params) {
-                const response = await searchHotelsWithAvailableRooms({
-                    locationName: params.locationName,
-                    checkIn: params.checkIn,
-                    checkOut: params.checkOut,
-                    capacity: params.capacity,
-                    sort: params.sort || '-rating'
-                });
-                results = response.data;
+            console.log('API Params:', combinedParams);
+            const response = await searchHotelsWithAvailableRooms(combinedParams);
+            if (!response.data || response.data.length === 0) {
+                setHotels([]);
+                setError(combinedParams.locationName
+                    ? 'Không tìm thấy khách sạn phù hợp'
+                    : 'Vui lòng nhập địa điểm');
+            } else {
+                setHotels(response.data);
+                setError(null);
             }
-            else if (route.params?.filters) {
-                const {
-                    minPrice,
-                    maxPrice,
-                    minDiscountPercent,
-                    rating,
-                    hotelAmenities = [],
-                    roomAmenities = []
-                } = route.params.filters;
-
-                const filters = {
-                    minPrice,
-                    maxPrice,
-                    minDiscountPercent,
-                    rating,
-                    amenities: [...hotelAmenities, ...roomAmenities].join(','),
-                    sort: route.params.filters.sort || '-createdAt'
-                };
-
-                const response = await fetchHotelsWithFilters(filters);
-                results = response.data || [];
-            }
-
-            setHotels(Array.isArray(results) ? results : []);
 
         } catch (err) {
             console.error('Fetch error:', err);
-            setError(err.message || 'Lỗi khi tải dữ liệu');
+            const errorMessage = err.response?.data?.message || err.message || 'Lỗi khi tải dữ liệu';
+            setError(errorMessage);
             setHotels([]);
         } finally {
             setLoading(false);
         }
-    };
+    }, [searchParams, currentFilters]);
 
     useEffect(() => {
+        console.log('Route changed:', route.params);
         if (route.params?.searchParams) {
             setSearchParams(route.params.searchParams);
             setLocation(route.params.searchParams.locationName);
-            fetchData(route.params.searchParams);
+            setCurrentFilters(route.params.filters || null);
         }
     }, [route.params]);
+
+    useEffect(() => {
+        console.log('searchParams/currentFilters changed:', searchParams, currentFilters);
+        if (searchParams) {
+            fetchData();
+        }
+    }, [searchParams, currentFilters]);
 
     const handleSearch = () => {
         if (searchTimeout) {
             clearTimeout(searchTimeout);
         }
 
-        setSearchTimeout(setTimeout(() => {
-            if (!location) {
-                Alert.alert('Lỗi', 'Vui lòng nhập địa điểm');
-                return;
-            }
+        setSearchTimeout(
+            setTimeout(async () => {
+                try {
+                    if (!location) {
+                        Alert.alert('Lỗi', 'Vui lòng nhập địa điểm');
+                        return;
+                    }
 
-            const newSearchParams = {
-                ...searchParams,
-                locationName: location
-            };
+                    const newSearchParams = {
+                        ...searchParams,
+                        locationName: location,
+                    };
 
-            setSearchParams(newSearchParams);
-            fetchData(newSearchParams);
-        }, 500));
+                    setSearchParams(newSearchParams);
+                    setLocation(location);
+                    await fetchData({
+                        ...newSearchParams,
+                        ...(currentFilters || {}),
+                    });
+
+                } catch (error) {
+                    console.error('Search error:', error);
+                }
+            }, 500)
+        );
     };
 
     if (loading) {
@@ -121,43 +123,48 @@ const SearchResultScreen = () => {
         });
     };
 
-    if (error) {
+    if (error || !hotels || hotels.length === 0) {
+        const isLocationError = error?.includes('Không tìm thấy địa điểm') ||
+            error?.includes('Vui lòng nhập');
+
         return (
             <SafeAreaView style={styles.errorContainer}>
                 <View style={styles.errorContent}>
-                    <Icon name="warning-outline" size={60} color="#ff6b6b" />
-                    <Text style={styles.errorTitle}>Đã xảy ra lỗi</Text>
-                    <Text style={styles.errorText}>{error}</Text>
-                    <TouchableOpacity
-                        style={styles.retryButton}
-                        onPress={fetchData}
-                    >
-                        <Text style={styles.retryButtonText}>Thử lại</Text>
-                    </TouchableOpacity>
-                </View>
-            </SafeAreaView>
-        );
-    }
+                    <Icon2
+                        name={isLocationError ? "warning-outline" : "search-off"}
+                        size={60}
+                        color={isLocationError ? "#ff6b6b" : "black"}
+                    />
+                    <Text style={styles.errorTitle}>
+                        {isLocationError ? 'Đã xảy ra lỗi' : 'Không tìm thấy kết quả'}
+                    </Text>
+                    <Text style={styles.errorText}>
+                        {error || 'Hãy thử điều chỉnh tiêu chí tìm kiếm của bạn'}
+                    </Text>
 
-    if (!hotels || hotels.length === 0) {
-        return (
-            <SafeAreaView style={styles.emptyContainer}>
-                <View style={styles.emptyContent}>
-                    <Icon2 name="search-off" size={60} color="black" />
-                    <Text style={styles.emptyTitle}>Không tìm thấy kết quả</Text>
-                    <Text style={styles.emptySubText}>Hãy thử điều chỉnh tiêu chí tìm kiếm của bạn</Text>
                     <TouchableOpacity
                         style={styles.retryButton}
-                        onPress={fetchData}
+                        onPress={() => {
+                            if (searchParams && !isLocationError) {
+                                fetchData();
+                            } else {
+                                navigation.goBack();
+                            }
+                        }}
                     >
-                        <Text style={styles.retryButtonText}>Tải lại</Text>
+                        <Text style={styles.retryButtonText}>
+                            {isLocationError ? 'Quay lại trang tìm kiếm' : 'Tải lại'}
+                        </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.backButton}
-                        onPress={() => navigation.goBack()}
-                    >
-                        <Text style={styles.backButtonText}>Quay lại tìm kiếm</Text>
-                    </TouchableOpacity>
+
+                    {!isLocationError && (
+                        <TouchableOpacity
+                            style={styles.backButton}
+                            onPress={() => navigation.goBack()}
+                        >
+                            <Text style={styles.backButtonText}>Quay lại tìm kiếm</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
             </SafeAreaView>
         );
@@ -186,7 +193,10 @@ const SearchResultScreen = () => {
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.filterButton}
-                        onPress={() => navigation.navigate('Filter')}
+                        onPress={() => navigation.navigate('Filter', {
+                            searchParams,
+                            filters: currentFilters
+                        })}
                     >
                         <Icon name="options-outline" size={25} color="#FF385C" />
                     </TouchableOpacity>

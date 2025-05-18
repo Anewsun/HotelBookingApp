@@ -34,37 +34,10 @@ export const fetchAllAmenities = async () => {
   }
 };
 
-export const fetchHotelsWithFilters = async (filters) => {
-  try {
-    const params = {
-      minPrice: filters.minPrice,
-      maxPrice: filters.maxPrice,
-      rating: filters.rating,
-      amenities: filters.amenities,
-      sort: filters.sort || '-price'
-    };
-
-    const response = await axios.get(API_URL, { params });
-
-    // Trường hợp 1: API trả về { data: { data: [...] } }
-    if (response.data && Array.isArray(response.data.data)) {
-      return response.data.data;
-    }
-    // Trường hợp 2: API trả về { data: [...] } trực tiếp
-    else if (Array.isArray(response.data)) {
-      return response.data;
-    }
-    // Trường hợp không có dữ liệu
-    return [];
-
-  } catch (error) {
-    console.error('Fetch hotels error:', error);
-    throw new Error(error.response?.data?.message || 'Không thể tải danh sách khách sạn');
-  }
-};
-
 export const searchHotelsWithAvailableRooms = async (params) => {
   try {
+    console.log('API call with params:', params);
+
     const response = await axios.get(`${API_URL}/search`, {
       params: {
         locationName: params.locationName,
@@ -75,13 +48,15 @@ export const searchHotelsWithAvailableRooms = async (params) => {
         minPrice: params.minPrice,
         maxPrice: params.maxPrice,
         roomType: params.roomType,
-        amenities: params.amenities,
+        amenities: params.amenities?.length ? params.amenities : undefined,
         sort: params.sort || '-rating',
         page: params.page || 1,
         limit: params.limit || 10
       },
       timeout: 10000
     });
+
+    console.log('API response:', response.data);
 
     if (response.data && response.data.success) {
       return {
@@ -90,9 +65,18 @@ export const searchHotelsWithAvailableRooms = async (params) => {
         pagination: response.data.pagination || { currentPage: 1, totalPages: 1 },
       };
     }
-    throw new Error(response.data.message || 'Lỗi server');
+    return {
+      data: [],
+      error: response.data.message || 'Lỗi server'
+    };
   } catch (error) {
     console.error('Search hotels error:', error.response?.data || error.message);
-    throw error;
+    throw {
+      response: {
+        status: error.response?.status,
+        data: error.response?.data
+      },
+      message: error.message
+    };
   }
 };
