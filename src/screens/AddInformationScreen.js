@@ -5,12 +5,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../components/Header';
 
 const AddInformationScreen = ({ navigation }) => {
-    const [name, setName] = useState('Hasna Aziya');
-    const [email, setEmail] = useState('hasnaziya@gmail.com');
-    const [phone, setPhone] = useState('+1 234 567 89');
+    const [name, setName] = useState('Nhật Tân');
+    const [email, setEmail] = useState('21110640@student.hcmute.edu.vn');
+    const [phone, setPhone] = useState('0943594896');
     const [bookForOthers, setBookForOthers] = useState(false);
     const [guestName, setGuestName] = useState('');
     const [guestEmail, setGuestEmail] = useState('');
+    const [guestPhone, setGuestPhone] = useState('');
 
     return (
         <SafeAreaView style={styles.container}>
@@ -18,12 +19,12 @@ const AddInformationScreen = ({ navigation }) => {
             <Stepper steps={['Đặt phòng', 'Thông tin', 'Xác nhận']} currentStep={2} />
 
             <ScrollView style={styles.scrollContainer}>
-                <Text style={styles.sectionTitle}>Name</Text>
+                <Text style={styles.sectionTitle}>Tên người dùng</Text>
                 <TextInput
                     style={styles.input}
                     value={name}
                     onChangeText={setName}
-                    placeholder="Enter your name"
+                    placeholder="Nhập tên"
                 />
 
                 <Text style={styles.sectionTitle}>Email</Text>
@@ -31,44 +32,55 @@ const AddInformationScreen = ({ navigation }) => {
                     style={styles.input}
                     value={email}
                     onChangeText={setEmail}
-                    placeholder="Enter your email"
+                    placeholder="Nhập email"
                     keyboardType="email-address"
                 />
 
-                <Text style={styles.sectionTitle}>Phone Number</Text>
+                <Text style={styles.sectionTitle}>Số điện thoại</Text>
                 <TextInput
                     style={styles.input}
                     value={phone}
                     onChangeText={setPhone}
-                    placeholder="Enter your phone number"
+                    placeholder="Nhập số điện thoại của bạn"
                     keyboardType="phone-pad"
                 />
 
                 <View style={styles.switchContainer}>
-                    <Text style={styles.sectionTitle}>Book for others</Text>
+                    <Text style={styles.sectionTitle}>Đặt cho người khác</Text>
                     <Switch
                         value={bookForOthers}
                         onValueChange={setBookForOthers}
+                        trackColor={{ false: "#767577", true: "#1167B1" }}
+                        thumbColor={bookForOthers ? "#f4f3f4" : "#f4f3f4"}
                     />
                 </View>
 
                 {bookForOthers && (
                     <>
-                        <Text style={styles.sectionTitle}>Guest Name</Text>
+                        <Text style={styles.sectionTitle}>Tên khách</Text>
                         <TextInput
                             style={styles.input}
                             value={guestName}
                             onChangeText={setGuestName}
-                            placeholder="Enter guest name"
+                            placeholder="Nhập tên khách"
                         />
 
-                        <Text style={styles.sectionTitle}>Guest Email</Text>
+                        <Text style={styles.sectionTitle}>Email khách</Text>
                         <TextInput
                             style={styles.input}
                             value={guestEmail}
                             onChangeText={setGuestEmail}
-                            placeholder="Enter guest email"
+                            placeholder="Nhập email khách"
                             keyboardType="email-address"
+                        />
+
+                        <Text style={styles.sectionTitle}>Số điện thoại khách</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={phone}
+                            onChangeText={setGuestPhone}
+                            placeholder="Nhập số điện thoại khách"
+                            keyboardType="phone-pad"
                         />
                     </>
                 )}
@@ -76,9 +88,9 @@ const AddInformationScreen = ({ navigation }) => {
 
             <TouchableOpacity
                 style={styles.nextButton}
-                onPress={() => navigation.navigate('PaymentScreen')}
+                onPress={() => navigation.navigate('Payment')}
             >
-                <Text style={styles.nextButtonText}>Next</Text>
+                <Text style={styles.nextButtonText}>Tiếp tục</Text>
             </TouchableOpacity>
         </SafeAreaView>
     );
@@ -87,22 +99,23 @@ const AddInformationScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#f0f4ff',
         paddingHorizontal: 16,
     },
     scrollContainer: {
         flex: 1,
     },
     sectionTitle: {
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: 'bold',
         marginBottom: 8,
         marginTop: 16,
         color: '#333',
     },
     input: {
+        backgroundColor: 'white',
         borderWidth: 1,
-        borderColor: '#ddd',
+        borderColor: 'black',
         borderRadius: 8,
         padding: 12,
         marginBottom: 8,
@@ -116,7 +129,7 @@ const styles = StyleSheet.create({
     nextButton: {
         backgroundColor: '#1167B1',
         paddingVertical: 16,
-        borderRadius: 8,
+        borderRadius: 25,
         alignItems: 'center',
         marginVertical: 16,
     },

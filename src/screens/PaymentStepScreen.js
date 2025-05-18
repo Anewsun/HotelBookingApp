@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Switch } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Switch, Image, TextInput } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { Stepper } from '../components/Stepper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../components/Header';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const PaymentStepScreen = ({ navigation }) => {
     const [checkInDate, setCheckInDate] = useState(null);
     const [checkOutDate, setCheckOutDate] = useState(null);
     const [showDatePicker, setShowDatePicker] = useState(null);
-    const [rooms, setRooms] = useState(1);
-    const [guests, setGuests] = useState(1);
     const [specialRequests, setSpecialRequests] = useState({
         earlyCheckIn: false,
         lateCheckOut: false,
@@ -27,8 +26,11 @@ const PaymentStepScreen = ({ navigation }) => {
     };
 
     const formatDate = (date) => {
-        if (!date) return 'Select date';
-        return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        if (!date) return "Chọn ngày";
+        const day = date.getDate();
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
     };
 
     return (
@@ -37,15 +39,39 @@ const PaymentStepScreen = ({ navigation }) => {
             <Stepper steps={['Đặt phòng', 'Thông tin', 'Xác nhận']} currentStep={1} />
 
             <ScrollView style={styles.scrollContainer}>
-                <View style={styles.hotelInfo}>
-                    <Text style={styles.hotelName}>Hyatt Regency Bali</Text>
-                    <Text style={styles.hotelLocation}>Denpasar, Bali</Text>
-                    <Text style={styles.roomType}>Suite King Bed</Text>
-                    <Text style={styles.price}>$64/night</Text>
+                <View style={styles.hotelContainer}>
+                    <Image
+                        source={require('../assets/images/hotel1.jpg')}
+                        style={styles.hotelImage}
+                        resizeMode="cover"
+                    />
+                    <View style={styles.hotelInfo}>
+                        <Text style={styles.hotelName}>Khách sạn KingDom</Text>
+
+                        <View style={styles.infoRow}>
+                            <Icon name="location-on" size={20} color="#666" />
+                            <Text style={styles.hotelLocation}>97 Lê Lợi, Đà Nẵng</Text>
+                        </View>
+
+                        <View style={styles.infoRow}>
+                            <Icon name="meeting-room" size={20} color="#666" />
+                            <Text style={styles.roomType}>Phòng: Family Alibaba</Text>
+                        </View>
+
+                        <View style={styles.infoRow}>
+                            <Icon name="king-bed" size={20} color="#666" />
+                            <Text style={styles.roomType}>Loại phòng: Suite</Text>
+                        </View>
+
+                        <View style={styles.infoRow}>
+                            <Icon name="attach-money" size={20} color="#1167B1" />
+                            <Text style={styles.price}>64 VNĐ/ngày</Text>
+                        </View>
+                    </View>
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Check in</Text>
+                    <Text style={styles.sectionTitle}>Ngày đến</Text>
                     <TouchableOpacity
                         style={styles.dateInput}
                         onPress={() => setShowDatePicker('checkIn')}
@@ -55,7 +81,7 @@ const PaymentStepScreen = ({ navigation }) => {
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Check out</Text>
+                    <Text style={styles.sectionTitle}>Ngày trả phòng</Text>
                     <TouchableOpacity
                         style={styles.dateInput}
                         onPress={() => setShowDatePicker('checkOut')}
@@ -65,47 +91,32 @@ const PaymentStepScreen = ({ navigation }) => {
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Rooms and Guests</Text>
-                    <View style={styles.counterContainer}>
-                        <Text>Rooms: {rooms}</Text>
-                        <View style={styles.counterButtons}>
-                            <TouchableOpacity onPress={() => setRooms(Math.max(1, rooms - 1))}>
-                                <Text style={styles.counterButton}>-</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={() => setRooms(rooms + 1)}>
-                                <Text style={styles.counterButton}>+</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                    <View style={styles.counterContainer}>
-                        <Text>Guests: {guests}</Text>
-                        <View style={styles.counterButtons}>
-                            <TouchableOpacity onPress={() => setGuests(Math.max(1, guests - 1))}>
-                                <Text style={styles.counterButton}>-</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={() => setGuests(guests + 1)}>
-                                <Text style={styles.counterButton}>+</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Additional Request</Text>
+                    <Text style={styles.sectionTitle}>Yêu cầu khác</Text>
                     <View style={styles.switchContainer}>
-                        <Text>Early Check-In</Text>
+                        <Text style={styles.roomType}>CheckIn sớm hơn</Text>
                         <Switch
                             value={specialRequests.earlyCheckIn}
                             onValueChange={(value) => setSpecialRequests({ ...specialRequests, earlyCheckIn: value })}
+                            trackColor={{ false: "#767577", true: "#1167B1" }}
+                            thumbColor={specialRequests.earlyCheckIn ? "#f4f3f4" : "#f4f3f4"}
                         />
                     </View>
                     <View style={styles.switchContainer}>
-                        <Text>Late Check-Out</Text>
+                        <Text style={styles.roomType}>Checkout trễ hơn</Text>
                         <Switch
                             value={specialRequests.lateCheckOut}
                             onValueChange={(value) => setSpecialRequests({ ...specialRequests, lateCheckOut: value })}
+                            trackColor={{ false: "#767577", true: "#1167B1" }}
+                            thumbColor={specialRequests.lateCheckOut ? "#f4f3f4" : "#f4f3f4"}
                         />
                     </View>
+                    <Text style={styles.sectionTitle}>Khác(nếu có)</Text>
+                    <TextInput
+                        style={styles.dateInput}
+                        value={specialRequests.additionalRequests}
+                        onChangeText={(text) => setSpecialRequests({ ...specialRequests, additionalRequests: text })}  // Cập nhật đúng state
+                        placeholder="Nhập yêu cầu khác nếu có"
+                    />
                 </View>
             </ScrollView>
 
@@ -113,7 +124,7 @@ const PaymentStepScreen = ({ navigation }) => {
                 style={styles.nextButton}
                 onPress={() => navigation.navigate('AddInformation')}
             >
-                <Text style={styles.nextButtonText}>Next</Text>
+                <Text style={styles.nextButtonText}>Tiếp tục</Text>
             </TouchableOpacity>
 
             <DateTimePickerModal
@@ -130,36 +141,50 @@ const PaymentStepScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#f0f4ff',
         paddingHorizontal: 16,
     },
     scrollContainer: {
         flex: 1,
     },
+    infoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginTop: 4,
+    },
+    hotelContainer: {
+        flexDirection: 'row',
+        marginBottom: 16,
+        gap: 12,
+    },
+    hotelImage: {
+        width: 100,
+        height: 150,
+        borderRadius: 8,
+    },
     hotelInfo: {
-        marginBottom: 20,
-        paddingBottom: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        flex: 1,
+        justifyContent: 'center',
     },
     hotelName: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 'bold',
         color: '#333',
     },
-    hotelLocation: {
-        fontSize: 14,
-        color: '#666',
-        marginTop: 4,
-    },
     roomType: {
-        fontSize: 16,
-        color: '#333',
-        marginTop: 8,
+        fontSize: 17,
+        color: 'black',
+        marginTop: 4,
     },
     price: {
         fontSize: 16,
         color: '#1167B1',
+        marginTop: 4,
+    },
+    hotelLocation: {
+        fontSize: 16,
+        color: 'black',
         marginTop: 4,
     },
     section: {
@@ -169,34 +194,17 @@ const styles = StyleSheet.create({
         borderBottomColor: '#eee',
     },
     sectionTitle: {
-        fontSize: 16,
+        fontSize: 19,
         fontWeight: 'bold',
         marginBottom: 12,
         color: '#333',
     },
     dateInput: {
         padding: 12,
+        backgroundColor: 'white',
         borderWidth: 1,
-        borderColor: '#ddd',
+        borderColor: 'black',
         borderRadius: 8,
-    },
-    counterContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 12,
-    },
-    counterButtons: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    counterButton: {
-        fontSize: 18,
-        paddingHorizontal: 12,
-        paddingVertical: 4,
-        borderWidth: 1,
-        borderColor: '#ddd',
-        marginHorizontal: 4,
     },
     switchContainer: {
         flexDirection: 'row',
@@ -207,7 +215,7 @@ const styles = StyleSheet.create({
     nextButton: {
         backgroundColor: '#1167B1',
         paddingVertical: 16,
-        borderRadius: 8,
+        borderRadius: 25,
         alignItems: 'center',
         marginVertical: 16,
     },
