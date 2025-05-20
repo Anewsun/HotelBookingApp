@@ -1,17 +1,74 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Switch } from 'react-native';
+import React, { useState, useContext } from 'react';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Switch, Alert } from 'react-native';
 import { Stepper } from '../components/Stepper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../components/Header';
+import { useAuth } from '../contexts/AuthContext';
 
-const AddInformationScreen = ({ navigation }) => {
-    const [name, setName] = useState('Nhật Tân');
-    const [email, setEmail] = useState('21110640@student.hcmute.edu.vn');
-    const [phone, setPhone] = useState('0943594896');
+const AddInformationScreen = ({ navigation, route }) => {
+    const { user } = useAuth();
+    const {
+        selectedRoom,
+        hotel,
+        checkInDate,
+        checkOutDate,
+        checkInTime,
+        checkOutTime,
+        specialRequests
+    } = route.params;
+
+    // State cho form
+    const [name, setName] = useState(user?.name || '');
+    const [email, setEmail] = useState(user?.email || '');
+    const [phone, setPhone] = useState(user?.phone || '');
     const [bookForOthers, setBookForOthers] = useState(false);
     const [guestName, setGuestName] = useState('');
     const [guestEmail, setGuestEmail] = useState('');
     const [guestPhone, setGuestPhone] = useState('');
+
+    const isFormValid = () => {
+        const basicInfoValid = name.trim() && email.trim() && phone.trim();
+
+        // Nếu đặt cho người khác, kiểm tra thêm thông tin khách
+        if (bookForOthers) {
+            return basicInfoValid && guestName.trim() && guestEmail.trim();
+        }
+        return basicInfoValid;
+    };
+
+    const handleContinue = () => {
+        if (!isFormValid()) {
+            Alert.alert('Thiếu thông tin', 'Vui lòng điền đầy đủ thông tin bắt buộc');
+            return;
+        }
+
+        navigation.navigate('Payment', {
+            bookingData: {
+                userInfo: {
+                    name: name.trim(),
+                    email: email.trim(),
+                    phone: phone.trim()
+                },
+                guestInfo: bookForOthers ? {
+                    name: guestName.trim(),
+                    email: guestEmail.trim(),
+                    phone: guestPhone.trim()
+                } : null,
+                room: selectedRoom,
+                hotel,
+                checkIn: {
+                    date: checkInDate,
+                    time: checkInTime
+                },
+                checkOut: {
+                    date: checkOutDate,
+                    time: checkOutTime
+                },
+                specialRequests,
+                bookerId: user?._id
+            }
+        });
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -19,12 +76,13 @@ const AddInformationScreen = ({ navigation }) => {
             <Stepper steps={['Đặt phòng', 'Thông tin', 'Xác nhận']} currentStep={2} />
 
             <ScrollView style={styles.scrollContainer}>
-                <Text style={styles.sectionTitle}>Tên người dùng</Text>
+                <Text style={styles.sectionTitle}>Tên người đặt</Text>
                 <TextInput
                     style={styles.input}
                     value={name}
                     onChangeText={setName}
                     placeholder="Nhập tên"
+                    defaultValue={user?.name || ''}
                 />
 
                 <Text style={styles.sectionTitle}>Email</Text>
@@ -34,6 +92,7 @@ const AddInformationScreen = ({ navigation }) => {
                     onChangeText={setEmail}
                     placeholder="Nhập email"
                     keyboardType="email-address"
+                    defaultValue={user?.email || ''}
                 />
 
                 <Text style={styles.sectionTitle}>Số điện thoại</Text>
@@ -41,8 +100,9 @@ const AddInformationScreen = ({ navigation }) => {
                     style={styles.input}
                     value={phone}
                     onChangeText={setPhone}
-                    placeholder="Nhập số điện thoại của bạn"
+                    placeholder="Nhập số điện thoại"
                     keyboardType="phone-pad"
+                    defaultValue={user?.phone || ''}
                 />
 
                 <View style={styles.switchContainer}>
@@ -77,7 +137,7 @@ const AddInformationScreen = ({ navigation }) => {
                         <Text style={styles.sectionTitle}>Số điện thoại khách</Text>
                         <TextInput
                             style={styles.input}
-                            value={phone}
+                            value={guestPhone}
                             onChangeText={setGuestPhone}
                             placeholder="Nhập số điện thoại khách"
                             keyboardType="phone-pad"
@@ -87,8 +147,9 @@ const AddInformationScreen = ({ navigation }) => {
             </ScrollView>
 
             <TouchableOpacity
-                style={styles.nextButton}
-                onPress={() => navigation.navigate('Payment')}
+                style={[styles.nextButton, !isFormValid() && styles.disabledButton]}
+                onPress={handleContinue}
+                disabled={!isFormValid()}
             >
                 <Text style={styles.nextButtonText}>Tiếp tục</Text>
             </TouchableOpacity>
@@ -132,6 +193,9 @@ const styles = StyleSheet.create({
         borderRadius: 25,
         alignItems: 'center',
         marginVertical: 16,
+    },
+    disabledButton: {
+        backgroundColor: '#cccccc',
     },
     nextButtonText: {
         color: '#fff',

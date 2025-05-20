@@ -214,7 +214,22 @@ const HotelDetailScreen = () => {
         </View>
         <TouchableOpacity
           style={[styles.bookNowButton, selectedRoomIndex === null && styles.disabledButton]}
-          onPress={() => selectedRoomIndex !== null && navigation.navigate('PaymentStep')}
+          onPress={() => {
+            if (selectedRoomIndex !== null) {
+              const selectedRoom = availableRooms[selectedRoomIndex];
+              const priceToUse = selectedRoom.discountPercent > 0
+                ? selectedRoom.discountedPrice
+                : selectedRoom.price;
+
+              navigation.navigate('PaymentStep', {
+                selectedRoom: {
+                  ...selectedRoom,
+                  price: priceToUse
+                },
+                hotel: hotel,
+              });
+            }
+          }}
           disabled={selectedRoomIndex === null}
         >
           <Text style={styles.bookNowText}>Đặt phòng ngay</Text>

@@ -6,6 +6,7 @@ import { FavoriteProvider } from './src/contexts/FavoriteContext';
 import { AuthProvider } from './src/contexts/AuthContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { navigationRef } from './src/navigation/RootNavigation';
+import { BookingProvider } from './src/contexts/BookingContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,7 +25,9 @@ const App = () => {
       <AuthProvider>
         <NavigationContainer ref={navigationRef}>
           <FavoriteProvider>
-            <AppNavigator />
+            <BookingProvider>
+              <AppNavigator />
+            </BookingProvider>
           </FavoriteProvider>
         </NavigationContainer>
       </AuthProvider>

@@ -1,109 +1,45 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../components/Header';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useBooking } from '../contexts/BookingContext';
+import { format } from 'date-fns';
+import { vi } from 'date-fns/locale';
 
-const BookingDetailScreen = ({ route }) => {
+const BookingDetailScreen = () => {
     const navigation = useNavigation();
-    
-    const mockBookings = [
-        {
-            id: '1',
-            bookingFor: 'self',
-            contactInfo: {
-                name: 'Nguyễn Văn A',
-                email: 'nguyenvana@example.com',
-                phone: '0123456789',
-            },
-            room: 'Phòng Deluxe - Tầng 5',
-            roomImage: require('../assets/images/hotel1.jpg'),
-            checkIn: new Date('2024-07-01T14:00:00'),
-            checkOut: new Date('2024-07-05T12:00:00'),
-            specialRequests: {
-                earlyCheckIn: true,
-                lateCheckOut: false,
-                additionalRequests: 'Không hút thuốc trong phòng, vui lòng chuẩn bị hoa hồng',
-            },
-            originalPrice: 5000000,
-            discountAmount: 500000,
-            finalPrice: 4500000,
-            status: 'confirmed',
-            paymentStatus: 'completed',
-            paymentMethod: 'credit_card',
-        },
-        {
-            id: '2',
-            bookingFor: 'other',
-            contactInfo: {
-                name: 'Lê Thị C',
-                email: 'lethic@example.com',
-                phone: '0988123456',
-            },
-            guestInfo: {
-                name: 'Trần Thị D',
-                email: 'tranthid@example.com',
-                phone: '0909123456',
-            },
-            room: 'Phòng Standard - Tầng 2',
-            roomImage: require('../assets/images/hotel2.jpg'),
-            checkIn: new Date('2024-08-10T14:00:00'),
-            checkOut: new Date('2024-08-15T12:00:00'),
-            specialRequests: {
-                earlyCheckIn: false,
-                lateCheckOut: true,
-                additionalRequests: '',
-            },
-            originalPrice: 3000000,
-            discountAmount: 0,
-            finalPrice: 3000000,
-            status: 'pending',
-            paymentStatus: 'pending',
-            paymentMethod: 'vnpay',
-        },
-        {
-            id: '3',
-            bookingFor: 'other',
-            contactInfo: {
-                name: 'Trần Văn B',
-                email: 'tranvanb@example.com',
-                phone: '0909123456',
-            },
-            guestInfo: {
-                name: 'Phạm Văn E',
-                email: 'phamvane@example.com',
-                phone: '0911123456',
-            },
-            room: 'Phòng Suite - Tầng 10',
-            roomImage: require('../assets/images/hotel3.jpg'),
-            checkIn: new Date('2024-09-01T14:00:00'),
-            checkOut: new Date('2024-09-03T12:00:00'),
-            specialRequests: {
-                earlyCheckIn: true,
-                lateCheckOut: true,
-                additionalRequests: 'Chuẩn bị bánh sinh nhật',
-            },
-            originalPrice: 8000000,
-            discountAmount: 1000000,
-            finalPrice: 7000000,
-            status: 'cancelled',
-            paymentStatus: 'refunded',
-            paymentMethod: 'bank_transfer',
-            cancellationReason: 'Thay đổi kế hoạch du lịch'
-        }
-    ];
-
+    const route = useRoute();
     const { bookingId } = route.params;
-    const booking = mockBookings.find(b => b.id === bookingId);
+    const { getDetails, cancelBooking } = useBooking();
+    const [booking, setBooking] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    if (!booking) {
-        return (
-            <View style={styles.container}>
-                <Text>Không tìm thấy thông tin đặt phòng</Text>
-            </View>
-        );
-    }
+    useEffect(() => {
+        const fetchBookingDetails = async () => {
+            try {
+                const details = await getDetails(bookingId);
+                setBooking(details);
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchBookingDetails();
+    }, [bookingId]);
+
+    const handleCancelBooking = async () => {
+        try {
+            await cancelBooking(bookingId);
+            navigation.goBack();
+        } catch (err) {
+            setError(err.message);
+        }
+    };
 
     const DetailRow = ({ icon, label, value, valueColor, valueStyle }) => (
         <View style={styles.detailRow}>
@@ -119,103 +55,205 @@ const BookingDetailScreen = ({ route }) => {
         </View>
     );
 
+    if (loading) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center' }}>
+                <ActivityIndicator size="large" color="#003366" />
+            </View>
+        );
+    }
+
+    if (error) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center' }}>
+                <Text style={styles.errorText}>{error}</Text>
+            </View>
+        );
+    }
+
+    if (!booking) {
+        return (
+            <View style={styles.container}>
+                <Text>Không tìm thấy thông tin đặt phòng</Text>
+            </View>
+        );
+    }
+
+    const getRoomImageSource = () => {
+        try {
+            const firstImage = booking.room?.images?.[0];
+            const imageUrl = firstImage?.url ||
+                (typeof firstImage === 'string' ? firstImage : null) ||
+                booking.room?.imageUrl ||
+                booking.room?.hotelId?.images?.[0]?.url;
+
+            if (imageUrl) {
+                return { uri: String(imageUrl) };
+            }
+        } catch (error) {
+            console.error('Error processing image URL:', error);
+        }
+        return require('../assets/images/hotel1.jpg');
+    };
+
+    const formatDate = (date) => {
+        return format(new Date(date), 'dd/MM/yyyy', { locale: vi });
+    };
+
+    const nights = Math.ceil((new Date(booking.checkOut) - new Date(booking.checkIn)) / (1000 * 60 * 60 * 24));
+
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView>
                 <Header title="Chi tiết booking" onBackPress={() => navigation.goBack()} showBackIcon={true} />
-                {/* Ảnh phòng */}
-                <Image source={booking.roomImage} style={styles.detailImage} />
 
-                {/* Thông tin cơ bản */}
+                <Image source={getRoomImageSource()} style={styles.detailImage} />
+
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Thông tin đặt phòng</Text>
-                    <DetailRow icon="hotel" label="Phòng" value={booking.room} />
-                    <DetailRow icon="calendar" label="Ngày nhận phòng"
-                        value={`${booking.checkIn.toLocaleDateString()} (14:00)`} />
-                    <DetailRow icon="calendar" label="Ngày trả phòng"
-                        value={`${booking.checkOut.toLocaleDateString()} (12:00)`} />
-                    <DetailRow icon="moon-o" label="Số đêm"
-                        value={Math.ceil((booking.checkOut - booking.checkIn) / (1000 * 60 * 60 * 24))} />
-                    <DetailRow icon="info-circle" label="Trạng thái"
+                    <DetailRow
+                        icon="hotel"
+                        label="Phòng"
+                        value={booking.room?.roomType || 'Không có thông tin'}
+                    />
+                    <DetailRow
+                        icon="calendar"
+                        label="Ngày nhận phòng"
+                        value={`${formatDate(booking.checkIn)} (14:00)`}
+                    />
+                    <DetailRow
+                        icon="calendar"
+                        label="Ngày trả phòng"
+                        value={`${formatDate(booking.checkOut)} (12:00)`}
+                    />
+                    <DetailRow
+                        icon="moon-o"
+                        label="Số đêm"
+                        value={nights}
+                    />
+                    <DetailRow
+                        icon="info-circle"
+                        label="Trạng thái"
                         value={
                             booking.status === 'confirmed' ? 'Đã xác nhận' :
-                                booking.status === 'pending' ? 'Đang chờ xử lý' : 'Đã hủy'
+                                booking.status === 'pending' ? 'Đang chờ xử lý' :
+                                    booking.status === 'completed' ? 'Đã hoàn thành' : 'Đã hủy'
                         }
                         valueColor={
                             booking.status === 'confirmed' ? '#4CAF50' :
-                                booking.status === 'pending' ? '#FFC107' : '#F44336'
+                                booking.status === 'pending' ? '#FFC107' :
+                                    booking.status === 'completed' ? '#2196F3' : '#F44336'
                         }
                     />
                 </View>
 
-                {/* Thông tin người đặt */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Thông tin người đặt</Text>
-                    <DetailRow icon="user" label="Họ tên" value={booking.contactInfo.name} />
-                    <DetailRow icon="envelope" label="Email" value={booking.contactInfo.email} />
-                    <DetailRow icon="phone" label="Điện thoại" value={booking.contactInfo.phone} />
-                    <DetailRow icon="info-circle" label="Loại đặt phòng"
-                        value={booking.bookingFor === 'self' ? 'Tự đặt cho mình' : 'Đặt cho người khác'} />
+                    <DetailRow
+                        icon="user"
+                        label="Họ tên"
+                        value={booking.contactInfo?.name || 'Không có thông tin'}
+                    />
+                    <DetailRow
+                        icon="envelope"
+                        label="Email"
+                        value={booking.contactInfo?.email || 'Không có thông tin'}
+                    />
+                    <DetailRow
+                        icon="phone"
+                        label="Điện thoại"
+                        value={booking.contactInfo?.phone || 'Không có thông tin'}
+                    />
+                    <DetailRow
+                        icon="info-circle"
+                        label="Loại đặt phòng"
+                        value={booking.bookingFor === 'self' ? 'Tự đặt cho mình' : 'Đặt cho người khác'}
+                    />
                 </View>
 
-                {/* Thông tin khách ở (nếu có) */}
                 {booking.bookingFor === 'other' && booking.guestInfo && (
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Thông tin khách ở</Text>
-                        <DetailRow icon="user" label="Họ tên" value={booking.guestInfo.name} />
+                        <DetailRow
+                            icon="user"
+                            label="Họ tên"
+                            value={booking.guestInfo.name}
+                        />
                         {booking.guestInfo.email && (
-                            <DetailRow icon="envelope" label="Email" value={booking.guestInfo.email} />
+                            <DetailRow
+                                icon="envelope"
+                                label="Email"
+                                value={booking.guestInfo.email}
+                            />
                         )}
                         {booking.guestInfo.phone && (
-                            <DetailRow icon="phone" label="Điện thoại" value={booking.guestInfo.phone} />
+                            <DetailRow
+                                icon="phone"
+                                label="Điện thoại"
+                                value={booking.guestInfo.phone}
+                            />
                         )}
                     </View>
                 )}
 
-                {/* Thông tin thanh toán */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Thông tin thanh toán</Text>
-                    <DetailRow icon="money" label="Tổng tiền"
-                        value={`${booking.originalPrice.toLocaleString()} VNĐ`} />
+                    <DetailRow
+                        icon="money"
+                        label="Tổng tiền"
+                        value={`${booking.originalPrice?.toLocaleString() || '0'} VNĐ`}
+                    />
                     {booking.discountAmount > 0 && (
-                        <DetailRow icon="tag" label="Giảm giá"
+                        <DetailRow
+                            icon="tag"
+                            label="Giảm giá"
                             value={`-${booking.discountAmount.toLocaleString()} VNĐ`}
                             valueColor="#4CAF50"
                         />
                     )}
-                    <DetailRow icon="credit-card" label="Thành tiền"
-                        value={`${booking.finalPrice.toLocaleString()} VNĐ`}
+                    <DetailRow
+                        icon="credit-card"
+                        label="Thành tiền"
+                        value={`${booking.finalPrice?.toLocaleString() || '0'} VNĐ`}
                         valueStyle={{ fontWeight: 'bold', color: '#003366' }}
                     />
-                    <DetailRow icon="check-circle" label="Phương thức thanh toán"
+                    <DetailRow
+                        icon="check-circle"
+                        label="Phương thức thanh toán"
                         value={
-                            booking.paymentMethod === 'credit_card' ? 'Thẻ tín dụng' :
-                                booking.paymentMethod === 'vnpay' ? 'VNPay' :
-                                    booking.paymentMethod === 'bank_transfer' ? 'Chuyển khoản' : 'Tiền mặt'
+                            booking.paymentMethod === 'vnpay' ? 'VNPay' :
+                                booking.paymentMethod === 'zalopay' ? 'ZaloPay' : 'Tiền mặt'
                         }
                     />
-                    <DetailRow icon="info-circle" label="Trạng thái thanh toán"
+                    <DetailRow
+                        icon="info-circle"
+                        label="Trạng thái thanh toán"
                         value={
-                            booking.paymentStatus === 'completed' ? 'Đã thanh toán' :
+                            booking.paymentStatus === 'paid' ? 'Đã thanh toán' :
                                 booking.paymentStatus === 'pending' ? 'Chờ thanh toán' :
                                     booking.paymentStatus === 'refunded' ? 'Đã hoàn tiền' : 'Đã hủy'
                         }
                         valueColor={
-                            booking.paymentStatus === 'completed' ? '#4CAF50' :
+                            booking.paymentStatus === 'paid' ? '#4CAF50' :
                                 booking.paymentStatus === 'refunded' ? '#2196F3' :
                                     booking.paymentStatus === 'pending' ? '#FFC107' : '#F44336'
                         }
                     />
                 </View>
 
-                {/* Yêu cầu đặc biệt */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Yêu cầu đặc biệt</Text>
-                    <DetailRow icon="clock-o" label="Nhận phòng sớm"
-                        value={booking.specialRequests.earlyCheckIn ? 'Có' : 'Không'} />
-                    <DetailRow icon="clock-o" label="Trả phòng muộn"
-                        value={booking.specialRequests.lateCheckOut ? 'Có' : 'Không'} />
-                    {booking.specialRequests.additionalRequests && (
+                    <DetailRow
+                        icon="clock-o"
+                        label="Nhận phòng sớm"
+                        value={booking.specialRequests?.earlyCheckIn ? 'Có' : 'Không'}
+                    />
+                    <DetailRow
+                        icon="clock-o"
+                        label="Trả phòng muộn"
+                        value={booking.specialRequests?.lateCheckOut ? 'Có' : 'Không'}
+                    />
+                    {booking.specialRequests?.additionalRequests && (
                         <View style={styles.detailRow}>
                             <Icon name="sticky-note" size={18} color="#555" style={styles.rowIcon} />
                             <Text style={styles.rowLabel}>Yêu cầu khác:</Text>
@@ -226,7 +264,6 @@ const BookingDetailScreen = ({ route }) => {
                     )}
                 </View>
 
-                {/* Lý do hủy (nếu có) */}
                 {booking.status === 'cancelled' && booking.cancellationReason && (
                     <View style={[styles.section, { borderLeftWidth: 4, borderLeftColor: '#F44336' }]}>
                         <Text style={styles.sectionTitle}>Lý do hủy phòng</Text>
@@ -239,24 +276,34 @@ const BookingDetailScreen = ({ route }) => {
                     </View>
                 )}
 
-                {/* Nút hành động */}
                 <View style={styles.actionContainer}>
-                    {booking.status === 'pending' && (
+                    {(booking.status === 'confirmed' || booking.status === 'pending') && booking.paymentStatus !== 'paid' && (
                         <>
-                            <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#F44336' }]}>
+                            <TouchableOpacity
+                                style={[styles.actionButton, { backgroundColor: '#F44336' }]}
+                                onPress={handleCancelBooking}
+                            >
                                 <Text style={styles.actionButtonText}>Hủy đặt phòng</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#4CAF50' }]}>
-                                <Text style={styles.actionButtonText}>Thanh toán ngay</Text>
-                            </TouchableOpacity>
+
+                            {booking.paymentStatus === 'pending' && (
+                                <TouchableOpacity
+                                    style={[styles.actionButton, { backgroundColor: '#4CAF50' }]}
+                                    onPress={() => { }}
+                                >
+                                    <Text style={styles.actionButtonText}>Thanh toán ngay</Text>
+                                </TouchableOpacity>
+                            )}
                         </>
                     )}
-                    {booking.status === 'confirmed' && (
+
+                    {booking.status === 'completed' && (
                         <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#2196F3' }]}>
                             <Text style={styles.actionButtonText}>Để lại bình luận</Text>
                         </TouchableOpacity>
                     )}
                 </View>
+
             </ScrollView>
         </SafeAreaView>
     );
@@ -324,8 +371,14 @@ const styles = StyleSheet.create({
     },
     actionButtonText: {
         fontSize: 16,
-        color: '#1167B1',
+        color: 'white',
         fontWeight: '600',
+    },
+    errorText: {
+        color: '#F44336',
+        textAlign: 'center',
+        marginTop: 20,
+        fontSize: 16,
     },
 });
 

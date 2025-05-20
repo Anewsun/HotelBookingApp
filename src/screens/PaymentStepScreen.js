@@ -6,15 +6,20 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../components/Header';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
-const PaymentStepScreen = ({ navigation }) => {
-    const [checkInDate, setCheckInDate] = useState(null);
-    const [checkOutDate, setCheckOutDate] = useState(null);
+const PaymentStepScreen = ({ navigation, route }) => {
+    const { selectedRoom, hotel, searchParams } = route.params;
+    const [checkInDate, setCheckInDate] = useState(searchParams?.checkIn ? new Date(searchParams.checkIn) : new Date());
+    const [checkOutDate, setCheckOutDate] = useState(searchParams?.checkOut ? new Date(searchParams.checkOut) : new Date(Date.now() + 86400000));
     const [showDatePicker, setShowDatePicker] = useState(null);
+    const [checkInTime, setCheckInTime] = useState('14:00');
+    const [checkOutTime, setCheckOutTime] = useState('12:00');
+    const [showTimePicker, setShowTimePicker] = useState(null);
     const [specialRequests, setSpecialRequests] = useState({
         earlyCheckIn: false,
         lateCheckOut: false,
         additionalRequests: ''
     });
+    const isFormValid = checkInDate && checkOutDate && checkInTime && checkOutTime;
 
     const handleDateConfirm = (date) => {
         if (showDatePicker === 'checkIn') {
@@ -23,6 +28,19 @@ const PaymentStepScreen = ({ navigation }) => {
             setCheckOutDate(date);
         }
         setShowDatePicker(null);
+    };
+
+    const handleTimeConfirm = (time) => {
+        const hours = time.getHours().toString().padStart(2, '0');
+        const minutes = time.getMinutes().toString().padStart(2, '0');
+        const selectedTime = `${hours}:${minutes}`;
+
+        if (showTimePicker === 'checkIn') {
+            setCheckInTime(selectedTime);
+        } else {
+            setCheckOutTime(selectedTime);
+        }
+        setShowTimePicker(null);
     };
 
     const formatDate = (date) => {
@@ -41,54 +59,90 @@ const PaymentStepScreen = ({ navigation }) => {
             <ScrollView style={styles.scrollContainer}>
                 <View style={styles.hotelContainer}>
                     <Image
-                        source={require('../assets/images/hotel1.jpg')}
+                        source={selectedRoom?.images?.[0]?.url
+                            ? { uri: selectedRoom.images[0].url }
+                            : require('../assets/images/hotel1.jpg')
+                        }
                         style={styles.hotelImage}
                         resizeMode="cover"
                     />
                     <View style={styles.hotelInfo}>
-                        <Text style={styles.hotelName}>Khách sạn KingDom</Text>
+                        <Text style={styles.hotelName}>{hotel?.name || 'Khách sạn'}</Text>
 
                         <View style={styles.infoRow}>
                             <Icon name="location-on" size={20} color="#666" />
-                            <Text style={styles.hotelLocation}>97 Lê Lợi, Đà Nẵng</Text>
+                            <Text style={styles.hotelLocation}>{hotel?.address || 'Địa chỉ'}</Text>
                         </View>
 
                         <View style={styles.infoRow}>
                             <Icon name="meeting-room" size={20} color="#666" />
-                            <Text style={styles.roomType}>Phòng: Family Alibaba</Text>
+                            <Text style={styles.roomType}>Phòng: {selectedRoom?.name || 'Phòng'}</Text>
                         </View>
 
                         <View style={styles.infoRow}>
                             <Icon name="king-bed" size={20} color="#666" />
-                            <Text style={styles.roomType}>Loại phòng: Suite</Text>
+                            <Text style={styles.roomType}>Loại phòng: {selectedRoom?.roomType || 'Loại phòng'}</Text>
                         </View>
 
                         <View style={styles.infoRow}>
                             <Icon name="attach-money" size={20} color="#1167B1" />
-                            <Text style={styles.price}>64 VNĐ/ngày</Text>
+                            <Text style={styles.price}>{selectedRoom?.price ? selectedRoom.price.toLocaleString('vi-VN') : '0'} VNĐ/ngày</Text>
                         </View>
                     </View>
                 </View>
 
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Ngày đến</Text>
-                    <TouchableOpacity
-                        style={styles.dateInput}
-                        onPress={() => setShowDatePicker('checkIn')}
-                    >
-                        <Text>{formatDate(checkInDate)}</Text>
-                    </TouchableOpacity>
+                    <View style={styles.datetimeContainer}>
+                        <TouchableOpacity
+                            style={styles.dateInput}
+                            onPress={() => setShowDatePicker('checkIn')}
+                        >
+                            <Text>{formatDate(checkInDate)}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.timeInput}
+                            onPress={() => setShowTimePicker('checkIn')}
+                        >
+                            <Text>{checkInTime}</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Ngày trả phòng</Text>
-                    <TouchableOpacity
-                        style={styles.dateInput}
-                        onPress={() => setShowDatePicker('checkOut')}
-                    >
-                        <Text>{formatDate(checkOutDate)}</Text>
-                    </TouchableOpacity>
+                    <View style={styles.datetimeContainer}>
+                        <TouchableOpacity
+                            style={styles.dateInput}
+                            onPress={() => setShowDatePicker('checkOut')}
+                        >
+                            <Text>{formatDate(checkOutDate)}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.timeInput}
+                            onPress={() => setShowTimePicker('checkOut')}
+                        >
+                            <Text>{checkOutTime}</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
+
+                <DateTimePickerModal
+                    isVisible={showDatePicker !== null || showTimePicker !== null}
+                    mode={showTimePicker !== null ? 'time' : 'date'}
+                    onConfirm={(date) => {
+                        if (showTimePicker !== null) {
+                            handleTimeConfirm(date);
+                        } else {
+                            handleDateConfirm(date);
+                        }
+                    }}
+                    onCancel={() => {
+                        setShowDatePicker(null);
+                        setShowTimePicker(null);
+                    }}
+                    minimumDate={showDatePicker === 'checkOut' && checkInDate ? checkInDate : new Date()}
+                />
 
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Yêu cầu khác</Text>
@@ -121,19 +175,23 @@ const PaymentStepScreen = ({ navigation }) => {
             </ScrollView>
 
             <TouchableOpacity
-                style={styles.nextButton}
-                onPress={() => navigation.navigate('AddInformation')}
+                style={[styles.nextButton, !isFormValid && styles.disabledButton]}
+                onPress={() =>
+                    navigation.navigate('AddInformation', {
+                        selectedRoom: route.params.selectedRoom,
+                        hotel: route.params.hotel,
+                        checkInDate: checkInDate.toISOString(),
+                        checkOutDate: checkOutDate.toISOString(),
+                        checkInTime,
+                        checkOutTime,
+                        specialRequests
+                    })
+                }
+                disabled={!isFormValid}
             >
                 <Text style={styles.nextButtonText}>Tiếp tục</Text>
             </TouchableOpacity>
 
-            <DateTimePickerModal
-                isVisible={showDatePicker !== null}
-                mode="date"
-                onConfirm={handleDateConfirm}
-                onCancel={() => setShowDatePicker(null)}
-                minimumDate={showDatePicker === 'checkOut' && checkInDate ? checkInDate : new Date()}
-            />
         </SafeAreaView>
     );
 };
@@ -199,12 +257,26 @@ const styles = StyleSheet.create({
         marginBottom: 12,
         color: '#333',
     },
+    datetimeContainer: {
+        flexDirection: 'row',
+        gap: 10,
+    },
     dateInput: {
+        flex: 2,
         padding: 12,
         backgroundColor: 'white',
         borderWidth: 1,
         borderColor: 'black',
         borderRadius: 8,
+    },
+    timeInput: {
+        flex: 1,
+        padding: 12,
+        backgroundColor: 'white',
+        borderWidth: 1,
+        borderColor: 'black',
+        borderRadius: 8,
+        alignItems: 'center',
     },
     switchContainer: {
         flexDirection: 'row',
@@ -223,6 +295,9 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 18,
         fontWeight: 'bold',
+    },
+    disabledButton: {
+        backgroundColor: '#cccccc',
     },
 });
 

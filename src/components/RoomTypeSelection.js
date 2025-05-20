@@ -41,7 +41,8 @@ const RoomTypeSelection = ({
       discounted: hasDiscount
         ? room.discountedPrice?.toLocaleString('vi-VN')
         : room.price?.toLocaleString('vi-VN'),
-      hasDiscount: !!hasDiscount
+      hasDiscount: !!hasDiscount,
+      priceToUse: hasDiscount ? room.discountedPrice : room.price
     };
   };
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { getAvailableVouchers, validateVoucher } from '../services/voucherService';
+import { getAvailableVouchers } from '../services/voucherService';
 
 export const useVoucher = () => {
     const { user } = useAuth();
@@ -27,30 +27,9 @@ export const useVoucher = () => {
         }
     };
 
-    const validateVoucherCode = async (voucherId, originalPrice) => {
-        if (!user?.accessToken) {
-            setError('User not authenticated');
-            return null;
-        }
-
-        setIsLoading(true);
-        setError(null);
-
-        try {
-            const response = await validateVoucher(voucherId, originalPrice, user.accessToken);
-            return response;
-        } catch (err) {
-            setError(err.message);
-            return null;
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
     return {
         isLoading,
         error,
         fetchAvailableVouchers,
-        validateVoucherCode,
     };
 };

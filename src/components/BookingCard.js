@@ -6,37 +6,70 @@ const BookingCard = ({ booking, onPress }) => {
     const getStatusColor = () => {
         switch (booking.status) {
             case 'confirmed': return '#4CAF50';
-            case 'pending': return '#FFC107';
+            case 'completed': return '#2196F3';
             case 'cancelled': return '#F44336';
-            default: return '#9E9E9E';
+            case 'pending':
+            default:
+                return '#FFC107';
         }
     };
 
-    const nights = Math.ceil((booking.checkOut - booking.checkIn) / (1000 * 60 * 60 * 24));
+    const getStatusText = () => {
+        switch (booking.status) {
+            case 'confirmed': return 'Đã xác nhận';
+            case 'completed': return 'Đã hoàn thành';
+            case 'cancelled': return 'Đã hủy';
+            case 'pending':
+            default:
+                return 'Đang chờ';
+        }
+    };
+
+    const getRoomName = () => {
+        if (!booking.room) return 'Không có thông tin phòng';
+        if (typeof booking.room === 'string') return booking.room;
+        return booking.room.name || booking.room.roomType || 'Phòng không xác định';
+    };
+
+    const getRoomImageSource = () => {
+        try {
+            const firstImage = booking.room?.images?.[0];
+            const imageUrl = firstImage?.url ||
+                (typeof firstImage === 'string' ? firstImage : null) ||
+                booking.room?.imageUrl ||
+                booking.room?.hotelId?.images?.[0]?.url;
+
+            if (imageUrl) {
+                return { uri: String(imageUrl) };
+            }
+        } catch (error) {
+            console.error('Error processing image URL:', error);
+        }
+        return require('../assets/images/hotel1.jpg');
+    };
+
+    const nights = Math.ceil((new Date(booking.checkOut) - new Date(booking.checkIn)) / (1000 * 60 * 60 * 24));
 
     return (
         <View style={styles.cardContainer}>
             <Image
-                source={booking.roomImage}
+                source={getRoomImageSource()}
                 style={styles.roomImage}
                 resizeMode="cover"
             />
 
             <View style={styles.contentContainer}>
                 <View style={styles.header}>
-                    <Text style={styles.roomName}>{booking.room}</Text>
+                    <Text style={styles.roomName}>{getRoomName()}</Text>
                     <View style={[styles.statusBadge, { backgroundColor: getStatusColor() }]}>
-                        <Text style={styles.statusText}>
-                            {booking.status === 'confirmed' ? 'Đã xác nhận' :
-                                booking.status === 'pending' ? 'Đang chờ' : 'Đã hủy'}
-                        </Text>
+                        <Text style={styles.statusText}>{getStatusText()}</Text>
                     </View>
                 </View>
 
                 <View style={styles.dateContainer}>
                     <Icon name="calendar" size={16} color="#555" />
                     <Text style={styles.dateText}>
-                        {booking.checkIn.toLocaleDateString()} - {booking.checkOut.toLocaleDateString()}
+                        {new Date(booking.checkIn).toLocaleDateString()} - {new Date(booking.checkOut).toLocaleDateString()}
                     </Text>
                     <Text style={styles.nightsText}>({nights} đêm)</Text>
                 </View>
@@ -44,7 +77,7 @@ const BookingCard = ({ booking, onPress }) => {
                 <View style={styles.infoContainer}>
                     <Text style={styles.infoText}>
                         <Text style={styles.infoLabel}>Người đặt: </Text>
-                        {booking.contactInfo.name}
+                        {booking.contactInfo?.name || 'Không có thông tin'}
                     </Text>
                     {booking.bookingFor === 'other' && booking.guestInfo && (
                         <Text style={styles.infoText}>
@@ -55,15 +88,15 @@ const BookingCard = ({ booking, onPress }) => {
                 </View>
 
                 <View style={styles.priceContainer}>
-                    <Text style={styles.finalPrice}>{booking.finalPrice.toLocaleString()} VNĐ</Text>
+                    <Text style={styles.finalPrice}>{booking.finalPrice?.toLocaleString() || '0'} VNĐ</Text>
                     {booking.discountAmount > 0 && (
-                        <Text style={styles.originalPrice}>{booking.originalPrice.toLocaleString()} VNĐ</Text>
+                        <Text style={styles.originalPrice}>{booking.originalPrice?.toLocaleString()} VNĐ</Text>
                     )}
                 </View>
 
                 <TouchableOpacity
                     style={styles.detailButton}
-                    onPress={() => onPress(booking.id)}
+                    onPress={() => onPress(booking._id || booking.id)}
                 >
                     <Text style={styles.detailButtonText}>Xem chi tiết</Text>
                     <Icon name="angle-right" size={18} color="#1167B1" />

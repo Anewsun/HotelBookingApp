@@ -1,136 +1,116 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, ActivityIndicator, SafeAreaView } from 'react-native';
+import BookingCard from '../components/BookingCard';
 import BottomNav from '../components/BottomNav';
 import Header from '../components/Header';
-import BookingCard from '../components/BookingCard';
+import { useBooking } from '../contexts/BookingContext';
 import { useNavigation } from '@react-navigation/native';
 
 const BookingScreen = () => {
+  const { bookings, loading, error } = useBooking();
   const navigation = useNavigation();
 
-  const bookings = [
-    {
-      id: '1',
-      bookingFor: 'self',
-      contactInfo: {
-        name: 'Nguyễn Văn A',
-        email: 'nguyenvana@example.com',
-        phone: '0123456789',
-      },
-      room: 'Phòng Deluxe - Tầng 5',
-      roomImage: require('../assets/images/hotel1.jpg'),
-      checkIn: new Date('2024-07-01T14:00:00'),
-      checkOut: new Date('2024-07-05T12:00:00'),
-      specialRequests: {
-        earlyCheckIn: true,
-        lateCheckOut: false,
-        additionalRequests: 'Không hút thuốc trong phòng, vui lòng chuẩn bị hoa hồng',
-      },
-      originalPrice: 5000000,
-      discountAmount: 500000,
-      finalPrice: 4500000,
-      status: 'confirmed',
-      paymentStatus: 'completed',
-      paymentMethod: 'credit_card',
-    },
-    {
-      id: '2',
-      bookingFor: 'other',
-      contactInfo: {
-        name: 'Lê Thị C',
-        email: 'lethic@example.com',
-        phone: '0988123456',
-      },
-      guestInfo: {
-        name: 'Trần Thị D',
-        email: 'tranthid@example.com',
-        phone: '0909123456',
-      },
-      room: 'Phòng Standard - Tầng 2',
-      roomImage: require('../assets/images/hotel2.jpg'),
-      checkIn: new Date('2024-08-10T14:00:00'),
-      checkOut: new Date('2024-08-15T12:00:00'),
-      specialRequests: {
-        earlyCheckIn: false,
-        lateCheckOut: true,
-        additionalRequests: '',
-      },
-      originalPrice: 3000000,
-      discountAmount: 0,
-      finalPrice: 3000000,
-      status: 'pending',
-      paymentStatus: 'pending',
-      paymentMethod: 'vnpay',
-    },
-    {
-      id: '3',
-      bookingFor: 'other',
-      contactInfo: {
-        name: 'Trần Văn B',
-        email: 'tranvanb@example.com',
-        phone: '0909123456',
-      },
-      guestInfo: {
-        name: 'Phạm Văn E',
-        email: 'phamvane@example.com',
-        phone: '0911123456',
-      },
-      room: 'Phòng Suite - Tầng 10',
-      roomImage: require('../assets/images/hotel3.jpg'),
-      checkIn: new Date('2024-09-01T14:00:00'),
-      checkOut: new Date('2024-09-03T12:00:00'),
-      specialRequests: {
-        earlyCheckIn: true,
-        lateCheckOut: true,
-        additionalRequests: 'Chuẩn bị bánh sinh nhật',
-      },
-      originalPrice: 8000000,
-      discountAmount: 1000000,
-      finalPrice: 7000000,
-      status: 'cancelled',
-      paymentStatus: 'refunded',
-      paymentMethod: 'bank_transfer',
-      cancellationReason: 'Thay đổi kế hoạch du lịch'
-    }
-  ];
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color="#003366" />
+      </View>
+    );
+  }
 
-  const handleDetailPress = (bookingId) => {
+  if (error) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+        <Text style={styles.errorText}>Lỗi khi tải dữ liệu: {error.message}</Text>
+      </View>
+    );
+  }
+
+  const handlePressBooking = (bookingId) => {
     navigation.navigate('BookingDetail', { bookingId });
   };
 
   return (
-    <View style={styles.screenContainer}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-      >
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
         <Header title="Lịch sử đặt phòng" />
 
-        {bookings.map((booking) => (
-          <BookingCard
-            key={booking.id}
-            booking={booking}
-            onPress={handleDetailPress}
-          />
-        ))}
+        <View style={styles.scrollWrapper}>
+          <ScrollView
+            contentContainerStyle={[
+              styles.scrollContent,
+              bookings.length === 0 && { flexGrow: 1 }
+            ]}
+          >
+            {bookings.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>📭</Text>
+                <Text style={styles.emptyText}>Chưa có phòng nào được đặt</Text>
+                <Text style={styles.emptySubText}>Hãy đặt phòng đầu tiên của bạn!</Text>
+              </View>
+            ) : (
+              bookings.map((booking) => (
+                <BookingCard
+                  key={booking._id}
+                  booking={{
+                    ...booking,
+                    id: booking._id,
+                    checkIn: new Date(booking.checkIn),
+                    checkOut: new Date(booking.checkOut)
+                  }}
+                  onPress={handlePressBooking}
+                />
+              ))
+            )}
+          </ScrollView>
+        </View>
 
-        <View style={{ height: 50 }} />
-      </ScrollView>
-
-      <BottomNav />
-    </View>
+        <BottomNav />
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  screenContainer: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#F5F7FA',
+    backgroundColor: '#f0f4ff'
   },
-  scrollContainer: {
+  container: {
+    flex: 1,
+    position: 'relative',
+    paddingTop: 15
+  },
+  scrollWrapper: {
+    flex: 1,
+    paddingBottom: 10,
+  },
+  scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 20,
+    paddingBottom: 16,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 20
+  },
+  emptyText: {
+    fontSize: 20,
+    color: 'black',
+    textAlign: 'center',
+    marginVertical: 8
+  },
+  emptySubText: {
+    fontSize: 16,
+    color: '#888',
+    textAlign: 'center'
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+    padding: 20,
+    fontSize: 16
   },
 });
 

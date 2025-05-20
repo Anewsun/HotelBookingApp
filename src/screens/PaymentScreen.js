@@ -1,18 +1,27 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image, Modal } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image, Modal, Alert, ActivityIndicator } from 'react-native';
 import { Stepper } from '../components/Stepper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../components/Header';
 import { PaymentMethodCard } from '../components/PaymentMethodCard';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { useVoucher } from '../hooks/useVoucher';
 
 const PaymentScreen = ({ navigation, route }) => {
+  const { bookingData } = route.params;
   const [selectedMethod, setSelectedMethod] = useState(null);
   const [showVouchers, setShowVouchers] = useState(false);
   const [selectedVoucher, setSelectedVoucher] = useState(null);
+  const [availableVouchers, setAvailableVouchers] = useState([]);
+  const { fetchAvailableVouchers, isLoading, error } = useVoucher();
+  const [discount, setDiscount] = useState(0);
+  const basePrice = Number(bookingData.room.price) || 0;
+  const [total, setTotal] = useState(basePrice);
 
-  const checkInDate = new Date('2024-09-16');
-  const checkOutDate = new Date('2024-09-18');
+  const checkInDate = new Date(bookingData.checkIn.date);
+  const checkOutDate = new Date(bookingData.checkOut.date);
+  const checkInTime = bookingData.checkIn.time;
+  const checkOutTime = bookingData.checkOut.time;
   const nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
 
   const paymentMethods = [
@@ -30,41 +39,58 @@ const PaymentScreen = ({ navigation, route }) => {
     },
   ];
 
-  const vouchers = [
-    {
-      id: 'voucher1',
-      name: 'GIAM10%',
-      type: 'percentage',
-      value: 10,
-      minAmount: 100,
-      maxDiscount: 50,
-      icon: 'local-offer'
-    },
-    {
-      id: 'voucher2',
-      name: 'GIAM20%',
-      type: 'percentage',
-      value: 20,
-      minAmount: 200,
-      maxDiscount: 200,
-      icon: 'local-offer'
-    },
-    {
-      id: 'voucher3',
-      name: 'GIAM50K',
-      type: 'fixed',
-      value: 50,
-      minAmount: 300,
-      icon: 'confirmation-number'
+  useEffect(() => {
+    const loadVouchers = async () => {
+      const vouchers = await fetchAvailableVouchers(basePrice);
+      if (vouchers) {
+        setAvailableVouchers(vouchers);
+      }
+    };
+
+    loadVouchers();
+  }, [basePrice]);
+
+  const formatDate = (date) => {
+    return date.toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(amount).replace('₫', 'VNĐ');
+  };
+
+  const handlePayment = async () => {
+    if (!selectedMethod) {
+      Alert.alert('Lỗi', 'Vui lòng chọn phương thức thanh toán');
+      return;
     }
-  ];
 
-  const basePrice = 256;
-  const discount = selectedVoucher?.type === 'percentage'
-    ? Math.min(basePrice * selectedVoucher.value / 100, selectedVoucher.maxDiscount || Infinity)
-    : selectedVoucher?.value || 0;
+    try {
+      const bookingPayload = {
+        ...bookingData,
+        checkIn: checkInDate,
+        checkOut: checkOutDate,
+        paymentMethod: selectedMethod,
+        voucher: selectedVoucher?._id || null,
+        totalAmount: total,
+        discountAmount: discount,
+        status: 'pending'
+      };
 
-  const total = basePrice - discount;
+      // const response = await createBooking(bookingPayload, user.accessToken);
+
+      navigation.navigate('Confirm');
+    } catch (error) {
+      console.error('Payment error:', error);
+      Alert.alert('Lỗi', error.message || 'Đã xảy ra lỗi khi thanh toán');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -75,31 +101,31 @@ const PaymentScreen = ({ navigation, route }) => {
         <View style={styles.hotelSection}>
           <View style={styles.hotelContainer}>
             <Image
-              source={require('../assets/images/hotel1.jpg')}
+              source={{ uri: bookingData.hotel.images?.[0]?.url || require('../assets/images/hotel1.jpg') }}
               style={styles.hotelImage}
               resizeMode="cover"
             />
             <View style={styles.hotelInfo}>
-              <Text style={styles.hotelName}>Khách sạn KingDom</Text>
+              <Text style={styles.hotelName}>{bookingData.hotel.name}</Text>
 
               <View style={styles.infoRow}>
                 <Icon name="location-on" size={16} color="#666" />
-                <Text style={styles.hotelLocation}>97 Lê Lợi, Đà Nẵng</Text>
+                <Text style={styles.hotelLocation}>{bookingData.hotel.address}</Text>
               </View>
 
               <View style={styles.infoRow}>
                 <Icon name="meeting-room" size={16} color="#666" />
-                <Text style={styles.roomType}>Phòng: Family Alibaba</Text>
+                <Text style={styles.roomType}>Tên phòng: {bookingData.room.name}</Text>
               </View>
 
               <View style={styles.infoRow}>
                 <Icon name="king-bed" size={16} color="#666" />
-                <Text style={styles.roomType}>Loại phòng: Suite</Text>
+                <Text style={styles.roomType}>Loại phòng: {bookingData.room.roomType}</Text>
               </View>
 
               <View style={styles.infoRow}>
-                <Icon name="attach-money" size={16} color="#1167B1" />
-                <Text style={styles.price}>64 VNĐ/ngày</Text>
+                <Icon name="king-bed" size={16} color="#666" />
+                <Text style={styles.price}>Giá: {formatCurrency(bookingData.room.price)}</Text>
               </View>
             </View>
           </View>
@@ -107,8 +133,8 @@ const PaymentScreen = ({ navigation, route }) => {
           <View style={styles.dateContainer}>
             <View style={styles.dateBoxLeft}>
               <Text style={styles.dateLabel}>Nhận phòng</Text>
-              <Text style={styles.dateValue}>16/09/2024</Text>
-              <Text style={styles.timeValue}>14:00</Text>
+              <Text style={styles.dateValue}>{formatDate(checkInDate)}</Text>
+              <Text style={styles.timeValue}>{checkInTime}</Text>
             </View>
 
             <View style={styles.nightContainer}>
@@ -118,8 +144,8 @@ const PaymentScreen = ({ navigation, route }) => {
 
             <View style={styles.dateBox}>
               <Text style={styles.dateLabel}>Trả phòng</Text>
-              <Text style={styles.dateValue}>18/09/2024</Text>
-              <Text style={styles.timeValue}>12:00</Text>
+              <Text style={styles.dateValue}>{formatDate(checkOutDate)}</Text>
+              <Text style={styles.timeValue}>{checkOutTime}</Text>
             </View>
           </View>
         </View>
@@ -127,22 +153,55 @@ const PaymentScreen = ({ navigation, route }) => {
         <View style={styles.guestInfoContainer}>
           <View style={styles.infoHeader}>
             <Icon name="person" size={20} color="#1167B1" />
-            <Text style={styles.sectionTitle}>Thông tin khách hàng</Text>
+            <Text style={styles.sectionTitle}>
+              {bookingData.guestInfo ? 'Thông tin khách hàng' : 'Thông tin người đặt'}
+            </Text>
           </View>
 
-          <View style={styles.infoItem}>
-            <Icon name="badge" size={18} color="#666" style={styles.infoIcon} />
-            <View>
-              <Text style={styles.infoLabel}>Tên người đặt</Text>
-              <Text style={styles.infoValue}>Nhật Tân</Text>
+          <View style={styles.infoSection}>
+            <View style={styles.infoRow}>
+              <Icon name="badge" size={18} color="#666" />
+              <Text style={styles.infoLabel}>Tên người đặt:</Text>
+              <Text style={styles.infoValue}>
+                {bookingData.guestInfo ? bookingData.guestInfo.name : bookingData.userInfo.name}
+              </Text>
+            </View>
+
+            <View style={styles.infoRow}>
+              <Icon name="email" size={18} color="#666" />
+              <Text style={styles.infoLabel}>Email:</Text>
+              <Text style={styles.infoValue}>
+                {bookingData.guestInfo ? bookingData.guestInfo.email : bookingData.userInfo.email}
+              </Text>
+            </View>
+
+            <View style={styles.infoRow}>
+              <Icon name="phone" size={18} color="#666" />
+              <Text style={styles.infoLabel}>Số điện thoại:</Text>
+              <Text style={styles.infoValue}>
+                {bookingData.guestInfo ? bookingData.guestInfo.phone : bookingData.userInfo.phone}
+              </Text>
             </View>
           </View>
 
           <View style={styles.infoItem}>
             <Icon name="info" size={18} color="#666" style={styles.infoIcon} />
             <View>
-              <Text style={styles.infoLabel}>Yêu cầu đặc biệt (nếu có)</Text>
-              <Text style={styles.infoValue}>Đến sớm hơn dự định 1 tiếng</Text>
+              <Text style={styles.infoLabel}>Yêu cầu đặc biệt</Text>
+              {bookingData.specialRequests.earlyCheckIn && (
+                <Text style={styles.infoValue}>• Check-in sớm</Text>
+              )}
+              {bookingData.specialRequests.lateCheckOut && (
+                <Text style={styles.infoValue}>• Check-out muộn</Text>
+              )}
+              {bookingData.specialRequests.additionalRequests && (
+                <Text style={styles.infoValue}>• {bookingData.specialRequests.additionalRequests}</Text>
+              )}
+              {!bookingData.specialRequests.earlyCheckIn &&
+                !bookingData.specialRequests.lateCheckOut &&
+                !bookingData.specialRequests.additionalRequests && (
+                  <Text style={styles.infoValue}>Không có yêu cầu đặc biệt</Text>
+                )}
             </View>
           </View>
         </View>
@@ -170,28 +229,28 @@ const PaymentScreen = ({ navigation, route }) => {
         <View style={styles.summaryContainer}>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Tổng tiền:</Text>
-            <Text style={styles.summaryValue}>{basePrice} VNĐ</Text>
+            <Text style={styles.summaryValue}>{formatCurrency(basePrice)}</Text>
           </View>
 
           {selectedVoucher && (
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Giảm giá:</Text>
               <Text style={[styles.summaryValue, styles.discountValue]}>
-                -{discount} VNĐ
+                -{formatCurrency(discount)}
               </Text>
             </View>
           )}
 
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Thành tiền:</Text>
-            <Text style={styles.totalValue}>{total} VNĐ</Text>
+            <Text style={styles.totalValue}>{formatCurrency(total)}</Text>
           </View>
         </View>
       </ScrollView>
 
       <TouchableOpacity
         style={[styles.confirmButton, !selectedMethod && styles.disabledButton]}
-        onPress={() => navigation.navigate('Confirm')}
+        onPress={handlePayment}
         disabled={!selectedMethod}
       >
         <Text style={styles.confirmText}>Thanh toán</Text>
@@ -202,32 +261,58 @@ const PaymentScreen = ({ navigation, route }) => {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Voucher khả dụng</Text>
 
-            {vouchers.map(voucher => (
-              <TouchableOpacity
-                key={voucher.id}
-                style={[
-                  styles.voucherItem,
-                  selectedVoucher?.id === voucher.id && styles.selectedVoucher
-                ]}
-                onPress={() => {
-                  setSelectedVoucher(voucher);
-                  setShowVouchers(false);
-                }}
-              >
-                <Icon name={voucher.icon} size={24} color="#1167B1" />
-                <View style={styles.voucherInfo}>
-                  <Text style={styles.voucherName}>{voucher.name}</Text>
-                  <Text style={styles.voucherDetails}>
-                    {voucher.type === 'percentage'
-                      ? `Giảm ${voucher.value}% (Tối đa ${voucher.maxDiscount} VNĐ)`
-                      : `Giảm ${voucher.value} VNĐ`}
-                  </Text>
-                  <Text style={styles.voucherCondition}>
-                    Áp dụng cho hóa đơn từ {voucher.minAmount} VNĐ
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
+            {isLoading ? (
+              <ActivityIndicator size="large" color="#1167B1" />
+            ) : error ? (
+              <Text style={styles.errorText}>{error}</Text>
+            ) : (
+              availableVouchers.map(voucher => (
+                <TouchableOpacity
+                  key={voucher._id}
+                  style={[
+                    styles.voucherItem,
+                    selectedVoucher?._id === voucher._id && styles.selectedVoucher
+                  ]}
+                  onPress={async () => {
+                    try {
+                      const validationResult = await validateVoucherCode(voucher._id, basePrice);
+
+                      if (validationResult && validationResult.success) {
+                        setSelectedVoucher(voucher);
+                        setDiscount(validationResult.discountAmount);
+                        setTotal(basePrice - validationResult.discountAmount);
+                        setShowVouchers(false);
+                      } else {
+                        Alert.alert('Lỗi', validationResult?.message || 'Voucher không hợp lệ');
+                      }
+                    } catch (error) {
+                      console.error('Error validating voucher:', error);
+                      Alert.alert('Lỗi', 'Đã xảy ra lỗi khi kiểm tra voucher');
+                    }
+                  }}
+                >
+                  <Icon
+                    name={voucher.discountType === 'percentage' ? 'local-offer' : 'confirmation-number'}
+                    size={24}
+                    color="#1167B1"
+                  />
+                  <View style={styles.voucherInfo}>
+                    <Text style={styles.voucherName}>{voucher.code}</Text>
+                    <Text style={styles.voucherDetails}>
+                      {voucher.discountType === 'percentage'
+                        ? `Giảm ${formatCurrency(voucher.discount)}% (Tối đa ${formatCurrency(voucher.maxDiscount)})`
+                        : `Giảm ${formatCurrency(voucher.discount)}`}
+                    </Text>
+                    <Text style={styles.voucherCondition}>
+                      Áp dụng cho hóa đơn từ {formatCurrency(voucher.minOrderValue)}
+                    </Text>
+                    <Text style={styles.voucherExpiry}>
+                      HSD: {new Date(voucher.expiryDate).toLocaleDateString()}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))
+            )}
 
             <TouchableOpacity
               style={styles.closeButton}
@@ -326,47 +411,59 @@ const styles = StyleSheet.create({
   },
   guestInfoContainer: {
     marginVertical: 10,
-    padding: 10,
-    borderRadius: 25,
+    padding: 15,
+    borderRadius: 10,
+    backgroundColor: 'white',
     borderWidth: 1,
-    borderColor: 'black',
+    borderColor: '#ddd',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   infoHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 15,
     gap: 8,
+  },
+  infoSection: {
+    marginBottom: 15,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 10,
+  },
+  infoLabel: {
+    fontSize: 16,
+    color: '#666',
+    minWidth: 50,
+  },
+  infoValue: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
+    flex: 1,
+  },
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  infoIcon: {
+    marginTop: 3,
+    color: '#666'
   },
   sectionTitle: {
     fontSize: 19,
     fontWeight: 'bold',
     color: '#1167B1',
-  },
-  infoItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-    gap: 12,
-  },
-  infoIcon: {
-    marginTop: 2,
-    color: 'black'
-  },
-  infoLabel: {
-    fontSize: 16,
-    color: 'black',
-    marginBottom: 2,
-  },
-  infoValue: {
-    fontSize: 15,
-    color: 'black',
-    fontWeight: '500',
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 4,
   },
   voucherButton: {
     flexDirection: 'row',
@@ -497,6 +594,16 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     fontSize: 17
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+    marginVertical: 16,
+  },
+  voucherExpiry: {
+    fontSize: 12,
+    color: '#FF0000',
+    marginTop: 4,
   },
 });
 

@@ -43,8 +43,12 @@ export const AuthProvider = ({ children }) => {
         if (storedUser) setUser(JSON.parse(storedUser));
 
         const freshUserData = await getMe();
-        await AsyncStorage.setItem('user', JSON.stringify(freshUserData));
-        setUser(freshUserData);
+        const updatedUser = {
+          ...freshUserData,
+          accessToken: token,
+        };
+        await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+        setUser(updatedUser);
         setIsAuthenticated(true);
       } catch (error) {
         await logout();
