@@ -93,27 +93,21 @@ export const logout = async () => {
 };
 
 export const login = async (email, password) => {
-    try {
-        const response = await axios.post(`${API_URL}/login`, { email, password });
+    const response = await axios.post(`${API_URL}/login`, { email, password });
 
-        // Đọc cookie từ response
-        const cookies = await CookieManager.get(API_URL);
-        const refreshToken = cookies.refreshToken?.value;
+    // Đọc cookie từ response
+    const cookies = await CookieManager.get(API_URL);
+    const refreshToken = cookies.refreshToken?.value;
 
-        if (response.data.user?.status === 'inactive') {
-            throw new Error('Tài khoản đã bị vô hiệu hóa');
-        }
-
-        if (refreshToken) {
-            await AsyncStorage.setItem('refreshToken', refreshToken);
-        }
-        console.log("🔥 Dữ liệu API trả về:", response.data);
-        return response.data;
-    } catch (error) {
-        const errorMessage = error.response?.data?.message || error.message || "Lỗi kết nối máy chủ";
-        console.log("🔴 Error:", errorMessage);
-        throw new Error(errorMessage);
+    if (response.data.user?.status === 'rejected') {
+        throw new Error('Tài khoản đã bị vô hiệu hóa');
     }
+
+    if (refreshToken) {
+        await AsyncStorage.setItem('refreshToken', refreshToken);
+    }
+    console.log("🔥 Dữ liệu API trả về:", response.data);
+    return response.data;
 };
 
 export const loginWithGoogle = async () => {
@@ -166,7 +160,7 @@ axios.interceptors.response.use(
     res => res,
     async error => {
         const originalRequest = error.config;
-        
+
         if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url.includes('/login')) {
             originalRequest._retry = true;
 

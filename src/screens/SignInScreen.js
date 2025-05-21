@@ -5,6 +5,7 @@ import SocialLogin from '../components/SocialLogin';
 import { login as apiLogin, loginWithGoogle, loginWithFacebook, getMe } from '../services/authService';
 import { useAuth } from '../contexts/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getErrorMessage } from '../utils/errorHandler';
 
 const SignInScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -36,30 +37,14 @@ const SignInScreen = ({ navigation }) => {
           });
 
           if (success) {
-            console.log("👉 Chuyển hướng tới Home");
+            console.log("Chuyển hướng tới Home");
           } else {
             Alert.alert('Lỗi', 'Không thể lưu thông tin đăng nhập');
           }
-        } else {
-          // Trường hợp không lấy được thông tin người dùng
-          Alert.alert('Lỗi', 'Không thể lấy thông tin người dùng');
         }
-      } else {
-        Alert.alert('Lỗi', 'Dữ liệu người dùng không hợp lệ');
       }
     } catch (error) {
-      console.log("🔴 Lỗi đăng nhập:", error);
-
-      let errorMessage = "Có lỗi xảy ra";
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message) {
-        errorMessage = error.message;
-      } else if (typeof error === "string") {
-        errorMessage = error;
-      }
-
-      Alert.alert('Lỗi', errorMessage);
+      Alert.alert('Lỗi', getErrorMessage(error));
     }
   };
 
@@ -69,19 +54,7 @@ const SignInScreen = ({ navigation }) => {
       Alert.alert('Thành công', 'Đăng nhập bằng Google thành công');
       navigation.navigate('Home');
     } catch (error) {
-      console.log("❌ Lỗi Google Login:", error.response?.data || error);
-
-      let errorMessage = "Có lỗi xảy ra";
-      if (error.response?.data?.message) {
-        errorMessage = String(error.response.data.message); // Ép kiểu về string
-      } else if (typeof error === "string") {
-        errorMessage = error;
-      } else if (error.message) {
-        errorMessage = String(error.message);
-      }
-
-      console.log("🔴 Lỗi đăng nhập Google:", errorMessage);
-      Alert.alert('Lỗi', errorMessage);
+      Alert.alert('Lỗi', getErrorMessage(error));
     }
   };
 
@@ -91,20 +64,7 @@ const SignInScreen = ({ navigation }) => {
       Alert.alert('Thành công', 'Đăng nhập bằng Facebook thành công');
       navigation.navigate('Home');
     } catch (error) {
-      console.log("❌ Lỗi Facebook Login:", error.response?.data || error);
-
-      let errorMessage = "Có lỗi xảy ra";
-      if (error.response?.data?.message) {
-        errorMessage = String(error.response.data.message); // Ép kiểu về string
-      } else if (typeof error === "string") {
-        errorMessage = error;
-      } else if (error.message) {
-        errorMessage = String(error.message);
-      }
-
-      console.log("🔴 Lỗi đăng nhập Facebook:", errorMessage);
-      console.log("📌 Debug lỗi BE trả về:", JSON.stringify(error, null, 2));
-      Alert.alert('Lỗi', errorMessage);
+      Alert.alert('Lỗi', getErrorMessage(error));
     }
   };
 

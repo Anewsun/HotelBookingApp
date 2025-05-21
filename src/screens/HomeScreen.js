@@ -79,8 +79,18 @@ const HomeScreen = () => {
         ListHeaderComponent={
           <>
             <View style={styles.header}>
-              <Text style={styles.name}>{user && user.name ? `Chào ${user.name}!` : 'Đang tải...'}</Text>
-              <Icon name="hand-left-outline" size={24} color="gold" style={styles.icon} />
+              <View style={styles.nameContainer}>
+                <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
+                  {user && user.name ? `Chào ${user.name}!` : 'Đang tải...'}
+                </Text>
+                <Icon
+                  name="hand-left-outline"
+                  size={24}
+                  color="gold"
+                  style={styles.handIcon}
+                />
+              </View>
+
               <TouchableOpacity
                 onPress={() => navigation.navigate('Notification')}
                 style={styles.notificationButton}
@@ -142,9 +152,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: 35,
+    paddingHorizontal: 15,
   },
-  icon: {
-    marginRight: 170
+  handIcon: {
+    marginLeft: 5,
   },
   section: {
     padding: 20
@@ -158,10 +169,16 @@ const styles = StyleSheet.create({
   row: {
     justifyContent: 'space-between'
   },
+  nameContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 10,
+  },
   name: {
     fontSize: 17,
     color: 'gray',
-    marginLeft: 20
+    flexShrink: 1,
   },
   title: {
     padding: 20,
@@ -192,7 +209,7 @@ const styles = StyleSheet.create({
   },
   notificationButton: {
     position: 'relative',
-    marginRight: 30,
+    marginRight: 10,
   },
   notificationBadge: {
     position: 'absolute',
