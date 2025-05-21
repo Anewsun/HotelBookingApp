@@ -11,13 +11,10 @@ export const BookingProvider = ({ children }) => {
     const [error, setError] = useState(null);
 
     const fetchMyBookings = async () => {
-        if (!user?.accessToken) return;
-
         setLoading(true);
         try {
-            const data = await getMyBookings(user.accessToken);
+            const data = await getMyBookings();
             setBookings(data);
-            setError(null);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -26,13 +23,9 @@ export const BookingProvider = ({ children }) => {
     };
 
     const addBooking = async (bookingData) => {
-        if (!user?.accessToken) {
-            throw new Error('User not authenticated');
-        }
-
         setLoading(true);
         try {
-            const newBooking = await createBooking(bookingData, user.accessToken);
+            const newBooking = await createBooking(bookingData);
             setBookings(prev => [newBooking, ...prev]);
             return newBooking;
         } catch (err) {
@@ -44,13 +37,9 @@ export const BookingProvider = ({ children }) => {
     };
 
     const getDetails = async (bookingId) => {
-        if (!user?.accessToken) {
-            throw new Error('User not authenticated');
-        }
-
         setLoading(true);
         try {
-            return await getBookingDetails(bookingId, user.accessToken);
+            return await getBookingDetails(bookingId);
         } catch (err) {
             setError(err.message);
             throw err;
@@ -60,13 +49,9 @@ export const BookingProvider = ({ children }) => {
     };
 
     const cancelMyBooking = async (bookingId) => {
-        if (!user?.accessToken) {
-            throw new Error('User not authenticated');
-        }
-
         setLoading(true);
         try {
-            await cancelBooking(bookingId, user.accessToken);
+            await cancelBooking(bookingId);
             setBookings(prev => prev.filter(b => b._id !== bookingId));
         } catch (err) {
             setError(err.message);

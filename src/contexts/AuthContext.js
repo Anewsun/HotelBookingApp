@@ -1,7 +1,8 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getMe } from '../services/authService';
+import { getMe, refreshToken } from '../services/authService';
+import { jwtDecode } from "jwt-decode";
 
 export const AuthContext = createContext();
 
@@ -19,8 +20,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(async () => {
     try {
-      await AsyncStorage.removeItem('token');
-      await AsyncStorage.removeItem('user');
+      await AsyncStorage.multiRemove(['token', 'refreshToken', 'user']);
       setUser(null);
       setIsAuthenticated(false);
     } catch (error) {
@@ -28,16 +28,39 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  const refreshUserData = async () => {
+    const token = await AsyncStorage.getItem('token');
+    if (!token) return;
+
+    const freshData = await getMe();
+    setUser({
+      ...freshData,
+      accessToken: token
+    });
+  };
+
   useEffect(() => {
     const loadAuthState = async () => {
       setIsLoading(true);
       try {
-        const token = await AsyncStorage.getItem('token');
+        const [token, refreshToken] = await AsyncStorage.multiGet(['token', 'refreshToken']);
         const storedUser = await AsyncStorage.getItem('user');
 
-        if (!token) {
+        if (!token[1]) {
           await logout();
           return;
+        }
+
+        // Kiểm tra token hết hạn
+        const decoded = jwtDecode(token[1]);
+        if (decoded.exp < Date.now() / 1000) {
+          try {
+            const newToken = await refreshToken();
+            await AsyncStorage.setItem('token', newToken);
+          } catch (refreshError) {
+            await logout();
+            return;
+          }
         }
 
         if (storedUser) setUser(JSON.parse(storedUser));
@@ -86,6 +109,7 @@ export const AuthProvider = ({ children }) => {
         isReady,
         login,
         logout,
+        refreshUserData,
       }}
     >
       {children}

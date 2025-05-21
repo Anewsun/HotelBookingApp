@@ -28,14 +28,14 @@ const BottomNav = () => {
         onPress={() => navigation.navigate('Booking')}
       >
         <Icon name="calendar-outline" size={34} />
-        <Text style={styles.navText}>Booking</Text>
+        <Text style={styles.navText}>Lịch đặt</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.navItem, { backgroundColor: currentRouteName === 'Profile' ? '#1167B1' : 'white' }]}
         onPress={() => navigation.navigate('Profile')}
       >
         <Icon name="person-outline" size={34} />
-        <Text style={styles.navText}>Profile</Text>
+        <Text style={styles.navText}>Cá nhân</Text>
       </TouchableOpacity>
     </View>
   );

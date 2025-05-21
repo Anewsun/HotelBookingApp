@@ -10,9 +10,7 @@ import { uploadAvatar } from '../services/userService';
 import { useAuth } from '../contexts/AuthContext';
 
 const menuItems = [
-    { title: 'My Profile', icon: 'user', screen: 'MyProfile' },
-    { title: 'Lịch sử đặt phòng', icon: 'shopping-bag', screen: 'MyOrders' },
-    { title: 'Cài đặt', icon: 'settings', screen: 'Setting' },
+    { title: 'Trang cá nhân của tôi', icon: 'user', screen: 'MyProfile' },
     { title: 'Liên hệ', icon: 'help-circle', screen: 'ContactUs' },
     { title: 'Chính sách bảo mật', icon: 'lock', screen: 'PrivacyPolicy' },
     { title: 'Đăng xuất', icon: 'log-out', action: 'logout' },
@@ -20,7 +18,6 @@ const menuItems = [
 
 const ProfileScreen = () => {
     const navigation = useNavigation();
-    const [avatarUrl, setAvatarUrl] = useState(null);
     const { user, refreshUserData, logout: logoutContext } = useAuth();
     const [logoutModalVisible, setLogoutModalVisible] = useState(false);
 
@@ -36,6 +33,8 @@ const ProfileScreen = () => {
         const options = {
             mediaType: 'photo',
             quality: 0.8,
+            selectionLimit: 1,
+            includeBase64: false,
         };
 
         launchImageLibrary(options, async (response) => {
@@ -83,7 +82,7 @@ const ProfileScreen = () => {
 
             <View style={styles.profileImageContainer}>
                 <Image
-                    source={{ uri: avatarUrl || (user ? user.defaultAvatar : 'https://res.cloudinary.com/dssrbosuv/image/upload/v1728055710/samples/man-portrait.jpg') }}
+                    source={{ uri: user?.avatar?.[0]?.url || require('../assets/images/default-avatar.jpg') }}
                     style={styles.profileImage}
                 />
                 <TouchableOpacity style={styles.editIconContainer} onPress={handleChangeAvatar}>

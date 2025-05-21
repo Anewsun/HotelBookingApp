@@ -1,30 +1,33 @@
 import axios from 'axios';
 import { Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Cookies } from '@react-native-cookies/cookies';
+import CookieManager from '@react-native-cookies/cookies';
 
 const API_URL = 'http://10.0.2.2:5000/api/auth';
 
 export const refreshToken = async () => {
     try {
-        // Lấy cookie hiện tại (ví dụ backend set cookie tên là 'refreshToken')
-        const cookies = await Cookies.get('http://10.0.2.2:5000');
-        // Tạo header Cookie dạng: "refreshToken=abc123; otherCookie=xyz"
-        const cookieHeader = Object.entries(cookies)
-            .map(([key, c]) => `${key}=${c.value}`)
-            .join('; ');
+        // Lấy refreshToken từ AsyncStorage (đã lưu khi login)
+        const refreshToken = await AsyncStorage.getItem('refreshToken');
 
-        const response = await axios.post(`${API_URL}/refresh-token`, null, {
-            headers: {
-                Cookie: cookieHeader,
-            },
-            // Nếu backend cần withCredentials, bạn có thể thêm (không chắc React Native hỗ trợ 100%)
-            // withCredentials: true,
-        });
+        if (!refreshToken) {
+            throw new Error('Không có refresh token');
+        }
 
-        const { accessToken } = response.data;
-        await AsyncStorage.setItem('token', accessToken);
-        return accessToken;
+        // Gửi request kèm refreshToken trong cookies
+        const response = await axios.post(
+            `${API_URL}/refresh-token`,
+            {},
+            {
+                headers: {
+                    Cookie: `refreshToken=${refreshToken}`,
+                },
+                withCredentials: true
+            }
+        );
+
+        await AsyncStorage.setItem('token', response.data.accessToken);
+        return response.data.accessToken;
     } catch (error) {
         console.log("🔴 Refresh token thất bại:", error.response?.data || error);
         throw new Error("Không thể làm mới token");
@@ -92,10 +95,24 @@ export const logout = async () => {
 export const login = async (email, password) => {
     try {
         const response = await axios.post(`${API_URL}/login`, { email, password });
+
+        // Đọc cookie từ response
+        const cookies = await CookieManager.get(API_URL);
+        const refreshToken = cookies.refreshToken?.value;
+
+        if (response.data.user?.status === 'inactive') {
+            throw new Error('Tài khoản đã bị vô hiệu hóa');
+        }
+
+        if (refreshToken) {
+            await AsyncStorage.setItem('refreshToken', refreshToken);
+        }
         console.log("🔥 Dữ liệu API trả về:", response.data);
         return response.data;
     } catch (error) {
-        throw error.response?.data?.message || "Lỗi kết nối máy chủ";
+        const errorMessage = error.response?.data?.message || error.message || "Lỗi kết nối máy chủ";
+        console.log("🔴 Error:", errorMessage);
+        throw new Error(errorMessage);
     }
 };
 
@@ -149,22 +166,19 @@ axios.interceptors.response.use(
     res => res,
     async error => {
         const originalRequest = error.config;
-
-        if (
-            error.response?.status === 401 &&
-            !originalRequest._retry &&
-            !originalRequest.url.includes('/login')
-        ) {
+        
+        if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url.includes('/login')) {
             originalRequest._retry = true;
+
             try {
-                const newAccessToken = await refreshToken();
-                axios.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
-                originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+                const newToken = await refreshToken();
+                axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+                originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
                 return axios(originalRequest);
             } catch (refreshError) {
-                console.log("⚠️ Refresh token không thành công");
-                await AsyncStorage.removeItem('token');
-                await AsyncStorage.removeItem('user');
+                console.log("⚠️ Refresh token không thành công", refreshError);
+                await AsyncStorage.multiRemove(['token', 'refreshToken', 'user']);
+                throw new Error('Phiên đăng nhập hết hạn');
             }
         }
 

@@ -85,7 +85,7 @@ const HomeScreen = () => {
                 onPress={() => navigation.navigate('Notification')}
                 style={styles.notificationButton}
               >
-                <Icon1 name="bell" size={24} color="red" style={styles.bellIcon} />
+                <Icon1 name="bell" size={24} color="red" />
                 {hasUnread && (
                   <View style={styles.notificationBadge}>
                     <Text style={styles.badgeText}>!</Text>
@@ -144,10 +144,7 @@ const styles = StyleSheet.create({
     paddingTop: 35,
   },
   icon: {
-    marginRight: 200
-  },
-  bellIcon: {
-    marginRight: 30
+    marginRight: 170
   },
   section: {
     padding: 20
