@@ -82,7 +82,9 @@ const ProfileScreen = () => {
 
             <View style={styles.profileImageContainer}>
                 <Image
-                    source={{ uri: user?.avatar?.[0]?.url || require('../assets/images/default-avatar.jpg') }}
+                    source={{
+                        uri: user?.avatar?.url || require('../assets/images/default-avatar.jpg')
+                    }}
                     style={styles.profileImage}
                 />
                 <TouchableOpacity style={styles.editIconContainer} onPress={handleChangeAvatar}>

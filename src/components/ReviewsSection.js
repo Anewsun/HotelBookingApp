@@ -1,49 +1,84 @@
-import React, { useState } from "react";
-import { View, Text, FlatList, StyleSheet, Image, Dimensions, TouchableOpacity } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, FlatList, StyleSheet, Image, Dimensions, TouchableOpacity, Alert } from "react-native";
 import Icon from 'react-native-vector-icons/FontAwesome5';
+import { getReviewsByHotel, deleteReview } from "../services/reviewService";
+import { useAuth } from "../contexts/AuthContext";
 
 const { width } = Dimensions.get('window');
 const MAX_BAR_WIDTH = width * 0.25;
 
-const reviews = [
-    {
-        id: "1",
-        name: "Tân Lương",
-        rating: 5,
-        comment: "Dịch vụ và phòng rất tuyệt.",
-        title: "Phòng rất đẹp",
-        date: "23/04/2025",
-        images: [require('../assets/images/hotel2.jpg')]
-    },
-    {
-        id: "2",
-        name: "Hữu Phong",
-        rating: 5,
-        comment: "Căn phòng không có gì để chê.",
-        title: "Không có điểm nào để phàn nàn",
-        date: "25/04/2025",
-        images: [require('../assets/images/hotel3.jpg')]
-    },
-    {
-        id: "3",
-        name: "Quang Lâm",
-        rating: 4,
-        comment: "Tuyệt vời nhưng giá hơi đắt.",
-        title: "Có thể cải thiện giá cả",
-        date: "03/04/2025",
-        images: [require('../assets/images/hotel2.jpg')]
-    },
-];
-
-const ReviewsSection = () => {
+const ReviewsSection = ({ hotelId, onEditReview, onReviewSubmit }) => {
+    const [reviews, setReviews] = useState([]);
     const [showAllReviews, setShowAllReviews] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const { user } = useAuth();
     const initialReviewCount = 2;
+
+    useEffect(() => {
+        const fetchReviews = async () => {
+            try {
+                const data = await getReviewsByHotel(hotelId);
+                setReviews(data);
+                setLoading(false);
+            } catch (error) {
+                console.error("Error fetching reviews:", error);
+                setLoading(false);
+            }
+        };
+
+        if (hotelId) fetchReviews();
+    }, [hotelId]);
+
+    const handleDelete = async (id) => {
+        Alert.alert("Xác nhận", "Bạn có chắc chắn muốn xóa đánh giá này?",
+            [
+                {
+                    text: "Hủy",
+                    style: "cancel"
+                },
+                {
+                    text: "Xóa",
+                    onPress: async () => {
+                        try {
+                            await deleteReview(id);
+
+                            const updatedReviews = reviews.filter(review => review._id !== id);
+                            setReviews(updatedReviews);
+                            
+                            onReviewSubmit();
+                        } catch (error) {
+                            Alert.alert("Lỗi", error.message);
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    if (loading) {
+        return (
+            <View style={styles.container}>
+                <Text>Đang tải đánh giá...</Text>
+            </View>
+        );
+    }
+
+    if (reviews.length === 0) {
+        return (
+            <View style={styles.container}>
+                <Text style={styles.title}>Đánh giá</Text>
+                <Text style={styles.noReviewsText}>Chưa có bài đánh giá nào</Text>
+            </View>
+        );
+    }
 
     const totalReviews = reviews.length;
     const averageRating = (reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews).toFixed(1);
     const displayedReviews = showAllReviews ? reviews : reviews.slice(0, initialReviewCount);
 
-    const starCounts = [1, 2, 3, 4, 5].map(star => reviews.filter(review => review.rating === star).length);
+    const starCounts = [1, 2, 3, 4, 5].map(star =>
+        reviews.filter(review => review.rating === star).length
+    );
 
     return (
         <View style={styles.container}>
@@ -75,14 +110,36 @@ const ReviewsSection = () => {
             </View>
             <FlatList
                 data={displayedReviews}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => item._id}
                 renderItem={({ item }) => (
                     <View style={styles.reviewItem}>
                         <View style={styles.userInfo}>
-                            <Image source={require('../assets/images/Bat.jpg')} style={styles.avatar} />
+                            <Image
+                                source={item.isAnonymous ? require('../assets/images/anonymous.png') :
+                                    (item.userId?.profileImage ? { uri: item.userId.profileImage } : require('../assets/images/default-avatar.jpg'))}
+                                style={styles.avatar}
+                            />
                             <View style={styles.userDetails}>
-                                <Text style={styles.name}>{item.name}</Text>
-                                <Text style={styles.date}>{item.date}</Text>
+                                <View style={styles.nameRow}>
+                                    <Text style={styles.name}>{item.isAnonymous ? "Ẩn danh" : item.userId?.name || "Khách"}</Text>
+                                    {user?.id === item.userId?._id && (
+                                        <View style={styles.actions}>
+                                            <TouchableOpacity
+                                                onPress={() => onEditReview(item)}
+                                                style={styles.actionButton}
+                                            >
+                                                <Icon name="edit" size={14} color="#666" />
+                                            </TouchableOpacity>
+                                            <TouchableOpacity
+                                                onPress={() => handleDelete(item._id)}
+                                                style={styles.actionButton}
+                                            >
+                                                <Icon name="trash" size={14} color="#FF4444" />
+                                            </TouchableOpacity>
+                                        </View>
+                                    )}
+                                </View>
+                                <Text style={styles.date}>{new Date(item.createdAt).toLocaleDateString('vi-VN')}</Text>
                                 <Text style={styles.titleText}>{item.title}</Text>
                                 <View style={styles.ratingStars}>
                                     {Array.from({ length: 5 }, (_, index) => (
@@ -92,10 +149,10 @@ const ReviewsSection = () => {
                                 <Text style={styles.comment}>{item.comment}</Text>
                             </View>
                         </View>
-                        {item.images.length > 0 && (
+                        {item.images && item.images.length > 0 && (
                             <View style={styles.imageContainer}>
                                 {item.images.map((image, index) => (
-                                    <Image key={index} source={image} style={styles.reviewImage} />
+                                    <Image key={index} source={{ uri: image }} style={styles.reviewImage} />
                                 ))}
                             </View>
                         )}
@@ -130,6 +187,12 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: "bold",
         marginBottom: 10,
+    },
+    noReviewsText: {
+        fontSize: 16,
+        color: "#888",
+        textAlign: "center",
+        marginVertical: 20,
     },
     ratingContainer: {
         flexDirection: 'row',
@@ -202,13 +265,26 @@ const styles = StyleSheet.create({
         height: 40,
         borderRadius: 20,
         marginRight: 10,
+        marginTop: 30
     },
     userDetails: {
         flex: 1,
     },
+    nameRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
     name: {
         fontWeight: "bold",
         fontSize: 15
+    },
+    actions: {
+        flexDirection: 'row',
+    },
+    actionButton: {
+        padding: 5,
+        marginLeft: 8,
     },
     date: {
         fontSize: 14,

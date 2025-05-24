@@ -41,6 +41,7 @@ const MyProfileScreen = () => {
     };
 
     const handleUpdateProfile = async () => {
+        setLoading(true);
         try {
             const updatePayload = {
                 name: formData.name,
@@ -162,10 +163,15 @@ const MyProfileScreen = () => {
                 </View>
 
                 <TouchableOpacity
-                    style={styles.saveButton}
+                    style={[styles.saveButton, loading && styles.disabledButton]}
                     onPress={handleUpdateProfile}
+                    disabled={loading}
                 >
-                    <Text style={styles.saveButtonText}>Lưu thay đổi</Text>
+                    {loading ? (
+                        <ActivityIndicator color="white" />
+                    ) : (
+                        <Text style={styles.saveButtonText}>Lưu thay đổi</Text>
+                    )}
                 </TouchableOpacity>
             </View>
 
@@ -417,6 +423,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         zIndex: 1000,
     },
+    disabledButton: {
+        backgroundColor: '#cccccc',
+        opacity: 0.7,
+    }
 });
 
 export default MyProfileScreen;

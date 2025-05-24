@@ -8,6 +8,8 @@ import ReviewsSection from "../components/ReviewsSection";
 import { fetchHotelById, fetchAllAmenities } from '../services/hotelService';
 import { getAvailableRoomsByHotel } from '../services/roomService';
 import { getAmenityIcon } from '../utils/AmenityIcons';
+import { getReviewsByHotel, createReview, updateReview } from '../services/reviewService';
+import ReviewFormModal from '../components/ReviewFormModal';
 
 const starIcon = require('../assets/images/star.png');
 
@@ -22,48 +24,53 @@ const HotelDetailScreen = () => {
   const [selectedRoomIndex, setSelectedRoomIndex] = useState(null);
   const [availableRooms, setAvailableRooms] = useState([]);
   const navigation = useNavigation();
+  const [reviewCount, setReviewCount] = useState(0);
+  const [selectedReview, setSelectedReview] = useState(null);
+  const [reviewModalVisible, setReviewModalVisible] = useState(false);
+  const [reviewsData, setReviewsData] = useState([]);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const searchParams = route.params?.searchParams || {
+        checkIn: new Date().toISOString().split('T')[0],
+        checkOut: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+        capacity: 2
+      };
+
+      const [hotelData, amenitiesData, roomsResponse, reviewsData] = await Promise.all([
+        fetchHotelById(hotelId),
+        fetchAllAmenities(),
+        getAvailableRoomsByHotel(hotelId, searchParams),
+        getReviewsByHotel(hotelId)
+      ]);
+
+      setHotel(hotelData);
+      setReviewsData(reviewsData);
+      setAllAmenities(amenitiesData);
+      setReviewCount(reviewsData.length);
+
+      if (roomsResponse && roomsResponse.data) {
+        setAvailableRooms(roomsResponse.data);
+      } else {
+        console.log('No rooms data returned from API');
+        setAvailableRooms([]);
+      }
+
+      if (hotelData.amenities && amenitiesData.length > 0) {
+        const filteredAmenities = amenitiesData.filter(amenity =>
+          hotelData.amenities.includes(amenity._id)
+        );
+        setHotelAmenities(filteredAmenities);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        const searchParams = route.params?.searchParams || {
-          checkIn: new Date().toISOString().split('T')[0],
-          checkOut: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-          capacity: 2
-        };
-        // Fetch song song hotel data và amenities
-        const [hotelData, amenitiesData, roomsResponse] = await Promise.all([
-          fetchHotelById(hotelId),
-          fetchAllAmenities(),
-          getAvailableRoomsByHotel(hotelId, searchParams)
-        ]);
-
-        setHotel(hotelData);
-        setAllAmenities(amenitiesData);
-        if (roomsResponse && roomsResponse.data) {
-          setAvailableRooms(roomsResponse.data);
-        } else {
-          console.log('No rooms data returned from API');
-          setAvailableRooms([]);
-        }
-        // Lọc amenities của khách sạn
-        if (hotelData.amenities && amenitiesData.length > 0) {
-          const filteredAmenities = amenitiesData.filter(amenity =>
-            hotelData.amenities.includes(amenity._id)
-          );
-          setHotelAmenities(filteredAmenities);
-        }
-      } catch (error) {
-        console.error('Full error details:', {
-          error: error.response?.data || error.message,
-          stack: error.stack
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadData();
   }, [hotelId, route.params?.searchParams]);
 
@@ -71,6 +78,22 @@ const HotelDetailScreen = () => {
     // Reset selected rooms khi availableRooms thay đổi
     setSelectedRoomIndex(null);
   }, [availableRooms]);
+
+  const handleSubmitReview = async (data) => {
+    try {
+      if (data.reviewId) {
+        await updateReview(data.reviewId, data);
+      } else {
+        await createReview(data);
+      }
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await loadData();
+      setReviewModalVisible(false);
+      setSelectedReview(null);
+    } catch (error) {
+      Alert.alert("Lỗi", error.message);
+    }
+  };
 
   const handleSelectedRoomChange = (selectedIndex) => {
     setSelectedRoomIndex(selectedIndex);
@@ -126,8 +149,10 @@ const HotelDetailScreen = () => {
                 </View>
                 <View style={styles.ratingContainer}>
                   <Image source={starIcon} style={styles.starIcon} />
-                  <Text style={styles.rating}>{hotel.rating}</Text>
-                  <Text style={styles.reviewCount}>(3 đánh giá)</Text>
+                  <Text style={styles.rating}>
+                    {hotel.rating ? hotel.rating.toFixed(1) : '0.0'}
+                  </Text>
+                  <Text style={styles.reviewCount}>({reviewCount} đánh giá)</Text>
                 </View>
               </View>
 
@@ -191,7 +216,14 @@ const HotelDetailScreen = () => {
                 onSelectedRoomChange={handleSelectedRoomChange}
                 searchParams={route.params.searchParams || null}
               />
-              <ReviewsSection />
+              <ReviewsSection
+                hotelId={hotelId}
+                onEditReview={(review) => {
+                  setSelectedReview(review);
+                  setReviewModalVisible(true);
+                }}
+                onReviewSubmit={loadData}
+              />
             </View>
           </View>
         )}
@@ -235,6 +267,17 @@ const HotelDetailScreen = () => {
           <Text style={styles.bookNowText}>Đặt phòng ngay</Text>
         </TouchableOpacity>
       </View>
+
+      <ReviewFormModal
+        visible={reviewModalVisible}
+        hotelId={hotelId}
+        initialData={selectedReview}
+        onClose={() => {
+          setReviewModalVisible(false);
+          setSelectedReview(null);
+        }}
+        onSubmit={handleSubmitReview}
+      />
     </SafeAreaView>
   );
 };

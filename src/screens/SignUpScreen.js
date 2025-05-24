@@ -20,22 +20,19 @@ const SignUpScreen = () => {
         console.log("🚀 handleRegister() called");
         console.log("📦 Data input:", { name, email, password });
         setIsLoading(true);
-    
+
         try {
             const result = await register(name, email, password);
             console.log("✅ Register success:", result);
-    
+
             Alert.alert('Đăng ký thành công', 'Hãy mở gmail lên và bấm xác nhận');
             navigation.navigate('SignIn');
         } catch (error) {
-            console.log("❌ Register error:", error.message);
-            setTimeout(() => {
-                Alert.alert("Lỗi", error.message || "Đăng ký thất bại");
-            }, 100);
+            Alert.alert('Lỗi', getErrorMessage(error));
         } finally {
             setIsLoading(false);
         }
-    };      
+    };
 
     return (
         <View style={styles.container}>
@@ -64,9 +61,9 @@ const SignUpScreen = () => {
                 />
             </View>
 
-            <TouchableOpacity 
-                style={[styles.registerButton, isLoading && { opacity: 0.7 }]} 
-                onPress={handleRegister} 
+            <TouchableOpacity
+                style={[styles.registerButton, isLoading && { opacity: 0.7 }]}
+                onPress={handleRegister}
                 disabled={isLoading}
             >
                 {isLoading ? (

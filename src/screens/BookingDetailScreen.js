@@ -7,6 +7,8 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { useBooking } from '../contexts/BookingContext';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import ReviewFormModal from "../components/ReviewFormModal";
+import { createReview } from "../services/reviewService";
 
 const BookingDetailScreen = () => {
     const navigation = useNavigation();
@@ -16,6 +18,8 @@ const BookingDetailScreen = () => {
     const [booking, setBooking] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [reviewModalVisible, setReviewModalVisible] = useState(false);
+    const [hasReviewed, setHasReviewed] = useState(false);
 
     useEffect(() => {
         const fetchBookingDetails = async () => {
@@ -297,10 +301,30 @@ const BookingDetailScreen = () => {
                         </>
                     )}
 
-                    {booking.status === 'completed' && (
-                        <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#2196F3' }]}>
-                            <Text style={styles.actionButtonText}>Để lại bình luận</Text>
-                        </TouchableOpacity>
+                    {booking.status === 'completed' && !hasReviewed && (
+                        <>
+                            <TouchableOpacity
+                                style={[styles.actionButton, { backgroundColor: '#2196F3' }]}
+                                onPress={() => setReviewModalVisible(true)}
+                            >
+                                <Text style={styles.actionButtonText}>Để lại bình luận</Text>
+                            </TouchableOpacity>
+
+                            <ReviewFormModal
+                                visible={reviewModalVisible}
+                                hotelId={booking.room?.hotelId?._id || booking.room?.hotelId}
+                                onClose={() => setReviewModalVisible(false)}
+                                onSubmit={async (data) => {
+                                    try {
+                                        await createReview(data);
+                                        setHasReviewed(true);
+                                        setReviewModalVisible(false);
+                                    } catch (error) {
+                                        Alert.alert("Lỗi", error.message);
+                                    }
+                                }}
+                            />
+                        </>
                     )}
                 </View>
 
