@@ -19,6 +19,9 @@ import AddInformationScreen from "../screens/AddInformationScreen";
 import MyProfileScreen from "../screens/MyProfileScreen";
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 import ContactUsScreen from '../screens/ContactUsScreen';
+import ZaloPayWebViewScreen from '../screens/ZaloPayWebViewScreen';
+import BlogListScreen from '../screens/BlogListScreen';
+import BlogDetailScreen from '../screens/BlogDetailScreen';
 
 import { useAuth } from "../contexts/AuthContext";
 import { createStackNavigator } from "@react-navigation/stack";
@@ -55,6 +58,9 @@ const AppStack = () => (
     <Stack.Screen name="MyProfile" component={MyProfileScreen} />
     <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
     <Stack.Screen name="ContactUs" component={ContactUsScreen} />
+    <Stack.Screen name="ZaloPayWebView" component={ZaloPayWebViewScreen} />
+    <Stack.Screen name="BlogList" component={BlogListScreen} />
+    <Stack.Screen name="BlogDetail" component={BlogDetailScreen} />
   </Stack.Navigator>
 );
 
