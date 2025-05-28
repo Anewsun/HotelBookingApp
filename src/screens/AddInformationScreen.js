@@ -180,6 +180,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         padding: 12,
         marginBottom: 8,
+        fontSize: 17
     },
     switchContainer: {
         flexDirection: 'row',

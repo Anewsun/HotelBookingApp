@@ -100,6 +100,7 @@ const styles = StyleSheet.create({
   stepNumber: {
     color: '#9e9e9e',
     fontWeight: 'bold',
+    fontSize: 15
   },
   activeStepNumber: {
     color: 'white',
@@ -107,15 +108,17 @@ const styles = StyleSheet.create({
   stepText: {
     marginTop: 5,
     color: '#9e9e9e',
-    fontSize: 12,
+    fontSize: 15,
     textAlign: 'center',
   },
   activeStepText: {
     color: '#1167B1',
     fontWeight: 'bold',
+    fontSize: 15
   },
   completedStepText: {
     color: '#4CAF50',
+    fontSize: 15
   },
   connector: {
     flex: 1,

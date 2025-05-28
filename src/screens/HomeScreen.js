@@ -36,15 +36,15 @@ const HomeScreen = () => {
     }
   };
 
-  useEffect(() => {
-    const unread = notifications.some(noti => noti.status === 'unread');
-    setHasUnread(unread);
-  }, [notifications]);
-
   useFocusEffect(
     useCallback(() => {
-      refetch();
-    }, [])
+      const refreshData = async () => {
+        await refetch();
+        const unread = notifications.some(noti => noti.status === 'unread');
+        setHasUnread(unread);
+      };
+      refreshData();
+    }, [notifications, refetch])
   );
 
   const handlePressHotel = (hotel) => {

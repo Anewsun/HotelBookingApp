@@ -6,6 +6,7 @@ import Header from '../components/Header';
 import { useNavigation } from '@react-navigation/native';
 import { useFavorite } from '../contexts/FavoriteContext';
 import { useHotels } from '../hooks/useHotels';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const FavoriteScreen = () => {
     const navigation = useNavigation();
@@ -34,7 +35,7 @@ const FavoriteScreen = () => {
     }
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <Header title="Danh sách yêu thích" onBackPress={() => navigation.goBack()} />
 
             {favorites.length === 0 ? (
@@ -62,7 +63,7 @@ const FavoriteScreen = () => {
             )}
 
             <BottomNav />
-        </View>
+        </SafeAreaView>
     );
 };
 
@@ -70,7 +71,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f0f4ff',
-        paddingTop: 20
     },
     listContainer: {
         paddingBottom: 20
