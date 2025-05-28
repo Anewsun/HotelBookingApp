@@ -3,6 +3,7 @@ import { ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getMe, refreshToken } from '../services/authService';
 import { jwtDecode } from "jwt-decode";
+import { initSocket, disconnectSocket, isSocketConnected } from '../utils/socket';
 
 export const AuthContext = createContext();
 
@@ -20,6 +21,13 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(async () => {
     try {
+      try {
+        if (isSocketConnected()) {
+          disconnectSocket();
+        }
+      } catch (error) {
+        console.log('Socket disconnect during logout:', error.message);
+      }
       await AsyncStorage.multiRemove(['token', 'refreshToken', 'user']);
       setUser(null);
       setIsAuthenticated(false);
@@ -88,6 +96,9 @@ export const AuthProvider = ({ children }) => {
     try {
       await AsyncStorage.setItem('token', userData.accessToken);
       await AsyncStorage.setItem('user', JSON.stringify(userData));
+      initSocket().catch(error => {
+        console.error('Background socket init error:', error.message);
+      });
       setUser(userData);
       setIsAuthenticated(true);
       return true;

@@ -56,6 +56,7 @@ const MyProfileScreen = () => {
         } catch (error) {
             Alert.alert('Lỗi', error.message);
         }
+        setLoading(false);
     };
 
     const handleDeactivate = async () => {
@@ -264,7 +265,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f0f4ff',
-        paddingTop: 15
+        paddingTop: 45
     },
     section: {
         backgroundColor: 'white',

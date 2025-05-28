@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, StatusBar, StyleSheet, TouchableOpacity, FlatList, Modal, Alert, SafeAreaView } from 'react-native';
+import { View, Text, Image, StatusBar, StyleSheet, TouchableOpacity, FlatList, Modal, Alert } from 'react-native';
 import Header from '../components/Header';
 import Feather from 'react-native-vector-icons/Feather';
 import BottomNav from '../components/BottomNav';
@@ -8,6 +8,7 @@ import { useNavigation } from "@react-navigation/native";
 import { logout, getMe } from '../services/authService';
 import { uploadAvatar } from '../services/userService';
 import { useAuth } from '../contexts/AuthContext';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const menuItems = [
     { title: 'Trang cá nhân của tôi', icon: 'user', screen: 'MyProfile' },
@@ -29,7 +30,7 @@ const ProfileScreen = () => {
         }
     };
 
-    const handleChangeAvatar = () => {
+    const handleChangeAvatar = async () => {
         const options = {
             mediaType: 'photo',
             quality: 0.8,
@@ -38,18 +39,21 @@ const ProfileScreen = () => {
         };
 
         launchImageLibrary(options, async (response) => {
-            console.log('Image Picker Result:', response);
-
             if (response.didCancel) return;
             if (response.errorCode || !response.assets) {
-                Alert.alert('Thông báo', 'Chưa phát triển trên app, hãy dùng website của chúng tôi để đổi avatar');
+                Alert.alert('Thông báo', 'Không thể chọn ảnh');
                 return;
             }
 
             const selectedImage = response.assets[0];
-            await uploadAvatar(selectedImage);
-            await refreshUserData();
-            Alert.alert("Thành công", "Cập nhật ảnh đại diện thành công!");
+            try {
+                await uploadAvatar(selectedImage);
+                await refreshUserData();
+                Alert.alert("Thành công", "Cập nhật ảnh đại diện thành công!");
+            } catch (error) {
+                console.error('Upload error:', error);
+                Alert.alert("Lỗi", error.message || "Không thể cập nhật avatar");
+            }
         });
     };
 
@@ -143,7 +147,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f0f4ff',
-        paddingTop: 15,
     },
     profileImageContainer: {
         justifyContent: 'center',

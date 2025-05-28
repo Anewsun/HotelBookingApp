@@ -10,6 +10,7 @@ import { getAvailableRoomsByHotel } from '../services/roomService';
 import { getAmenityIcon } from '../utils/AmenityIcons';
 import { getReviewsByHotel, createReview, updateReview } from '../services/reviewService';
 import ReviewFormModal from '../components/ReviewFormModal';
+import { useAuth } from '../contexts/AuthContext';
 
 const starIcon = require('../assets/images/star.png');
 
@@ -28,6 +29,7 @@ const HotelDetailScreen = () => {
   const [selectedReview, setSelectedReview] = useState(null);
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
   const [reviewsData, setReviewsData] = useState([]);
+  const { user } = useAuth();
 
   const loadData = async () => {
     try {
@@ -216,6 +218,25 @@ const HotelDetailScreen = () => {
                 onSelectedRoomChange={handleSelectedRoomChange}
                 searchParams={route.params.searchParams || null}
               />
+
+              <TouchableOpacity
+                style={styles.chatButton}
+                onPress={() => {
+                  if (!user) {
+                    Alert.alert('Yêu cầu đăng nhập', 'Vui lòng đăng nhập để nhắn tin');
+                    return;
+                  }
+                  navigation.navigate('Chat', {
+                    userId: hotel.ownerId,
+                    hotelId: hotel._id,
+                    hotelName: hotel.name
+                  });
+                }}
+              >
+                <Icon name="comments" size={20} color="#FFF" />
+                <Text style={styles.chatButtonText}>Nhắn tin với chủ khách sạn</Text>
+              </TouchableOpacity>
+
               <ReviewsSection
                 hotelId={hotelId}
                 onEditReview={(review) => {
@@ -256,7 +277,7 @@ const HotelDetailScreen = () => {
               navigation.navigate('PaymentStep', {
                 selectedRoom: {
                   ...selectedRoom,
-                  price: priceToUse
+                  price: selectedRoom.price,
                 },
                 hotel: hotel,
               });
@@ -448,7 +469,7 @@ const styles = StyleSheet.create({
   divider: {
     width: 1,
     backgroundColor: '#fff',
-    marginVertical: 0, // Đảm bảo không có margin dọc
+    marginVertical: 0,
   },
   labelContent: {
     flexDirection: 'row',
@@ -478,6 +499,21 @@ const styles = StyleSheet.create({
   disabledButton: {
     backgroundColor: '#cccccc',
   },
+  chatButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4CAF50',
+    padding: 15,
+    borderRadius: 25,
+    marginLeft: 10,
+    flex: 1
+  },
+  chatButtonText: {
+    color: 'white',
+    marginLeft: 8,
+    fontWeight: 'bold'
+  }
 });
 
 export default HotelDetailScreen;
