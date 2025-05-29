@@ -4,6 +4,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { useNavigation } from '@react-navigation/native';
 import { getLocations } from '../services/locationService';
+import { formatDate } from '../utils/dateUtils';
 
 const SearchBox = () => {
   const navigation = useNavigation();
@@ -37,14 +38,6 @@ const SearchBox = () => {
 
     fetchLocations();
   }, []);
-
-  const formatDate = (date) => {
-    if (!date) return "Chọn ngày";
-    const day = date.getDate();
-    const month = date.getMonth() + 1;
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
 
   const totalGuests = () => adults + children;
 

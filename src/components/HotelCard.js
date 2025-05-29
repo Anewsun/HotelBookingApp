@@ -42,7 +42,7 @@ const HotelCard = ({ hotel, onPress }) => {
               source={require('../assets/images/star.png')}
               style={{ width: 16, height: 16 }}
             />
-            <Text style={styles.ratingText}>{hotel.rating}</Text>
+            <Text style={styles.ratingText}>{hotel.rating.toFixed(1)}</Text>
           </View>
         </View>
       </View>

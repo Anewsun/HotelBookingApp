@@ -1,22 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { formatDate } from '../utils/dateUtils';
 
 const PostCard = ({ post, onPress }) => {
-    const formatDate = (dateString) => {
-        try {
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) throw new Error('Invalid date');
-
-            const day = date.getDate().toString().padStart(2, '0');
-            const month = (date.getMonth() + 1).toString().padStart(2, '0');
-            const year = date.getFullYear();
-            return `${day}/${month}/${year}`;
-        } catch (error) {
-            console.error('Lỗi định dạng ngày:', error);
-            return '--/--/----';
-        }
-    };
-
     return (
         <TouchableOpacity style={styles.card} onPress={() => onPress(post._id)}>
             {post.images?.[0]?.url && (

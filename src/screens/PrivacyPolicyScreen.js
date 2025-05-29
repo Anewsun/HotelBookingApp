@@ -2,18 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Header from '../components/Header';
+import { formatDate } from '../utils/dateUtils';
 
 const PrivacyPolicyScreen = () => {
     const navigation = useNavigation();
     const [policyDate, setpolicyDate] = useState(new Date());
-
-    const formatDate = (date) => {
-        if (!date) return "Chọn ngày";
-        const day = date.getDate();
-        const month = date.getMonth() + 1;
-        const year = date.getFullYear();
-        return `${day}/${month}/${year}`;
-    };
 
     return (
         <View style={styles.container}>

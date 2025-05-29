@@ -6,9 +6,10 @@ const API_URL = 'http://10.0.2.2:5000/api';
 export const uploadAvatar = async (file) => {
   const token = await AsyncStorage.getItem('token');
   const formData = new FormData();
+
   formData.append('avatar', {
     uri: file.uri,
-    type: file.type,
+    type: file.type || 'image/jpeg',
     name: file.fileName || `avatar_${Date.now()}.jpg`,
   });
 
@@ -19,10 +20,15 @@ export const uploadAvatar = async (file) => {
         'Content-Type': 'multipart/form-data',
       },
     });
+
     console.log("✅ Upload avatar thành công:", response.data);
-    return response.data.data.avatar[0]; // trả về avatar mới
+    return response.data.data.avatar;
   } catch (error) {
-    console.log("❌ Upload avatar thất bại:", error.response?.data || error);
+    console.log("❌ Upload avatar thất bại:", {
+      message: error.message,
+      response: error.response?.data,
+      config: error.config,
+    });
     throw error.response?.data?.message || "Lỗi upload avatar";
   }
 };
