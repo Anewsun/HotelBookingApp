@@ -1,16 +1,50 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView, Text, ActivityIndicator, SafeAreaView } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, StyleSheet, ScrollView, Text, ActivityIndicator, TouchableOpacity, Animated } from 'react-native';
+import { Provider as PaperProvider, Menu, Divider } from 'react-native-paper';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import BookingCard from '../components/BookingCard';
 import BottomNav from '../components/BottomNav';
 import Header from '../components/Header';
 import { useBooking } from '../contexts/BookingContext';
 import { useNavigation } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const BookingScreen = () => {
-  const { bookings, loading, error } = useBooking();
+  const { bookings, loading, error, initialLoading } = useBooking();
   const navigation = useNavigation();
+  const [visible, setVisible] = useState(false);
+  const [filterStatus, setFilterStatus] = useState(null);
+  const scaleAnim = useRef(new Animated.Value(0)).current;
 
-  if (loading) {
+  const handlePressBooking = (bookingId) => {
+    navigation.navigate('BookingDetail', { bookingId });
+  };
+
+  const openMenu = () => {
+    setVisible(true);
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeMenu = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0,
+      useNativeDriver: true,
+    }).start(() => setVisible(false));
+  };
+
+  const handleFilter = (status) => {
+    setFilterStatus(status === filterStatus ? null : status);
+    closeMenu();
+  };
+
+  const filteredBookings = filterStatus
+    ? bookings.filter(booking => booking.status === filterStatus)
+    : bookings;
+
+  if (initialLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center' }}>
         <ActivityIndicator size="large" color="#003366" />
@@ -26,60 +60,106 @@ const BookingScreen = () => {
     );
   }
 
-  const handlePressBooking = (bookingId) => {
-    navigation.navigate('BookingDetail', { bookingId });
+  const getStatusLabel = (status) => {
+    const statusLabels = {
+      pending: 'Đang chờ',
+      confirmed: 'Đã xác nhận',
+      cancelled: 'Đã hủy',
+      completed: 'Đã hoàn thành'
+    };
+    return statusLabels[status] || status;
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <Header title="Lịch sử đặt phòng" />
-
-        <View style={styles.scrollWrapper}>
-          <ScrollView
-            contentContainerStyle={[
-              styles.scrollContent,
-              bookings.length === 0 && { flexGrow: 1 }
-            ]}
-          >
-            {bookings.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>📭</Text>
-                <Text style={styles.emptyText}>Chưa có phòng nào được đặt</Text>
-                <Text style={styles.emptySubText}>Hãy đặt phòng đầu tiên của bạn!</Text>
+    <PaperProvider>
+      <SafeAreaView style={styles.container}>
+          <Header
+            title="Lịch sử đặt phòng"
+            rightComponent={
+              <View style={styles.filterContainer}>
+                {filterStatus && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>!</Text>
+                  </View>
+                )}
+                <Menu
+                  visible={visible}
+                  onDismiss={closeMenu}
+                  anchor={
+                    <TouchableOpacity onPress={openMenu}>
+                      <Icon name="filter-list" size={24} color="#003366" />
+                    </TouchableOpacity>
+                  }
+                  contentStyle={styles.menuContent}
+                >
+                  <Menu.Item
+                    onPress={() => handleFilter(null)}
+                    title="Tất cả"
+                    titleStyle={filterStatus === null ? styles.selectedMenuText : null}
+                  />
+                  <Divider />
+                  {['pending', 'confirmed', 'cancelled', 'completed'].map((status) => (
+                    <Menu.Item
+                      key={status}
+                      onPress={() => handleFilter(status)}
+                      title={getStatusLabel(status)}
+                      titleStyle={filterStatus === status ? styles.selectedMenuText : null}
+                    />
+                  ))}
+                </Menu>
               </View>
-            ) : (
-              bookings.map((booking) => (
-                <BookingCard
-                  key={booking._id}
-                  booking={{
-                    ...booking,
-                    id: booking._id,
-                    checkIn: new Date(booking.checkIn),
-                    checkOut: new Date(booking.checkOut)
-                  }}
-                  onPress={handlePressBooking}
-                />
-              ))
-            )}
-          </ScrollView>
-        </View>
+            }
+          />
 
-        <BottomNav />
-      </View>
-    </SafeAreaView>
+          <View style={styles.scrollWrapper}>
+            <ScrollView
+              contentContainerStyle={[
+                styles.scrollContent,
+                filteredBookings.length === 0 && { flexGrow: 1 }
+              ]}
+            >
+              {filteredBookings.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>📭</Text>
+                  <Text style={styles.emptyText}>
+                    {filterStatus
+                      ? `Không có booking ${getStatusLabel(filterStatus)}`
+                      : 'Chưa có phòng nào được đặt'}
+                  </Text>
+                  <Text style={styles.emptySubText}>
+                    {filterStatus
+                      ? 'Thử lọc trạng thái khác'
+                      : 'Hãy đặt phòng đầu tiên của bạn!'}
+                  </Text>
+                </View>
+              ) : (
+                filteredBookings.map((booking) => (
+                  <BookingCard
+                    key={booking._id}
+                    booking={{
+                      ...booking,
+                      id: booking._id,
+                      checkIn: new Date(booking.checkIn),
+                      checkOut: new Date(booking.checkOut)
+                    }}
+                    onPress={handlePressBooking}
+                  />
+                ))
+              )}
+            </ScrollView>
+          </View>
+
+          <BottomNav />
+      </SafeAreaView>
+    </PaperProvider>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#f0f4ff'
-  },
   container: {
     flex: 1,
     position: 'relative',
-    paddingTop: 15
+    backgroundColor: '#f0f4ff',
   },
   scrollWrapper: {
     flex: 1,
@@ -111,6 +191,37 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     padding: 20,
     fontSize: 16
+  },
+  filterContainer: {
+    marginRight: 10,
+    position: 'relative',
+  },
+  menuContent: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    paddingVertical: 0,
+    elevation: 3,
+  },
+  selectedMenuText: {
+    color: '#003366',
+    fontWeight: 'bold',
+  },
+  badge: {
+    position: 'absolute',
+    right: -5,
+    top: -5,
+    backgroundColor: 'red',
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  badgeText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });
 
