@@ -48,12 +48,22 @@ export const retryPayment = async (bookingId, paymentMethod) => {
     }
 };
 
-export const checkPaymentStatus = async (transactionId) => {
+export const checkZaloPaymentStatus = async (transactionId) => {
     try {
         const response = await axios.get(`${API_URL}bookings/payment-status/${transactionId}`);
         return response.data;
     } catch (error) {
-        throw new Error(error.response?.data?.message || 'Failed to check payment status');
+        throw new Error('ZaloPay: ' + (error.response?.data?.message || 'Lỗi kiểm tra trạng thái'));
+    }
+};
+
+export const checkVNPayPaymentStatus = async (transactionId) => {
+    try {
+        const response = await axios.get(`${API_URL}bookings/payment-status/${transactionId}`);
+        console.log('[Smart Check] Calling VNPay for:', transactionId);
+        return response.data;
+    } catch (error) {
+        throw new Error('VNPay: ' + (error.response?.data?.message || 'Lỗi kiểm tra trạng thái'));
     }
 };
 
@@ -62,7 +72,6 @@ export const forceZaloPayCallback = async (callbackData) => {
         const response = await axios.post(`${API_URL}bookings/zalopay-callback`, callbackData);
         return response.data;
     } catch (error) {
-        console.error('Error forcing ZaloPay callback:', error.response?.data || error.message);
         throw new Error('Gửi callback thất bại');
     }
 };

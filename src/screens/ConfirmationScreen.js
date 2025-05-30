@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 
 const ConfirmationScreen = ({ route }) => {
   const { transactionId, bookingId } = route.params;
-  const { checkPaymentStatus, sendFakeZaloCallback, getDetails } = useBooking();
+  const { checkPaymentSmart, sendFakeZaloCallback, getDetails } = useBooking();
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -16,55 +16,62 @@ const ConfirmationScreen = ({ route }) => {
     let isMounted = true;
     let intervalId = null;
 
-    const verifyAndSendCallback = async () => {
+    const verifyAndHandlePayment = async () => {
       try {
-        const result = await checkPaymentStatus(transactionId);
-        console.log('Payment verification result:', result);
+        const bookingDetail = await getDetails(bookingId);
+        const paymentMethod = bookingDetail?.paymentMethod;
 
-        if (result.return_code === 1 && isMounted) {
-          clearInterval(intervalId);
+        const handleSuccess = async (result) => {
+          if (paymentMethod === 'zalopay') {
+            try {
+              const callbackData = {
+                app_id: 2554,
+                app_trans_id: transactionId,
+                zp_trans_id: result.zp_trans_id,
+                amount: result.amount,
+                embed_data: JSON.stringify({ bookingId }),
+                item: JSON.stringify([
+                  {
+                    itemid: bookingDetail.room._id,
+                    itemname: 'Room Booking',
+                    itemprice: result.amount,
+                    itemquantity: 1
+                  }
+                ]),
+                merchant_user_id: bookingDetail.user,
+                user_fee_amount: 0,
+                discount_amount: 0,
+                timestamp: result.server_time,
+                server_time: result.server_time,
+                channel: 14,
+                description: `Payment for Booking ${bookingId}`,
+                bank_code: 'zalopayapp',
+                payment_method: 'zalopay',
+                status: 1
+              };
 
-          try {
-            const bookingDetail = await getDetails(bookingId);
-
-            const callbackData = {
-              app_id: 2554,
-              app_trans_id: transactionId,
-              zp_trans_id: result.zp_trans_id,
-              amount: result.amount,
-              embed_data: JSON.stringify({ bookingId }),
-              item: JSON.stringify([
-                {
-                  itemid: bookingDetail.room._id,
-                  itemname: 'Room Booking',
-                  itemprice: result.amount,
-                  itemquantity: 1
-                }
-              ]),
-              merchant_user_id: bookingDetail.user,
-              user_fee_amount: 0,
-              discount_amount: 0,
-              timestamp: result.server_time,
-              server_time: result.server_time,
-              channel: 14,
-              description: `Payment for Booking ${bookingId}`,
-              bank_code: 'zalopayapp',
-              payment_method: 'zalopay',
-              status: 1
-            };
-
-            const callbackResult = await sendFakeZaloCallback(callbackData);
-            console.log('ZaloPay callback sent result:', callbackResult);
-          } catch (callbackErr) {
-            console.warn('Callback gửi thất bại:', callbackErr.message);
+              const callbackResult = await sendFakeZaloCallback(callbackData);
+              console.log('ZaloPay callback sent result:', callbackResult);
+            } catch (err) {
+              console.warn('ZaloPay callback failed:', err.message);
+            }
           }
 
-          setStatus('paid');
-          setLoading(false);
+          if (isMounted) {
+            setStatus('paid');
+            setLoading(false);
+          }
+        };
+
+        let result = await checkPaymentSmart(transactionId, bookingId);
+        console.log('Payment verification result:', result);
+
+        if (result.return_code === 1) {
+          clearInterval(intervalId);
+          await handleSuccess(result);
           return;
         }
 
-        // Retry nếu chưa thành công
         let retryCount = 0;
         const maxRetries = 5;
         const retryInterval = 3000;
@@ -83,49 +90,12 @@ const ConfirmationScreen = ({ route }) => {
           }
 
           try {
-            const retryResult = await checkPaymentStatus(transactionId);
+            const retryResult = await checkPaymentSmart(transactionId, bookingId);
             console.log(`Retry ${retryCount + 1} result:`, retryResult);
 
-            if (retryResult.return_code === 1 && isMounted) {
+            if (retryResult.return_code === 1) {
               clearInterval(intervalId);
-
-              try {
-                const bookingDetail = await getDetails(bookingId);
-
-                const callbackData = {
-                  app_id: 2554,
-                  app_trans_id: transactionId,
-                  zp_trans_id: retryResult.zp_trans_id,
-                  amount: retryResult.amount,
-                  embed_data: JSON.stringify({ bookingId }),
-                  item: JSON.stringify([
-                    {
-                      itemid: bookingDetail.room._id,
-                      itemname: 'Room Booking',
-                      itemprice: retryResult.amount,
-                      itemquantity: 1
-                    }
-                  ]),
-                  merchant_user_id: bookingDetail.user,
-                  user_fee_amount: 0,
-                  discount_amount: 0,
-                  timestamp: retryResult.server_time,
-                  server_time: retryResult.server_time,
-                  channel: 14,
-                  description: `Payment for Booking ${bookingId}`,
-                  bank_code: 'zalopayapp',
-                  payment_method: 'zalopay',
-                  status: 1
-                };
-
-                const callbackResult = await sendFakeZaloCallback(callbackData);
-                console.log('ZaloPay callback sent result:', callbackResult);
-              } catch (callbackErr) {
-                console.warn('Callback gửi thất bại:', callbackErr.message);
-              }
-
-              setStatus('paid');
-              setLoading(false);
+              await handleSuccess(retryResult);
             }
           } catch (err) {
             console.error('Retry error:', err);
@@ -144,7 +114,7 @@ const ConfirmationScreen = ({ route }) => {
       }
     };
 
-    verifyAndSendCallback();
+    verifyAndHandlePayment();
 
     return () => {
       isMounted = false;

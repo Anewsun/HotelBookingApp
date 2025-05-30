@@ -329,15 +329,27 @@ const BookingDetailScreen = () => {
                                             try {
                                                 const result = await retryPayment(booking._id, booking.paymentMethod);
                                                 console.log('Payment result:', result);
+                                                const paymentUrl = result.paymentUrl || result.payUrl;
 
-                                                if (result?.paymentUrl) {
-                                                    setQrData(result.paymentUrl);
-                                                    setTransactionId(result.transactionId);
-                                                    if (result.paymentUrl && result.transactionId) {
+                                                if (booking.paymentMethod === 'zalopay') {
+                                                    if (paymentUrl) {
+                                                        setQrData(paymentUrl);
+                                                        setTransactionId(result.transactionId);
                                                         setShowQRModal(true);
+                                                    } else {
+                                                        Alert.alert('Lỗi', 'Không nhận được URL thanh toán từ ZaloPay');
+                                                    }
+                                                } else if (booking.paymentMethod === 'vnpay') {
+                                                    if (paymentUrl) {
+                                                        navigation.navigate('VNPayWebView', {
+                                                            payUrl: paymentUrl,
+                                                            bookingId: booking._id,
+                                                        });
+                                                    } else {
+                                                        Alert.alert('Lỗi', 'Không nhận được URL thanh toán từ VNPay');
                                                     }
                                                 } else {
-                                                    Alert.alert('Lỗi', 'Không nhận được URL thanh toán từ hệ thống');
+                                                    Alert.alert('Lỗi', 'Phương thức thanh toán không được hỗ trợ');
                                                 }
                                             } catch (error) {
                                                 console.error('Payment error:', error);

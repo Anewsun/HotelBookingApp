@@ -60,7 +60,7 @@ const AppStack = () => (
     <Stack.Screen name="MyProfile" component={MyProfileScreen} />
     <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
     <Stack.Screen name="ContactUs" component={ContactUsScreen} />
-    <Stack.Screen name="VnPayWebView" component={VNPayWebViewScreen} />
+    <Stack.Screen name="VNPayWebView" component={VNPayWebViewScreen} />
     <Stack.Screen name="BlogList" component={BlogListScreen} />
     <Stack.Screen name="BlogDetail" component={BlogDetailScreen} />
     <Stack.Screen name="ChatList" component={ChatListScreen} />

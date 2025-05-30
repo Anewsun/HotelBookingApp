@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
-import { createBooking, getMyBookings, getBookingDetails, cancelBooking, retryPayment, checkPaymentStatus, confirmPayment, forceZaloPayCallback } from '../services/bookingService';
+import { createBooking, getMyBookings, getBookingDetails, cancelBooking, retryPayment, forceZaloPayCallback, checkVNPayPaymentStatus, checkZaloPaymentStatus } from '../services/bookingService';
 
 const BookingContext = createContext();
 
@@ -67,16 +67,6 @@ export const BookingProvider = ({ children }) => {
         }
     };
 
-    const checkPaymentStatusForBooking = async (transactionId) => {
-        try {
-            const result = await checkPaymentStatus(transactionId);
-            return result;
-        } catch (error) {
-            console.error('Error checking payment status:', error);
-            throw error;
-        }
-    };
-
     const retryPaymentForBooking = async (bookingId, paymentMethod) => {
         setLoading(true);
         try {
@@ -97,6 +87,24 @@ export const BookingProvider = ({ children }) => {
         } catch (err) {
             setError(err.message);
             throw err;
+        }
+    };
+
+    const checkPaymentSmart = async (transactionId, bookingId) => {
+        try {
+            const booking = await getDetails(bookingId);
+            const paymentMethod = booking?.paymentMethod;
+            console.log('[Smart Check] Using payment method:', paymentMethod);
+
+            if (paymentMethod === 'zalopay') {
+                return await checkZaloPaymentStatus(transactionId);
+            } else if (paymentMethod === 'vnpay') {
+                return await checkVNPayPaymentStatus(transactionId);
+            } else {
+                throw new Error('Phương thức thanh toán không được hỗ trợ');
+            }
+        } catch (err) {
+            throw new Error(err.message || 'Lỗi xác định trạng thái thanh toán');
         }
     };
 
@@ -121,9 +129,9 @@ export const BookingProvider = ({ children }) => {
                 cancelBooking: cancelMyBooking,
                 refreshBookings: fetchMyBookings,
                 initialLoading,
-                checkPaymentStatus: checkPaymentStatusForBooking,
                 retryPayment: retryPaymentForBooking,
                 sendFakeZaloCallback,
+                checkPaymentSmart,
             }}
         >
             {children}

@@ -1,51 +1,55 @@
-import React, { useState } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import React, { useRef } from 'react';
+import { View, ActivityIndicator, Alert } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { useNavigation } from '@react-navigation/native';
 
-const VnPayWebViewScreen = ({ route, navigation }) => {
-    const { paymentUrl, bookingId } = route.params;
-    const [loading, setLoading] = useState(true);
+const VNPayWebViewScreen = ({ route }) => {
+    const { payUrl, bookingId } = route.params;
+    const navigation = useNavigation();
+    const webViewRef = useRef(null);
 
-    const handleNavigation = (event) => {
-        const url = event.url;
-
-        if (!url) return true;
+    const handleNavigationChange = (navState) => {
+        const { url } = navState;
 
         if (url.includes('/vnpay-return')) {
-            const isSuccess = url.includes('vnp_ResponseCode=00');
-            if (isSuccess) {
-                navigation.replace('Confirm', { bookingId });
-            } else {
-                navigation.goBack();
-            }
-            return false;
-        }
+            console.log('Detected return from VNPay:', url);
 
-        return true;
+            const transactionId = extractTransactionId(url);
+            if (!transactionId) {
+                Alert.alert('Lỗi', 'Không thể xác định mã giao dịch');
+                navigation.replace('BookingDetail', { bookingId });
+                return;
+            }
+
+            navigation.replace('Confirm', {
+                transactionId,
+                bookingId
+            });
+        }
+    };
+
+    const extractTransactionId = (url) => {
+        const match = url.match(/vnp_TxnRef=([^&]+)/);
+        return match ? decodeURIComponent(match[1]) : '';
     };
 
     return (
-        <WebView
-            source={{ uri: paymentUrl }}
-            startInLoadingState
-            onLoadStart={() => setLoading(true)}
-            onLoadEnd={() => setLoading(false)}
-            renderLoading={() => loading && (
-                <View style={styles.centered}>
-                    <ActivityIndicator size="large" color="#1167B1" />
-                </View>
-            )}
-            onShouldStartLoadWithRequest={handleNavigation}
-        />
+        <View style={{ flex: 1 }}>
+            <WebView
+                ref={webViewRef}
+                source={{ uri: payUrl }}
+                onNavigationStateChange={handleNavigationChange}
+                startInLoadingState
+                renderLoading={() => (
+                    <View style={{ flex: 1, justifyContent: 'center' }}>
+                        <ActivityIndicator size="large" color="#1167B1" />
+                    </View>
+                )}
+                javaScriptEnabled
+                domStorageEnabled
+            />
+        </View>
     );
 };
 
-const styles = StyleSheet.create({
-    centered: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-});
-
-export default VnPayWebViewScreen;
+export default VNPayWebViewScreen;
