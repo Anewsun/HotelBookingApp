@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://10.0.2.2:5000/api/';
+const API_URL = 'http://10.0.2.2:3000/api/';
 
 const getToken = async () => {
     return await AsyncStorage.getItem('token');
@@ -18,12 +18,17 @@ export const getPosts = async () => {
 };
 
 export const getPostById = async (postId) => {
-    const response = await axios.get(`${API_URL}posts/${postId}`, {
-        params: {
-            populate: 'userId,interactions.userId'
-        }
-    });
-    return response.data;
+    try {
+        const response = await axios.get(`${API_URL}posts/${postId}`, {
+            params: {
+                populate: 'userId,interactions.userId'
+            }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching post:', error);
+        throw error;
+    }
 };
 
 export const addInteraction = async (postId, type, content) => {
@@ -59,6 +64,21 @@ export const deleteInteraction = async (postId, interactionId) => {
         return response.data;
     } catch (error) {
         console.error('Error deleting interaction:', error);
+        throw error;
+    }
+};
+
+export const getPostInteractions = async (postId) => {
+    try {
+        const token = await getToken();
+        const response = await axios.get(`${API_URL}posts/${postId}/interactions`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching interactions:', error);
         throw error;
     }
 };

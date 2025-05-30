@@ -15,7 +15,7 @@ export const initSocket = async () => {
       socket.disconnect();
     }
 
-    socket = io('http://10.0.2.2:5000', {
+    socket = io('http://10.0.2.2:3000', {
       auth: { token },
       transports: ['websocket'],
       reconnection: true,

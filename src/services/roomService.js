@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://10.0.2.2:5000/api';
+const API_URL = 'http://10.0.2.2:3000/api';
 
 // Lấy danh sách phòng của khách sạn
 export const fetchRoomsByHotelId = async (hotelId) => {

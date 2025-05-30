@@ -3,7 +3,7 @@ import { Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import CookieManager from '@react-native-cookies/cookies';
 
-const API_URL = 'http://10.0.2.2:5000/api/auth';
+const API_URL = 'http://10.0.2.2:3000/api/auth';
 
 export const refreshToken = async () => {
     try {

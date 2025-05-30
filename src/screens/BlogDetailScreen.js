@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, FlatList, ActivityIndicator, Image, ScrollView, RefreshControl, TouchableOpacity, Dimensions } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useAuth } from '../contexts/AuthContext';
-import { getPostById, addInteraction, deleteInteraction } from '../services/postService';
+import { getPostById, addInteraction, deleteInteraction, getPostInteractions } from '../services/postService';
 import CommentItem from '../components/CommentItem';
 import Header from '../components/Header';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,14 +21,23 @@ const BlogDetailScreen = ({ route }) => {
     const [isLiked, setIsLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(0);
     const navigation = useNavigation();
+    const isAuthor = user?.id === post?.userId;
 
     const loadPost = async () => {
         try {
-            const { data } = await getPostById(postId);
-            console.log('API Response:', data);
-            setPost(data);
+            const [postResponse, interactionsResponse] = await Promise.all([
+                getPostById(postId),
+                getPostInteractions(postId)
+            ]);
 
-            const likes = data.interactions?.filter(i => i.type === 'like') || [];
+            const postData = {
+                ...postResponse.data,
+                interactions: interactionsResponse.data || []
+            };
+
+            setPost(postData);
+
+            const likes = postData.interactions.filter(i => i.type === 'like');
             setLikeCount(likes.length);
             setIsLiked(likes.some(i => i.userId._id === user?.id));
         } catch (error) {
@@ -62,12 +71,16 @@ const BlogDetailScreen = ({ route }) => {
     const handleLike = async () => {
         try {
             if (isLiked) {
-                const like = post.interactions?.find(
+                const like = post.interactions.find(
                     i => i.type === 'like' && i.userId._id === user?.id
                 );
-                if (like) await deleteInteraction(post._id, like._id);
+                if (like) {
+                    await deleteInteraction(post._id, like._id);
+                    setLikeCount(prev => prev - 1);
+                }
             } else {
                 await addInteraction(post._id, 'like', '');
+                setLikeCount(prev => prev + 1);
             }
             setIsLiked(!isLiked);
         } catch (error) {
@@ -116,10 +129,21 @@ const BlogDetailScreen = ({ route }) => {
                 }
             >
                 <View style={styles.postContainer}>
+                    <View style={styles.authorContainer}>
+                        <Image
+                            source={isAuthor && user?.avatar?.url
+                                ? { uri: user.avatar.url }
+                                : require('../assets/images/default-avatar.jpg')
+                            }
+                            style={styles.avatar}
+                        />
+                        <View style={styles.authorInfo}>
+                            <Text style={styles.authorName}>{post?.userId?.name}</Text>
+                            <Text style={styles.postDate}>Ngày {formatDate(post?.createdAt)}</Text>
+                        </View>
+                    </View>
+
                     <Text style={styles.postTitle}>{post?.title}</Text>
-                    <Text style={styles.postMeta}>
-                        Đăng bởi {post?.userId?.name} • Ngày {formatDate(post?.createdAt)}
-                    </Text>
 
                     {post?.images?.length > 0 && (
                         <FlatList
@@ -156,14 +180,15 @@ const BlogDetailScreen = ({ route }) => {
                             onPress={handleLike}
                         >
                             <Icon
-                                name="thumb-up"
-                                size={24}
+                                name={isLiked ? "thumb-up" : "thumb-up-off-alt"}
+                                size={28}
                                 color={isLiked ? '#007bff' : '#95a5a6'}
                             />
                             <Text style={[
-                                styles.interactionText,
+                                styles.likeCountText,
                                 isLiked && styles.likedText
                             ]}>
+                                {likeCount} lượt thích
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -183,6 +208,7 @@ const BlogDetailScreen = ({ route }) => {
                                     comment={item}
                                     onDelete={() => handleDeleteComment(item._id)}
                                     canDelete={item.userId._id === user?.id}
+                                    avatar={item.userId.avatar}
                                 />
                             )}
                             scrollEnabled={false}
@@ -193,6 +219,10 @@ const BlogDetailScreen = ({ route }) => {
 
             {isAuthenticated && (
                 <View style={styles.commentInputContainer}>
+                    <Image
+                        source={user?.avatar?.url ? { uri: user.avatar.url } : require('../assets/images/default-avatar.jpg')}
+                        style={styles.userAvatar}
+                    />
                     <TextInput
                         style={styles.commentInput}
                         placeholder="Viết bình luận..."
@@ -235,22 +265,41 @@ const styles = StyleSheet.create({
         shadowRadius: 6,
         elevation: 3,
     },
-    postTitle: {
-        fontSize: 22,
-        fontWeight: 'bold',
-        color: '#2d3436',
-        marginBottom: 8,
-    },
-    postMeta: {
-        fontSize: 14,
-        color: '#636e72',
+    authorContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
         marginBottom: 16,
     },
-    postContent: {
+    avatar: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        marginRight: 12,
+    },
+    userAvatar: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        marginRight: 12,
+    },
+    authorInfo: {
+        flex: 1,
+    },
+    authorName: {
         fontSize: 16,
-        lineHeight: 24,
+        fontWeight: 'bold',
         color: '#2d3436',
-        marginVertical: 16,
+    },
+    postDate: {
+        fontSize: 14,
+        color: '#636e72',
+        marginTop: 4,
+    },
+    postTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#2d3436',
+        marginBottom: 16,
     },
     imageList: {
         paddingBottom: 10,
@@ -264,16 +313,20 @@ const styles = StyleSheet.create({
     interactionContainer: {
         flexDirection: 'row',
         marginTop: 16,
+        paddingTop: 16,
+        borderTopWidth: 1,
+        borderTopColor: '#eee',
     },
     likeButton: {
         flexDirection: 'row',
         alignItems: 'center',
         padding: 8,
     },
-    interactionText: {
+    likeCountText: {
         marginLeft: 8,
         color: '#95a5a6',
-        fontSize: 16,
+        fontSize: 18,
+        fontWeight: '500',
     },
     likedText: {
         color: '#007bff',
@@ -287,10 +340,10 @@ const styles = StyleSheet.create({
         padding: 16,
     },
     sectionTitle: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: '600',
         color: '#2d3436',
-        marginBottom: 12,
+        marginBottom: 16,
     },
     commentInputContainer: {
         flexDirection: 'row',
@@ -306,7 +359,7 @@ const styles = StyleSheet.create({
         borderRadius: 24,
         paddingHorizontal: 16,
         paddingVertical: 12,
-        fontSize: 16,
+        fontSize: 18,
         marginRight: 8,
         maxHeight: 120,
     },

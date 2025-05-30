@@ -1,10 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Alert, TouchableOpacity, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
-const CommentItem = ({ comment, onDelete, canDelete }) => {
+const CommentItem = ({ comment, onDelete, canDelete, avatar }) => {
     return (
         <View style={styles.container}>
+             <Image
+                source={comment?.userId?.avatar?.url ? { uri: comment.userId.avatar.url } : require('../assets/images/default-avatar.jpg')}
+                style={styles.avatar}
+            />
             <View style={styles.commentHeader}>
                 <Text style={styles.userName}>{comment.userId.name}</Text>
                 {canDelete && (
@@ -36,6 +40,12 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         marginBottom: 8,
     },
+    avatar: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        marginRight: 12,
+    },
     commentHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -44,10 +54,12 @@ const styles = StyleSheet.create({
     userName: {
         fontWeight: 'bold',
         color: '#333',
+        fontSize: 18
     },
     commentText: {
         color: '#555',
         lineHeight: 20,
+        fontSize: 17
     },
 });
 
