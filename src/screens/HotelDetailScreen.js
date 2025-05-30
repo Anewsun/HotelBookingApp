@@ -229,7 +229,8 @@ const HotelDetailScreen = () => {
                   navigation.navigate('Chat', {
                     userId: hotel.ownerId,
                     hotelId: hotel._id,
-                    hotelName: hotel.name
+                    hotelName: hotel.name,
+                    receiverName: "Chủ khách sạn"
                   });
                 }}
               >

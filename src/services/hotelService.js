@@ -25,7 +25,7 @@ export const fetchHotelById = async (hotelId) => {
 
 export const fetchAllAmenities = async () => {
   try {
-    const response = await fetch('http://10.0.2.2:5000/api/amenities');
+    const response = await fetch('http://10.0.2.2:3000/api/amenities');
     const data = await response.json();
     return data.data;
   } catch (error) {

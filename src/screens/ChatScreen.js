@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 
 const ChatScreen = ({ route }) => {
-    const { userId, hotelName: initialHotelName } = route.params;
+    const { userId, hotelName: initialHotelName, receiverName: initialReceiverName } = route.params;
     const [socketError, setSocketError] = useState(false);
     const [socketReady, setSocketReady] = useState(false);
     const [state, setState] = useState({
@@ -19,7 +19,7 @@ const ChatScreen = ({ route }) => {
         hasMore: true,
         refreshing: false,
         isTyping: false,
-        receiverName: 'Chủ khách sạn',
+        receiverName: initialReceiverName || 'Chủ khách sạn',
         hotelName: initialHotelName,
     });
     const { user } = useAuth();
@@ -193,8 +193,8 @@ const ChatScreen = ({ route }) => {
                 </TouchableOpacity>
                 <View style={styles.headerContent}>
                     <Text style={styles.headerTitle}>{state.receiverName}</Text>
-                    {state.hotelInfo && (
-                        <Text style={styles.hotelName}>{state.hotelInfo.name}</Text>
+                    {state.hotelName && (
+                        <Text style={styles.hotelName}>{state.hotelName}</Text>
                     )}
                 </View>
                 <View style={{ width: 24 }} />
@@ -288,13 +288,13 @@ const styles = StyleSheet.create({
         alignItems: 'center'
     },
     hotelName: {
-        fontSize: 14,
-        color: '#EEE',
+        fontSize: 16,
+        color: 'black',
         marginTop: 2
     },
     container: {
         flex: 1,
-        backgroundColor: '#F5F5F5'
+        backgroundColor: '#f0f4ff'
     },
     messagesContainer: {
         paddingVertical: 10,

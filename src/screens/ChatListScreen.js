@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, FlatList, TouchableOpacity, Text, StyleSheet, Image } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { getConversations } from '../services/chatService';
@@ -7,13 +7,14 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { formatTime } from '../utils/dateUtils';
 import BottomNav from '../components/BottomNav';
 import Header from '../components/Header';
-import { getSocket, waitForSocketConnection } from '../utils/socket';
+import { getSocket, waitForSocketConnection, initSocket } from '../utils/socket';
 import { useFocusEffect } from '@react-navigation/native';
 
 const ChatListScreen = ({ navigation }) => {
     const [conversations, setConversations] = useState([]);
     const [socketReady, setSocketReady] = useState(false);
     const { user } = useAuth();
+    const socketRef = useRef(null);
 
     const loadConversations = useCallback(async () => {
         try {
@@ -25,56 +26,48 @@ const ChatListScreen = ({ navigation }) => {
         }
     }, []);
 
-    useEffect(() => {
-        let socket;
-        let mounted = true;
+    const setupSocket = useCallback(async () => {
+        try {
+            await initSocket();
+            const socket = getSocket();
+            socketRef.current = socket;
 
-        const setupSocket = async () => {
-            try {
-                await waitForSocketConnection();
-                if (!mounted) return;
+            socket.emit('join', user.id);
 
-                socket = getSocket();
-                const handleNewMessage = () => loadConversations();
+            const handleNewMessage = () => {
+                loadConversations();
+            };
 
-                socket.on('newMessage', handleNewMessage);
-                setSocketReady(true);
+            socket.on('newMessage', handleNewMessage);
 
-                return () => {
-                    socket?.off('newMessage', handleNewMessage);
-                };
-            } catch (error) {
-                console.error('Socket setup failed:', error);
-                if (mounted) setSocketReady(false);
-            }
-        };
-
-        setupSocket();
-
-        return () => {
-            mounted = false;
-        };
-    }, [loadConversations]);
-
-    useEffect(() => {
-        if (!socketReady) return;
-
-        const socket = getSocket();
-        const handleNewMessage = () => {
-            loadConversations();
-        };
-
-        socket.on('newMessage', handleNewMessage);
-
-        return () => {
-            socket.off('newMessage', handleNewMessage);
-        };
-    }, [socketReady, loadConversations]);
+            return () => {
+                socket.off('newMessage', handleNewMessage);
+            };
+        } catch (error) {
+            console.error('Socket setup failed:', error);
+        }
+    }, [user.id, loadConversations]);
 
     useFocusEffect(
         useCallback(() => {
-            loadConversations();
-        }, [loadConversations])
+            let cleanup;
+
+            const init = async () => {
+                await loadConversations();
+                cleanup = await setupSocket();
+            };
+
+            init();
+
+            return () => {
+                if (cleanup && typeof cleanup === 'function') {
+                    cleanup();
+                }
+                if (socketRef.current) {
+                    socketRef.current.off('newMessage');
+                }
+            };
+        }, [loadConversations, setupSocket])
     );
 
     const renderItem = ({ item }) => (
@@ -82,7 +75,8 @@ const ChatListScreen = ({ navigation }) => {
             style={styles.chatItem}
             onPress={() => navigation.navigate('Chat', {
                 userId: item._id,
-                hotelName: item.name
+                hotelName: item.hotelName,
+                receiverName: "Chủ khách sạn"
             })}
         >
             <View style={styles.avatarContainer}>
@@ -98,7 +92,7 @@ const ChatListScreen = ({ navigation }) => {
             <View style={styles.chatContent}>
                 <View style={styles.chatHeader}>
                     <Text style={styles.chatName} numberOfLines={1}>
-                        {item.name}
+                        {item.hotelName || item.name}
                     </Text>
                     <Text style={styles.chatTime}>
                         {formatTime(item.lastMessageDate)}
