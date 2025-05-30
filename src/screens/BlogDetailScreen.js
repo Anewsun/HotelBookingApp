@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, FlatList, ActivityIndicator, Image, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TextInput, FlatList, ActivityIndicator, Image, ScrollView, RefreshControl, TouchableOpacity, Dimensions } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useAuth } from '../contexts/AuthContext';
 import { getPostById, addInteraction, deleteInteraction } from '../services/postService';
@@ -8,6 +8,8 @@ import Header from '../components/Header';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { formatDate } from '../utils/dateUtils';
+import RenderHtml from 'react-native-render-html';
+import sanitizeHtml from 'sanitize-html';
 
 const BlogDetailScreen = ({ route }) => {
     const { postId } = route.params;
@@ -82,6 +84,13 @@ const BlogDetailScreen = ({ route }) => {
         }
     };
 
+    const cleanHtml = sanitizeHtml(post?.content || '', {
+        allowedTags: ['p', 'img', 'b', 'i', 'em', 'strong', 'br'],
+        allowedAttributes: {
+            img: ['src', 'alt', 'width', 'height']
+        }
+    });
+
     if (loading && !post) {
         return (
             <View style={styles.loadingContainer}>
@@ -129,7 +138,17 @@ const BlogDetailScreen = ({ route }) => {
                         />
                     )}
 
-                    <Text style={styles.postContent}>{post?.content}</Text>
+                    <View style={styles.htmlContentContainer}>
+                        <RenderHtml
+                            contentWidth={300}
+                            source={{ html: cleanHtml || '' }}
+                            tagsStyles={{
+                                img: styles.htmlImage,
+                                p: { marginVertical: 8 }
+                            }}
+                            imagesMaxWidth={Dimensions.get('window').width - 32}
+                        />
+                    </View>
 
                     <View style={styles.interactionContainer}>
                         <TouchableOpacity
@@ -298,6 +317,16 @@ const styles = StyleSheet.create({
         borderRadius: 24,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    htmlContentContainer: {
+        marginVertical: 16,
+    },
+    htmlImage: {
+        width: '100%',
+        height: 200,
+        resizeMode: 'contain',
+        marginVertical: 8,
+        borderRadius: 8,
     },
 });
 
