@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Dimensions } from "react-native";
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import { getAmenityIcon } from '../utils/AmenityIcons';
+import { formatDate } from '../utils/dateUtils';
 
 const { width: viewportWidth } = Dimensions.get('window');
 
@@ -68,16 +69,6 @@ const RoomTypeSelection = ({
         </Text>
       </View>
     );
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
   };
 
   const renderRoomPrice = (room) => {

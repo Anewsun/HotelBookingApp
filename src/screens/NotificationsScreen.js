@@ -1,11 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FlatList, View, ActivityIndicator, Text, RefreshControl, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import NotificationItem from '../components/NotificationItem';
 import MarkAllAsReadButton from '../components/MarkAllAsReadButton';
 import useNotifications from '../hooks/useNotifications';
-import { initSocket, getSocket } from '../utils/socket';
+import { initSocket, getSocket, isSocketConnected } from '../utils/socket';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
 
@@ -20,22 +20,32 @@ const NotificationsScreen = () => {
         markAsRead,
         markAllAsRead,
     } = useNotifications(user?.accessToken);
+    const [socketReady, setSocketReady] = useState(false);
 
-    // Socket.IO real-time
     useEffect(() => {
         const setupSocket = async () => {
-            await initSocket();
-            const socket = getSocket();
+            try {
+                if (!isSocketConnected()) {
+                    await initSocket();
+                }
 
-            socket.on('new-notification', () => {
-                refresh();
-            });
+                const socket = getSocket();
+                socket.on('new-notification', refresh);
+                setSocketReady(true);
+            } catch (error) {
+                console.error('Socket setup error:', error);
+            }
         };
 
         setupSocket();
+
         return () => {
-            const socket = getSocket();
-            if (socket) socket.disconnect();
+            try {
+                const socket = getSocket();
+                socket?.off('new-notification');
+            } catch (error) {
+                console.log('Socket cleanup error:', error.message);
+            }
         };
     }, []);
 
@@ -48,7 +58,7 @@ const NotificationsScreen = () => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <Header title="Thông báo" onBackPress={() => navigation.goBack()} showBackIcon={true} rightComponent={<MarkAllAsReadButton onPress={markAllAsRead}/>} />
+            <Header title="Thông báo" onBackPress={() => navigation.goBack()} showBackIcon={true} rightComponent={<MarkAllAsReadButton onPress={markAllAsRead} />} />
 
             {loading ? (
                 <ActivityIndicator size="large" style={styles.loader} />

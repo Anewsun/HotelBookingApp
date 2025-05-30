@@ -5,7 +5,7 @@ const API_URL = 'http://10.0.2.2:5000/api/';
 export const createBooking = async (bookingData) => {
     try {
         const response = await axios.post(`${API_URL}bookings`, bookingData);
-        return response.data.data;
+        return response.data;
     } catch (error) {
         throw new Error(error.response?.data?.message || 'Failed to create booking');
     }
@@ -38,20 +38,31 @@ export const cancelBooking = async (bookingId) => {
     }
 };
 
-export const processPayment = async (bookingId, paymentMethod) => {
+export const retryPayment = async (bookingId, paymentMethod) => {
     try {
-        const response = await axios.post(`${API_URL}bookings/${bookingId}/pay`);
-        return response.data.data || response.data;
+        const response = await axios.post(`${API_URL}bookings/retry-payment`, { bookingId, paymentMethod });
+        return response.data;
     } catch (error) {
+        console.error('Retry payment API error response:', error.response);
         throw new Error(error.response?.data?.message || 'Request failed');
     }
 };
 
 export const checkPaymentStatus = async (transactionId) => {
     try {
-        const response = await axios.get(`${API_URL}bookings/check-payment/${transactionId}`);
-        return response.data.data || response.data;
+        const response = await axios.get(`${API_URL}bookings/payment-status/${transactionId}`);
+        return response.data;
     } catch (error) {
-        throw new Error(error.response?.data?.message || 'Request failed');
+        throw new Error(error.response?.data?.message || 'Failed to check payment status');
+    }
+};
+
+export const forceZaloPayCallback = async (callbackData) => {
+    try {
+        const response = await axios.post(`${API_URL}bookings/zalopay-callback`, callbackData);
+        return response.data;
+    } catch (error) {
+        console.error('Error forcing ZaloPay callback:', error.response?.data || error.message);
+        throw new Error('Gửi callback thất bại');
     }
 };

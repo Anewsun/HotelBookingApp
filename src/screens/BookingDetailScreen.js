@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../components/Header';
@@ -9,23 +9,33 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import ReviewFormModal from "../components/ReviewFormModal";
 import { createReview } from "../services/reviewService";
+import QRCodeCustom from '../components/QRCodeCustom';
+import Modal from 'react-native-modal';
 
 const BookingDetailScreen = () => {
     const navigation = useNavigation();
     const route = useRoute();
     const { bookingId } = route.params;
-    const { getDetails, cancelBooking } = useBooking();
+    const { getDetails, cancelBooking, retryPayment } = useBooking();
     const [booking, setBooking] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [reviewModalVisible, setReviewModalVisible] = useState(false);
     const [hasReviewed, setHasReviewed] = useState(false);
+    const [showQRModal, setShowQRModal] = useState(false);
+    const [qrData, setQrData] = useState(null);
+    const [transactionId, setTransactionId] = useState(null);
 
     useEffect(() => {
         const fetchBookingDetails = async () => {
             try {
+                setLoading(true);
                 const details = await getDetails(bookingId);
                 setBooking(details);
+                // Reset modal khi booking được set tránh load ngay lập tức
+                setShowQRModal(false);
+                setQrData(null);
+                setTransactionId(null);
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -36,13 +46,32 @@ const BookingDetailScreen = () => {
         fetchBookingDetails();
     }, [bookingId]);
 
+    useEffect(() => {
+        console.log('showQRModal:', showQRModal);
+        console.log('qrData:', qrData);
+    }, [showQRModal, qrData]);
+
+
     const handleCancelBooking = async () => {
-        try {
-            await cancelBooking(bookingId);
-            navigation.goBack();
-        } catch (err) {
-            setError(err.message);
-        }
+        Alert.alert(
+            'Xác nhận hủy đặt phòng',
+            'Bạn có chắc muốn hủy đặt phòng này?',
+            [
+                { text: 'Không', style: 'cancel' },
+                {
+                    text: 'Hủy đặt',
+                    onPress: async () => {
+                        try {
+                            await cancelBooking(bookingId);
+                            Alert.alert('Thành công', 'Đặt phòng đã được hủy');
+                            navigation.goBack();
+                        } catch (err) {
+                            Alert.alert('Lỗi', err.message || 'Không thể hủy đặt phòng');
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     const DetailRow = ({ icon, label, value, valueColor, valueStyle }) => (
@@ -291,12 +320,38 @@ const BookingDetailScreen = () => {
                             </TouchableOpacity>
 
                             {booking.paymentStatus === 'pending' && (
-                                <TouchableOpacity
-                                    style={[styles.actionButton, { backgroundColor: '#4CAF50' }]}
-                                    onPress={() => { }}
-                                >
-                                    <Text style={styles.actionButtonText}>Thanh toán ngay</Text>
-                                </TouchableOpacity>
+                                <>
+                                    <TouchableOpacity
+                                        style={[styles.actionButton, { backgroundColor: '#1167B1', opacity: loading ? 0.6 : 1 }]}
+                                        disabled={loading}
+                                        onPress={async () => {
+                                            setLoading(true);
+                                            try {
+                                                const result = await retryPayment(booking._id, booking.paymentMethod);
+                                                console.log('Payment result:', result);
+
+                                                if (result?.paymentUrl) {
+                                                    setQrData(result.paymentUrl);
+                                                    setTransactionId(result.transactionId);
+                                                    if (result.paymentUrl && result.transactionId) {
+                                                        setShowQRModal(true);
+                                                    }
+                                                } else {
+                                                    Alert.alert('Lỗi', 'Không nhận được URL thanh toán từ hệ thống');
+                                                }
+                                            } catch (error) {
+                                                console.error('Payment error:', error);
+                                                Alert.alert('Lỗi', error.message || 'Không thể khởi tạo thanh toán lại.');
+                                            } finally {
+                                                setLoading(false);
+                                            }
+                                        }}
+                                    >
+                                        <Text style={styles.actionButtonText}>
+                                            {loading ? 'Đang xử lý...' : 'Thanh toán ngay'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </>
                             )}
                         </>
                     )}
@@ -328,6 +383,33 @@ const BookingDetailScreen = () => {
                     )}
                 </View>
 
+                <Modal isVisible={showQRModal && !!qrData}>
+                    <View style={styles.qrContainer}>
+                        <Text style={styles.qrTitle}>Quét mã để thanh toán</Text>
+
+                        {qrData ? (
+                            <QRCodeCustom value={qrData} size={250} />
+                        ) : (
+                            <ActivityIndicator size="large" color="#0000ff" />
+                        )}
+
+                        <Text style={styles.qrInfo}>Mã đặt phòng: {booking?._id}</Text>
+                        <Text style={styles.qrInfo}>Số tiền: {booking?.finalPrice?.toLocaleString()} VNĐ</Text>
+
+                        <TouchableOpacity
+                            style={styles.qrButton}
+                            onPress={() => {
+                                setShowQRModal(false);
+                                navigation.navigate('Confirm', {
+                                    transactionId,
+                                    bookingId: booking._id
+                                });
+                            }}
+                        >
+                            <Text style={styles.qrButtonText}>Đã quét xong</Text>
+                        </TouchableOpacity>
+                    </View>
+                </Modal>
             </ScrollView>
         </SafeAreaView>
     );
@@ -402,6 +484,43 @@ const styles = StyleSheet.create({
         color: '#F44336',
         textAlign: 'center',
         marginTop: 20,
+        fontSize: 16,
+    },
+    qrContainer: {
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 10,
+        alignItems: 'center',
+    },
+    qrTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 15,
+        color: '#003366',
+    },
+    qrInfo: {
+        fontSize: 14,
+        marginTop: 10,
+        color: '#555',
+    },
+    qrInstruction: {
+        marginTop: 15,
+        marginBottom: 20,
+        textAlign: 'center',
+        color: '#666',
+        lineHeight: 22,
+    },
+    qrButton: {
+        backgroundColor: '#1167B1',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 5,
+        width: '100%',
+        alignItems: 'center',
+    },
+    qrButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
         fontSize: 16,
     },
 });

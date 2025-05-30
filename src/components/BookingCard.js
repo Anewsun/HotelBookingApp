@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
-const BookingCard = ({ booking, onPress }) => {
+const BookingCard = memo(({ booking, onPress, extraData }) => {
     const getStatusColor = () => {
         switch (booking.status) {
             case 'confirmed': return '#4CAF50';
@@ -33,6 +33,10 @@ const BookingCard = ({ booking, onPress }) => {
 
     const getRoomImageSource = () => {
         try {
+            if (typeof booking.room === 'string') {
+                return require('../assets/images/hotel1.jpg');
+            }
+
             const firstImage = booking.room?.images?.[0];
             const imageUrl = firstImage?.url ||
                 (typeof firstImage === 'string' ? firstImage : null) ||
@@ -45,6 +49,7 @@ const BookingCard = ({ booking, onPress }) => {
         } catch (error) {
             console.error('Error processing image URL:', error);
         }
+
         return require('../assets/images/hotel1.jpg');
     };
 
@@ -104,7 +109,7 @@ const BookingCard = ({ booking, onPress }) => {
             </View>
         </View>
     );
-};
+});
 
 const styles = StyleSheet.create({
     cardContainer: {

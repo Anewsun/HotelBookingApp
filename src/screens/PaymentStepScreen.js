@@ -5,6 +5,7 @@ import { Stepper } from '../components/Stepper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../components/Header';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { formatDate } from '../utils/dateUtils';
 
 const PaymentStepScreen = ({ navigation, route }) => {
     const { selectedRoom, hotel, searchParams } = route.params;
@@ -43,17 +44,9 @@ const PaymentStepScreen = ({ navigation, route }) => {
         setShowTimePicker(null);
     };
 
-    const formatDate = (date) => {
-        if (!date) return "Chọn ngày";
-        const day = date.getDate();
-        const month = date.getMonth() + 1;
-        const year = date.getFullYear();
-        return `${day}/${month}/${year}`;
-    };
-
     return (
         <SafeAreaView style={styles.container}>
-            <Header title="Đặt phòng và thanh toán" onBackPress={() => navigation.goBack()} showBackIcon={true} />
+            <Header title="Đặt phòng & thanh toán" onBackPress={() => navigation.goBack()} showBackIcon={true} />
             <Stepper steps={['Đặt phòng', 'Thông tin', 'Xác nhận']} currentStep={1} />
 
             <ScrollView style={styles.scrollContainer}>
@@ -98,13 +91,13 @@ const PaymentStepScreen = ({ navigation, route }) => {
                             style={styles.dateInput}
                             onPress={() => setShowDatePicker('checkIn')}
                         >
-                            <Text>{formatDate(checkInDate)}</Text>
+                            <Text style={styles.dateTimeText}>{formatDate(checkInDate)}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.timeInput}
                             onPress={() => setShowTimePicker('checkIn')}
                         >
-                            <Text>{checkInTime}</Text>
+                            <Text style={styles.dateTimeText}>{checkInTime}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -116,13 +109,13 @@ const PaymentStepScreen = ({ navigation, route }) => {
                             style={styles.dateInput}
                             onPress={() => setShowDatePicker('checkOut')}
                         >
-                            <Text>{formatDate(checkOutDate)}</Text>
+                            <Text style={styles.dateTimeText}>{formatDate(checkOutDate)}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.timeInput}
                             onPress={() => setShowTimePicker('checkOut')}
                         >
-                            <Text>{checkOutTime}</Text>
+                            <Text style={styles.dateTimeText}>{checkOutTime}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -268,6 +261,8 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'black',
         borderRadius: 8,
+        justifyContent: 'center',
+        fontSize: 17
     },
     timeInput: {
         flex: 1,
@@ -276,7 +271,12 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'black',
         borderRadius: 8,
+        justifyContent: 'center',
         alignItems: 'center',
+    },
+    dateTimeText: {
+        fontSize: 17,
+        textAlign: 'center',
     },
     switchContainer: {
         flexDirection: 'row',

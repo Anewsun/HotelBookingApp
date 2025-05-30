@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image, Modal, Alert, ActivityIndicator } from 'react-native';
 import { Stepper } from '../components/Stepper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -6,6 +6,8 @@ import Header from '../components/Header';
 import { PaymentMethodCard } from '../components/PaymentMethodCard';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useVoucher } from '../hooks/useVoucher';
+import { useBooking } from '../contexts/BookingContext';
+import { formatDate } from '../utils/dateUtils';
 
 const PaymentScreen = ({ navigation, route }) => {
   const { bookingData } = route.params;
@@ -15,15 +17,15 @@ const PaymentScreen = ({ navigation, route }) => {
   const [availableVouchers, setAvailableVouchers] = useState([]);
   const { fetchAvailableVouchers, isLoading, error } = useVoucher();
   const [discount, setDiscount] = useState(0);
-  const basePrice = Number(bookingData.room.price) || 0;
+  const basePrice = useMemo(() => Number(bookingData.room.price) || 0, [bookingData.room.price]);
   const [total, setTotal] = useState(basePrice);
-
+  const { addBooking, getDetails } = useBooking();
+  const [isProcessing, setIsProcessing] = useState(false);
   const checkInDate = new Date(bookingData.checkIn.date);
   const checkOutDate = new Date(bookingData.checkOut.date);
   const checkInTime = bookingData.checkIn.time;
   const checkOutTime = bookingData.checkOut.time;
-  const nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
-
+  const nights = bookingData.nights || Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
   const paymentMethods = [
     {
       id: 'zalopay',
@@ -41,6 +43,8 @@ const PaymentScreen = ({ navigation, route }) => {
 
   useEffect(() => {
     const loadVouchers = async () => {
+      if (basePrice <= 0) return;
+
       const vouchers = await fetchAvailableVouchers(basePrice);
       if (vouchers) {
         setAvailableVouchers(vouchers);
@@ -48,17 +52,11 @@ const PaymentScreen = ({ navigation, route }) => {
     };
 
     loadVouchers();
-  }, [basePrice]);
-
-  const formatDate = (date) => {
-    return date.toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
+  }, [basePrice, fetchAvailableVouchers]);
 
   const formatCurrency = (amount) => {
+    if (isNaN(amount)) return amount.toString();
+
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND'
@@ -66,29 +64,64 @@ const PaymentScreen = ({ navigation, route }) => {
   };
 
   const handlePayment = async () => {
-    if (!selectedMethod) {
-      Alert.alert('Lỗi', 'Vui lòng chọn phương thức thanh toán');
-      return;
-    }
-
+    setIsProcessing(true);
     try {
+      if (!selectedMethod) {
+        Alert.alert('Lỗi', 'Vui lòng chọn phương thức thanh toán');
+        return;
+      }
+
       const bookingPayload = {
-        ...bookingData,
-        checkIn: checkInDate,
-        checkOut: checkOutDate,
+        roomId: bookingData.room?._id,
+        hotelId: bookingData.hotel._id,
+        checkIn: new Date(bookingData.checkIn.date).toISOString(),
+        checkOut: new Date(bookingData.checkOut.date).toISOString(),
         paymentMethod: selectedMethod,
-        voucher: selectedVoucher?._id || null,
-        totalAmount: total,
-        discountAmount: discount,
-        status: 'pending'
+        voucherId: selectedVoucher?._id,
+        contactInfo: {
+          name: bookingData.userInfo.name.trim(),
+          email: bookingData.userInfo.email.trim(),
+          phone: bookingData.userInfo.phone.trim()
+        },
+        specialRequests: bookingData.specialRequests
       };
 
-      // const response = await createBooking(bookingPayload, user.accessToken);
+      if (bookingData.guestInfo) {
+        bookingPayload.bookingFor = 'other';
+        bookingPayload.guestInfo = {
+          name: bookingData.guestInfo.name.trim(),
+          email: bookingData.guestInfo.email?.trim() || '',
+          phone: bookingData.guestInfo.phone.trim()
+        };
+      } else {
+        bookingPayload.bookingFor = 'self';
+      }
 
-      navigation.navigate('Confirm');
+      console.log('Payload gửi đi:', bookingPayload);
+      const result = await addBooking(bookingPayload);
+
+      // if (result?.paymentUrl) {
+      //   navigation.navigate('ZaloPayWebView', {
+      //     paymentUrl: result.paymentUrl
+      //   });
+      // } else {
+      //   Alert.alert('Lỗi', 'Không nhận được URL thanh toán từ server');
+      // }
+
+      // console.log('→ Gửi sang WebView:', {
+      //   url: result.paymentUrl
+      // });
+      Alert.alert('Thành công', 'Đặt phòng thành công! Bạn có thể thanh toán sau trong Lịch sử đặt phòng.');
+      navigation.navigate('Booking');
     } catch (error) {
-      console.error('Payment error:', error);
-      Alert.alert('Lỗi', error.message || 'Đã xảy ra lỗi khi thanh toán');
+      console.error('Lỗi chi tiết:', {
+        message: error.message,
+        stack: error.stack,
+        response: error.result?.data
+      });
+      Alert.alert('Lỗi', error.message || 'Thanh toán thất bại');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -222,7 +255,7 @@ const PaymentScreen = ({ navigation, route }) => {
         >
           <Icon name="local-offer" size={24} color="#1167B1" />
           <Text style={styles.voucherButtonText}>
-            {selectedVoucher ? selectedVoucher.name : 'Chọn voucher'}
+            {selectedVoucher ? selectedVoucher.code : 'Chọn voucher'}
           </Text>
         </TouchableOpacity>
 
@@ -249,11 +282,15 @@ const PaymentScreen = ({ navigation, route }) => {
       </ScrollView>
 
       <TouchableOpacity
-        style={[styles.confirmButton, !selectedMethod && styles.disabledButton]}
+        style={[styles.confirmButton, (!selectedMethod || isProcessing) && styles.disabledButton]}
         onPress={handlePayment}
-        disabled={!selectedMethod}
+        disabled={!selectedMethod || isProcessing}
       >
-        <Text style={styles.confirmText}>Thanh toán</Text>
+        {isProcessing ? (
+          <ActivityIndicator color="blue" />
+        ) : (
+          <Text style={styles.confirmText}>Đặt phòng ngay</Text>
+        )}
       </TouchableOpacity>
 
       <Modal visible={showVouchers} transparent animationType="slide">
@@ -274,23 +311,27 @@ const PaymentScreen = ({ navigation, route }) => {
                     selectedVoucher?._id === voucher._id && styles.selectedVoucher
                   ]}
                   onPress={async () => {
-                    try {
-                      const validationResult = await validateVoucherCode(voucher._id, basePrice);
+                    let discountValue = 0;
 
-                      if (validationResult && validationResult.success) {
-                        setSelectedVoucher(voucher);
-                        setDiscount(validationResult.discountAmount);
-                        setTotal(basePrice - validationResult.discountAmount);
-                        setShowVouchers(false);
-                      } else {
-                        Alert.alert('Lỗi', validationResult?.message || 'Voucher không hợp lệ');
-                      }
-                    } catch (error) {
-                      console.error('Error validating voucher:', error);
-                      Alert.alert('Lỗi', 'Đã xảy ra lỗi khi kiểm tra voucher');
+                    if (voucher.discountType === 'fixed') {
+                      discountValue = voucher.discount;
+                    } else {
+                      const rawDiscount = (basePrice * voucher.discount) / 100;
+                      discountValue = voucher.maxDiscount
+                        ? Math.min(rawDiscount, voucher.maxDiscount)
+                        : rawDiscount;
                     }
-                  }}
-                >
+
+                    if (isNaN(discountValue)) {
+                      Alert.alert('Lỗi', 'Giá trị giảm giá không hợp lệ');
+                      return;
+                    }
+
+                    setSelectedVoucher(voucher);
+                    setDiscount(discountValue);
+                    setTotal(basePrice - discountValue);
+                    setShowVouchers(false);
+                  }}>
                   <Icon
                     name={voucher.discountType === 'percentage' ? 'local-offer' : 'confirmation-number'}
                     size={24}
@@ -300,7 +341,8 @@ const PaymentScreen = ({ navigation, route }) => {
                     <Text style={styles.voucherName}>{voucher.code}</Text>
                     <Text style={styles.voucherDetails}>
                       {voucher.discountType === 'percentage'
-                        ? `Giảm ${formatCurrency(voucher.discount)}% (Tối đa ${formatCurrency(voucher.maxDiscount)})`
+                        ? `Giảm ${voucher.discount}%` +
+                        (voucher.maxDiscount ? ` (Tối đa ${formatCurrency(voucher.maxDiscount)})` : '')
                         : `Giảm ${formatCurrency(voucher.discount)}`}
                     </Text>
                     <Text style={styles.voucherCondition}>

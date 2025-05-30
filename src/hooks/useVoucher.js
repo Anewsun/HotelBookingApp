@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getAvailableVouchers } from '../services/voucherService';
 
@@ -7,7 +7,7 @@ export const useVoucher = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const fetchAvailableVouchers = async (totalAmount, page = 1, limit = 10) => {
+    const fetchAvailableVouchers = useCallback(async (totalAmount, page = 1, limit = 10) => {
         if (!user?.accessToken) {
             setError('User not authenticated');
             return null;
@@ -25,7 +25,7 @@ export const useVoucher = () => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [user?.accessToken]);
 
     return {
         isLoading,
