@@ -23,6 +23,7 @@ const styles = StyleSheet.create({
     marginVertical: 16
   },
   button: {
+    width: 160,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFF',

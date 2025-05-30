@@ -49,23 +49,33 @@ const SignInScreen = ({ navigation }) => {
   };
 
   const handleGoogleLogin = async () => {
-    try {
-      const result = await loginWithGoogle();
-      Alert.alert('Thành công', 'Đăng nhập bằng Google thành công');
-      navigation.navigate('Home');
-    } catch (error) {
-      Alert.alert('Lỗi', getErrorMessage(error));
-    }
+    // try {
+    //   const result = await loginWithGoogle();
+    //   Alert.alert('Thành công', 'Đăng nhập bằng Google thành công');
+    //   navigation.navigate('Home');
+    // } catch (error) {
+    //   Alert.alert('Lỗi', getErrorMessage(error));
+    // }
+    Alert.alert(
+      'Thông báo',
+      'Chức năng đăng nhập bằng Google chỉ khả dụng khi sử dụng web. Vui lòng truy cập bookit.com để sử dụng tính năng này.',
+      [{ text: 'OK' }]
+    );
   };
 
   const handleFacebookLogin = async () => {
-    try {
-      const result = await loginWithFacebook();
-      Alert.alert('Thành công', 'Đăng nhập bằng Facebook thành công');
-      navigation.navigate('Home');
-    } catch (error) {
-      Alert.alert('Lỗi', getErrorMessage(error));
-    }
+    // try {
+    //   const result = await loginWithFacebook();
+    //   Alert.alert('Thành công', 'Đăng nhập bằng Facebook thành công');
+    //   navigation.navigate('Home');
+    // } catch (error) {
+    //   Alert.alert('Lỗi', getErrorMessage(error));
+    // }
+    Alert.alert(
+      'Thông báo',
+      'Chức năng đăng nhập bằng Facebook chỉ khả dụng khi sử dụng web. Vui lòng truy cập bookit.com để sử dụng tính năng này.',
+      [{ text: 'OK' }]
+    );
   };
 
   return (
@@ -107,6 +117,9 @@ const SignInScreen = ({ navigation }) => {
 
       <Text style={styles.orText}>HOẶC</Text>
       <SocialLogin onGooglePress={handleGoogleLogin} onFacebookPress={handleFacebookLogin} />
+      <Text style={styles.noteText}>
+        Chức năng đăng nhập MXH chỉ khả dụng trên web
+      </Text>
 
       <Text style={styles.footerText}>
         Chưa có tài khoản? <Text style={styles.registerText} onPress={() => navigation.navigate('SignUp')} >Đăng ký</Text>
@@ -199,6 +212,13 @@ const styles = StyleSheet.create({
     color: '#1167B1',
     fontWeight: 'bold',
     fontSize: 17
+  },
+  noteText: {
+    textAlign: 'center',
+    marginTop: 8,
+    color: '#888',
+    fontStyle: 'italic',
+    fontSize: 14,
   },
 });
 

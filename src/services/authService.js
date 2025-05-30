@@ -110,24 +110,24 @@ export const login = async (email, password) => {
     return response.data;
 };
 
-export const loginWithGoogle = async () => {
-    try {
-        const authUrl = `${API_URL}/google`;
-        Linking.openURL(authUrl);
-    } catch (error) {
-        console.log("🔴 Lỗi Google Login:", error);
-        throw "Đăng nhập Google thất bại";
-    }
-};
+// export const loginWithGoogle = async () => {
+//     try {
+//         const authUrl = `${API_URL}/google`;
+//         Linking.openURL(authUrl);
+//     } catch (error) {
+//         console.log("🔴 Lỗi Google Login:", error);
+//         throw "Đăng nhập Google thất bại";
+//     }
+// };
 
-export const loginWithFacebook = async () => {
-    try {
-        const response = await axios.get(`${API_URL}/facebook`);
-        return response.data;
-    } catch (error) {
-        throw error.response?.data || "Đăng nhập Facebook thất bại";
-    }
-};
+// export const loginWithFacebook = async () => {
+//     try {
+//         const response = await axios.get(`${API_URL}/facebook`);
+//         return response.data;
+//     } catch (error) {
+//         throw error.response?.data || "Đăng nhập Facebook thất bại";
+//     }
+// };
 
 export const sendOTP = async (email) => {
     try {
