@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert } fro
 import { useNavigation } from '@react-navigation/native';
 import Header from '../components/Header';
 import { resetPassword } from '../services/authService';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const NewPasswordScreen = ({ route }) => {
   const [password, setPassword] = useState('');
@@ -46,7 +47,7 @@ const NewPasswordScreen = ({ route }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Header title="Mật khẩu mới" onBackPress={() => navigation.goBack()} showBackIcon={true} />
       <Text style={styles.subText}>Mật khẩu mới phải khác với mật khẩu trước đó.</Text>
 
@@ -89,7 +90,7 @@ const NewPasswordScreen = ({ route }) => {
       <TouchableOpacity style={styles.button} onPress={handleCreatePassword}>
         <Text style={styles.buttonText}>Tạo mật khẩu mới</Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 };
 

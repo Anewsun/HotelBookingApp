@@ -30,23 +30,20 @@ const NotificationsScreen = () => {
                 }
 
                 const socket = getSocket();
-                socket.on('new-notification', refresh);
+                socket.on('notification', refresh);
                 setSocketReady(true);
+
+                return () => {
+                    socket?.off('notification');
+                };
             } catch (error) {
-                console.error('Socket setup error:', error);
+                console.log('Socket setup failed, using polling:', error.message);
+                const interval = setInterval(refresh, 30000);
+                return () => clearInterval(interval);
             }
         };
 
         setupSocket();
-
-        return () => {
-            try {
-                const socket = getSocket();
-                socket?.off('new-notification');
-            } catch (error) {
-                console.log('Socket cleanup error:', error.message);
-            }
-        };
     }, []);
 
     const renderItem = ({ item }) => (

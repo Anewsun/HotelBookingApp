@@ -72,10 +72,16 @@ const FilterScreen = ({ navigation, route }) => {
     );
   }
 
+  const activeFilterCount =
+    (selectedRating ? 1 : 0) +
+    (priceRange.min > 0 || priceRange.max < 10000000 ? 1 : 0) +
+    (selectedRoomType ? 1 : 0) +
+    selectedRoomAmenities.length;
+
   return (
     <SafeAreaView style={styles.container}>
       <Header
-        title={`Bộ lọc (${(selectedRating ? 1 : 0) + selectedRoomAmenities.length})`}
+        title={`Bộ lọc (${activeFilterCount})`}
         onBackPress={() => navigation.goBack()}
         showBackIcon={true}
       />

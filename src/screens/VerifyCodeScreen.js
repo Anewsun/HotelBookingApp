@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, TextInput } from 'react-native';
 import Header from '../components/Header';
 import { verifyOTP, sendOTP } from '../services/authService';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const VerifyCodeScreen = ({ navigation, route }) => {
   const [code, setCode] = useState('');
@@ -64,7 +65,7 @@ const VerifyCodeScreen = ({ navigation, route }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Header title="Xác nhận Code" onBackPress={() => navigation.goBack()} showBackIcon={true} />
       <Text style={styles.subText}>Hãy nhập mã code chúng tôi gửi bạn qua email</Text>
       <Text style={styles.emailText}>{email || 'your-email@example.com'}</Text>
@@ -120,7 +121,7 @@ const VerifyCodeScreen = ({ navigation, route }) => {
       >
         <Text style={styles.buttonText}>{isLoading ? 'Đang xử lý...' : 'Xác nhận'}</Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 };
 

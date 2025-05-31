@@ -66,10 +66,9 @@ export const register = async (name, email, password) => {
         console.log("❌ Error Response:", error.response?.data || error);
 
         if (error.response && error.response.status === 400) {
-            throw new Error(error.response.data.message || "Lỗi từ máy chủ!");
+            throw new Error(error.response.data.message);
         }
-
-        throw new Error("Đăng ký thất bại, thử lại sau!");
+        throw new Error(error.response.data.message);
     }
 };
 

@@ -3,7 +3,7 @@ import { ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getMe, refreshToken } from '../services/authService';
 import { jwtDecode } from "jwt-decode";
-import { initSocket, disconnectSocket, isSocketConnected } from '../utils/socket';
+import { initSocket, disconnectSocket, isSocketConnected, waitForSocketConnection } from '../utils/socket';
 
 export const AuthContext = createContext();
 
@@ -96,14 +96,32 @@ export const AuthProvider = ({ children }) => {
     try {
       await AsyncStorage.setItem('token', userData.accessToken);
       await AsyncStorage.setItem('user', JSON.stringify(userData));
-      initSocket().catch(error => {
-        console.error('Background socket init error:', error.message);
-      });
+      try {
+        if (!isSocketConnected()) {
+          await initSocket().catch(error => {
+            console.log('Non-critical socket init error:', error.message);
+          });
+        }
+      } catch (error) {
+        console.log('Background socket init error (non-critical):', error.message);
+      }
       setUser(userData);
       setIsAuthenticated(true);
       return true;
     } catch (error) {
       console.error('Login error:', error);
+      return false;
+    }
+  };
+
+  const connectSocketIfNeeded = async () => {
+    try {
+      if (!isSocketConnected()) {
+        await initSocket();
+      }
+      return true;
+    } catch (error) {
+      console.log('Socket connection attempt failed:', error.message);
       return false;
     }
   };
@@ -121,6 +139,7 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         refreshUserData,
+        connectSocketIfNeeded
       }}
     >
       {children}

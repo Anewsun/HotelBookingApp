@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import * as notificationService from '../services/notificationService';
+import { initSocket, getSocket, isSocketConnected } from '../utils/socket';
 
 const useNotifications = (token) => {
   const [notifications, setNotifications] = useState([]);
@@ -7,7 +8,7 @@ const useNotifications = (token) => {
   const [error, setError] = useState(null);
 
   const fetchNotifications = async () => {
-    if (!token) return; // Dừng nếu không có token
+    if (!token) return;
     try {
       const data = await notificationService.getNotifications();
       setNotifications(data);
@@ -21,7 +22,7 @@ const useNotifications = (token) => {
   const handleMarkAsRead = async (notificationId) => {
     try {
       await notificationService.markAsRead(notificationId);
-      setNotifications(prev => 
+      setNotifications(prev =>
         prev.map(n => n._id === notificationId ? { ...n, status: 'read' } : n)
       );
     } catch (err) {
@@ -38,14 +39,37 @@ const useNotifications = (token) => {
     }
   };
 
+  const hasUnread = notifications.some(noti => noti.status === 'unread');
+
   useEffect(() => {
+    const setupSocket = async () => {
+      try {
+        if (!isSocketConnected()) {
+          await initSocket();
+        }
+
+        const socket = getSocket();
+        socket.on('notification', fetchNotifications);
+
+        return () => {
+          socket?.off('notification');
+        };
+      } catch (error) {
+        console.log('Socket setup failed, using polling instead:', error.message);
+        const interval = setInterval(fetchNotifications, 30000);
+        return () => clearInterval(interval);
+      }
+    };
+
     fetchNotifications();
-  }, [token]); // Gọi lại API khi token thay đổi
+    setupSocket();
+  }, [token]);
 
   return {
     notifications,
     loading,
     error,
+    hasUnread,
     refresh: fetchNotifications,
     markAsRead: handleMarkAsRead,
     markAllAsRead: handleMarkAllAsRead,

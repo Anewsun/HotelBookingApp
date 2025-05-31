@@ -12,6 +12,7 @@ import { useFavorite } from '../contexts/FavoriteContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useHotels } from '../hooks/useHotels';
 import useNotifications from '../hooks/useNotifications';
+import { initSocket, getSocket, isSocketConnected } from '../utils/socket';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -20,8 +21,7 @@ const HomeScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const { favoriteIds, toggleFavorite } = useFavorite();
   const [currentPage, setCurrentPage] = useState(1);
-  const { notifications } = useNotifications(user?.accessToken);
-  const [hasUnread, setHasUnread] = useState(false);
+  const { notifications, hasUnread } = useNotifications(user?.accessToken);
   const hotelsPerPage = 6;
 
   const totalPages = Math.ceil(hotels.length / hotelsPerPage);
@@ -36,16 +36,30 @@ const HomeScreen = () => {
     }
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      const refreshData = async () => {
-        await refetch();
-        const unread = notifications.some(noti => noti.status === 'unread');
-        setHasUnread(unread);
-      };
-      refreshData();
-    }, [notifications, refetch])
-  );
+  useEffect(() => {
+    const setupSocket = async () => {
+      try {
+        if (!isSocketConnected()) {
+          await initSocket();
+        }
+
+        const socket = getSocket();
+        socket.on('notification', () => {
+          refetch();
+        });
+
+        return () => {
+          socket?.off('notification');
+        };
+      } catch (error) {
+        console.log('Socket setup failed, using polling:', error.message);
+        const interval = setInterval(refetch, 30000);
+        return () => clearInterval(interval);
+      }
+    };
+
+    setupSocket();
+  }, []);
 
   const handlePressHotel = (hotel) => {
     navigation.navigate('Detail', {
