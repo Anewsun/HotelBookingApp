@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Image, TextInput, Alert, Acti
 import InputField from '../components/InputField';
 import { useNavigation } from '@react-navigation/native';
 import { register } from '../services/authService';
+import { getErrorMessage } from '../utils/errorHandler';
 
 const SignUpScreen = () => {
     const navigation = useNavigation();
