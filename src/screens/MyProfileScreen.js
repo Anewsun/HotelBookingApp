@@ -7,6 +7,7 @@ import Header from '../components/Header';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getErrorMessage } from '../utils/errorHandler';
 
 const MyProfileScreen = () => {
     const navigation = useNavigation();
@@ -22,6 +23,7 @@ const MyProfileScreen = () => {
     const [reason, setReason] = useState('');
     const [showDeactivateModal, setShowDeactivateModal] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [emailChanged, setEmailChanged] = useState(false);
 
     useFocusEffect(
         React.useCallback(() => {
@@ -37,7 +39,13 @@ const MyProfileScreen = () => {
                 phone: user.phone || '',
                 address: user.address?.street || '',
             });
+            setEmailChanged(false);
         }
+    };
+
+    const handleEmailChange = (text) => {
+        setFormData({ ...formData, email: text });
+        setEmailChanged(text !== user.email);
     };
 
     const handleUpdateProfile = async () => {
@@ -49,12 +57,20 @@ const MyProfileScreen = () => {
                 phone: formData.phone,
                 address: { street: formData.address }
             };
+            console.log('Updating profile with:', updatePayload);
 
             await updateMe(updatePayload);
             await refreshUserData();
-            Alert.alert('Thành công', 'Cập nhật thông tin thành công!');
+            if (emailChanged) {
+                Alert.alert(
+                    'Thành công',
+                    'Cập nhật thông tin thành công! Một email xác thực đã được gửi đến địa chỉ email mới của bạn. Vui lòng kiểm tra email và xác thực.'
+                );
+            } else {
+                Alert.alert('Thành công', 'Cập nhật thông tin thành công!');
+            }
         } catch (error) {
-            Alert.alert('Lỗi', error.message);
+            Alert.alert('Lỗi', getErrorMessage(error));
         }
         setLoading(false);
     };
@@ -130,15 +146,18 @@ const MyProfileScreen = () => {
                     />
                 </View>
 
+                {emailChanged && (
+                    <Text style={styles.warningText}>Email sẽ cần được xác thực lại sau khi thay đổi</Text>
+                )}
+
                 <View style={styles.inputContainer}>
                     <Feather name="mail" size={20} color="#1167B1" style={styles.icon} />
                     <TextInput
                         style={styles.input}
                         value={formData.email}
-                        onChangeText={(text) => setFormData({ ...formData, email: text })}
+                        onChangeText={handleEmailChange}
                         placeholder="Email"
                         keyboardType="email-address"
-                        editable={false}
                     />
                 </View>
 
@@ -427,7 +446,13 @@ const styles = StyleSheet.create({
     disabledButton: {
         backgroundColor: '#cccccc',
         opacity: 0.7,
-    }
+    },
+    warningText: {
+        color: '#FF5252',
+        fontSize: 14,
+        marginTop: 4,
+        marginLeft: 32,
+    },
 });
 
 export default MyProfileScreen;

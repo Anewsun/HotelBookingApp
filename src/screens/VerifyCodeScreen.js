@@ -66,8 +66,8 @@ const VerifyCodeScreen = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header title="Xác nhận Code" onBackPress={() => navigation.goBack()} showBackIcon={true} />
-      <Text style={styles.subText}>Hãy nhập mã code chúng tôi gửi bạn qua email</Text>
+      <Header title="Xác nhận OTP" onBackPress={() => navigation.goBack()} showBackIcon={true} />
+      <Text style={styles.subText}>Hãy nhập mã OTP chúng tôi gửi bạn qua email</Text>
       <Text style={styles.emailText}>{email || 'your-email@example.com'}</Text>
 
       <View style={styles.codeContainer}>

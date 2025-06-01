@@ -137,7 +137,7 @@ const SearchBox = () => {
         </View>
 
         <View style={styles.column}>
-          <Text style={styles.label}>Khách</Text>
+          <Text style={styles.label}>Số người</Text>
           <TouchableOpacity style={styles.inputContainer} onPress={() => setGuestModalVisible(true)}>
             <Icon name="person" size={20} color="#888" />
             <Text style={styles.input}>{totalGuests()} khách</Text>

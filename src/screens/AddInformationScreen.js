@@ -72,7 +72,7 @@ const AddInformationScreen = ({ navigation, route }) => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <Header title="Đặt phòng và thanh toán" onBackPress={() => navigation.goBack()} showBackIcon={true} />
+            <Header title="Thông tin người đặt" onBackPress={() => navigation.goBack()} showBackIcon={true} />
             <Stepper steps={['Đặt phòng', 'Thông tin', 'Xác nhận']} currentStep={2} />
 
             <ScrollView style={styles.scrollContainer}>

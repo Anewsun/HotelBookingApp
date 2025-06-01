@@ -48,7 +48,7 @@ const NewPasswordScreen = ({ route }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header title="Mật khẩu mới" onBackPress={() => navigation.goBack()} showBackIcon={true} />
+      <Header title="Đổi mật khẩu" onBackPress={() => navigation.goBack()} showBackIcon={true} />
       <Text style={styles.subText}>Mật khẩu mới phải khác với mật khẩu trước đó.</Text>
 
       <View style={styles.inputContainer}>

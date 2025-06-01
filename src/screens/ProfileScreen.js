@@ -51,7 +51,6 @@ const ProfileScreen = () => {
                 await refreshUserData();
                 Alert.alert("Thành công", "Cập nhật ảnh đại diện thành công!");
             } catch (error) {
-                console.error('Upload error:', error);
                 Alert.alert("Lỗi", error.message || "Không thể cập nhật avatar");
             }
         });

@@ -16,9 +16,6 @@ const PaymentScreen = ({ navigation, route }) => {
   const [selectedVoucher, setSelectedVoucher] = useState(null);
   const [availableVouchers, setAvailableVouchers] = useState([]);
   const { fetchAvailableVouchers, isLoading, error } = useVoucher();
-  const [discount, setDiscount] = useState(0);
-  const basePrice = useMemo(() => Number(bookingData.room.price) || 0, [bookingData.room.price]);
-  const [total, setTotal] = useState(basePrice);
   const { addBooking, getDetails } = useBooking();
   const [isProcessing, setIsProcessing] = useState(false);
   const checkInDate = new Date(bookingData.checkIn.date);
@@ -26,6 +23,12 @@ const PaymentScreen = ({ navigation, route }) => {
   const checkInTime = bookingData.checkIn.time;
   const checkOutTime = bookingData.checkOut.time;
   const nights = bookingData.nights || Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
+  const [discount, setDiscount] = useState(0);
+  const basePrice = useMemo(() => {
+    const pricePerNight = Number(bookingData.room.price) || 0;
+    return pricePerNight * nights;
+  }, [bookingData.room.price, nights]);
+  const [total, setTotal] = useState(basePrice);
   const paymentMethods = [
     {
       id: 'zalopay',
@@ -62,6 +65,30 @@ const PaymentScreen = ({ navigation, route }) => {
       currency: 'VND'
     }).format(amount).replace('₫', 'VNĐ');
   };
+
+  const handleVoucherSelect = useCallback((voucher) => {
+    let discountValue = 0;
+    let totalPrice = basePrice;
+
+    if (voucher.discountType === 'fixed') {
+      discountValue = voucher.discount;
+    } else {
+      const rawDiscount = (totalPrice * voucher.discount) / 100;
+      discountValue = voucher.maxDiscount
+        ? Math.min(rawDiscount, voucher.maxDiscount)
+        : rawDiscount;
+    }
+
+    if (isNaN(discountValue)) {
+      Alert.alert('Lỗi', 'Giá trị giảm giá không hợp lệ');
+      return;
+    }
+
+    setSelectedVoucher(voucher);
+    setDiscount(discountValue);
+    setTotal(totalPrice - discountValue);
+    setShowVouchers(false);
+  }, [basePrice]);
 
   const handlePayment = async () => {
     setIsProcessing(true);
@@ -100,17 +127,6 @@ const PaymentScreen = ({ navigation, route }) => {
       console.log('Payload gửi đi:', bookingPayload);
       const result = await addBooking(bookingPayload);
 
-      // if (result?.paymentUrl) {
-      //   navigation.navigate('ZaloPayWebView', {
-      //     paymentUrl: result.paymentUrl
-      //   });
-      // } else {
-      //   Alert.alert('Lỗi', 'Không nhận được URL thanh toán từ server');
-      // }
-
-      // console.log('→ Gửi sang WebView:', {
-      //   url: result.paymentUrl
-      // });
       Alert.alert('Thành công', 'Đặt phòng thành công! Bạn có thể thanh toán sau trong Lịch sử đặt phòng.');
       navigation.navigate('Booking');
     } catch (error) {
@@ -158,7 +174,7 @@ const PaymentScreen = ({ navigation, route }) => {
 
               <View style={styles.infoRow}>
                 <Icon name="king-bed" size={16} color="#666" />
-                <Text style={styles.price}>Giá: {formatCurrency(bookingData.room.price)}</Text>
+                <Text style={styles.price}>Giá: {formatCurrency(bookingData.room.price)} /ngày</Text>
               </View>
             </View>
           </View>
@@ -298,63 +314,44 @@ const PaymentScreen = ({ navigation, route }) => {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Voucher khả dụng</Text>
 
-            {isLoading ? (
-              <ActivityIndicator size="large" color="#1167B1" />
-            ) : error ? (
-              <Text style={styles.errorText}>{error}</Text>
-            ) : (
-              availableVouchers.map(voucher => (
-                <TouchableOpacity
-                  key={voucher._id}
-                  style={[
-                    styles.voucherItem,
-                    selectedVoucher?._id === voucher._id && styles.selectedVoucher
-                  ]}
-                  onPress={async () => {
-                    let discountValue = 0;
-
-                    if (voucher.discountType === 'fixed') {
-                      discountValue = voucher.discount;
-                    } else {
-                      const rawDiscount = (basePrice * voucher.discount) / 100;
-                      discountValue = voucher.maxDiscount
-                        ? Math.min(rawDiscount, voucher.maxDiscount)
-                        : rawDiscount;
-                    }
-
-                    if (isNaN(discountValue)) {
-                      Alert.alert('Lỗi', 'Giá trị giảm giá không hợp lệ');
-                      return;
-                    }
-
-                    setSelectedVoucher(voucher);
-                    setDiscount(discountValue);
-                    setTotal(basePrice - discountValue);
-                    setShowVouchers(false);
-                  }}>
-                  <Icon
-                    name={voucher.discountType === 'percentage' ? 'local-offer' : 'confirmation-number'}
-                    size={24}
-                    color="#1167B1"
-                  />
-                  <View style={styles.voucherInfo}>
-                    <Text style={styles.voucherName}>{voucher.code}</Text>
-                    <Text style={styles.voucherDetails}>
-                      {voucher.discountType === 'percentage'
-                        ? `Giảm ${voucher.discount}%` +
-                        (voucher.maxDiscount ? ` (Tối đa ${formatCurrency(voucher.maxDiscount)})` : '')
-                        : `Giảm ${formatCurrency(voucher.discount)}`}
-                    </Text>
-                    <Text style={styles.voucherCondition}>
-                      Áp dụng cho hóa đơn từ {formatCurrency(voucher.minOrderValue)}
-                    </Text>
-                    <Text style={styles.voucherExpiry}>
-                      HSD: {new Date(voucher.expiryDate).toLocaleDateString()}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))
-            )}
+            <ScrollView style={styles.voucherScrollContainer}>
+              {isLoading ? (
+                <ActivityIndicator size="large" color="#1167B1" />
+              ) : error ? (
+                <Text style={styles.errorText}>{error}</Text>
+              ) : (
+                availableVouchers.map(voucher => (
+                  <TouchableOpacity
+                    key={voucher._id}
+                    style={[
+                      styles.voucherItem,
+                      selectedVoucher?._id === voucher._id && styles.selectedVoucher
+                    ]}
+                    onPress={() => handleVoucherSelect(voucher)}>
+                    <Icon
+                      name={voucher.discountType === 'percentage' ? 'local-offer' : 'confirmation-number'}
+                      size={24}
+                      color="#1167B1"
+                    />
+                    <View style={styles.voucherInfo}>
+                      <Text style={styles.voucherName}>{voucher.code}</Text>
+                      <Text style={styles.voucherDetails}>
+                        {voucher.discountType === 'percentage'
+                          ? `Giảm ${voucher.discount}%` +
+                          (voucher.maxDiscount ? ` (Tối đa ${formatCurrency(voucher.maxDiscount)})` : '')
+                          : `Giảm ${formatCurrency(voucher.discount)}`}
+                      </Text>
+                      <Text style={styles.voucherCondition}>
+                        Áp dụng cho hóa đơn từ {formatCurrency(voucher.minOrderValue)}
+                      </Text>
+                      <Text style={styles.voucherExpiry}>
+                        HSD: {new Date(voucher.expiryDate).toLocaleDateString()}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))
+              )}
+            </ScrollView>
 
             <TouchableOpacity
               style={styles.closeButton}
@@ -507,6 +504,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1167B1',
   },
+  voucherScrollContainer: {
+    maxHeight: 400,
+    marginBottom: 16,
+  },
   voucherButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -587,6 +588,7 @@ const styles = StyleSheet.create({
     margin: 20,
     borderRadius: 8,
     padding: 16,
+    maxHeight: '80%',
   },
   modalTitle: {
     fontSize: 18,

@@ -28,7 +28,7 @@ const SendEmailScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header title="Send Email" onBackPress={() => navigation.goBack()} showBackIcon={true} />
+      <Header title="Quên mật khẩu" onBackPress={() => navigation.goBack()} showBackIcon={true} />
 
       <View style={styles.content}>
         <Text style={styles.headerText}>Nhập Email</Text>

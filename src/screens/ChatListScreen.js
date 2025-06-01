@@ -116,12 +116,20 @@ const ChatListScreen = ({ navigation }) => {
         <SafeAreaView style={styles.container}>
             <Header title="Tin nhắn" />
 
-            <FlatList
-                data={conversations}
-                keyExtractor={(item) => `conversation-${item._id}`}
-                renderItem={renderItem}
-                contentContainerStyle={styles.listContent}
-            />
+            {conversations.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                    <Icon name="chat-bubble-outline" size={60} color="#CCC" style={styles.emptyIcon} />
+                    <Text style={styles.emptyText}>Chưa có tin nhắn</Text>
+                    <Text style={styles.emptySubText}>Hãy chat với chủ khách sạn nào đó để hiện danh sách nhé!</Text>
+                </View>
+            ) : (
+                <FlatList
+                    data={conversations}
+                    keyExtractor={(item) => `conversation-${item._id}`}
+                    renderItem={renderItem}
+                    contentContainerStyle={styles.listContent}
+                />
+            )}
             <BottomNav />
         </SafeAreaView>
     );
@@ -197,7 +205,28 @@ const styles = StyleSheet.create({
         color: '#FFF',
         fontSize: 14,
         fontWeight: 'bold'
-    }
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 40,
+    },
+    emptyIcon: {
+        marginBottom: 20,
+    },
+    emptyText: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#333',
+        textAlign: 'center',
+        marginBottom: 8,
+    },
+    emptySubText: {
+        fontSize: 16,
+        color: '#666',
+        textAlign: 'center',
+    },
 });
 
 export default ChatListScreen;

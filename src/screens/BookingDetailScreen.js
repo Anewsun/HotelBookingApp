@@ -25,6 +25,7 @@ const BookingDetailScreen = () => {
     const [showQRModal, setShowQRModal] = useState(false);
     const [qrData, setQrData] = useState(null);
     const [transactionId, setTransactionId] = useState(null);
+    const [showSuccessAlert, setShowSuccessAlert] = useState(false);
 
     useEffect(() => {
         const fetchBookingDetails = async () => {
@@ -373,7 +374,7 @@ const BookingDetailScreen = () => {
                                 style={[styles.actionButton, { backgroundColor: '#2196F3' }]}
                                 onPress={() => setReviewModalVisible(true)}
                             >
-                                <Text style={styles.actionButtonText}>Để lại bình luận</Text>
+                                <Text style={styles.actionButtonText}>Để lại đánh giá</Text>
                             </TouchableOpacity>
 
                             <ReviewFormModal
@@ -385,6 +386,9 @@ const BookingDetailScreen = () => {
                                         await createReview(data);
                                         setHasReviewed(true);
                                         setReviewModalVisible(false);
+                                        Alert.alert("Thành công", "Đánh giá thành công!", [
+                                            { text: "OK" }
+                                        ]);
                                     } catch (error) {
                                         Alert.alert("Lỗi", error.message);
                                     }
@@ -422,6 +426,11 @@ const BookingDetailScreen = () => {
                     </View>
                 </Modal>
             </ScrollView>
+            {showSuccessAlert && (
+                <View style={styles.successAlert}>
+                    <Text style={styles.successAlertText}>Đánh giá thành công!</Text>
+                </View>
+            )}
         </SafeAreaView>
     );
 };
