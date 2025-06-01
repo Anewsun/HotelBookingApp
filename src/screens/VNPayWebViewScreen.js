@@ -1,36 +1,47 @@
 import React, { useRef } from 'react';
-import { View, ActivityIndicator, Alert } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useNavigation } from '@react-navigation/native';
+import { useBooking } from '../contexts/BookingContext';
 
 const VNPayWebViewScreen = ({ route }) => {
     const { payUrl, bookingId } = route.params;
     const navigation = useNavigation();
     const webViewRef = useRef(null);
+    const { confirmVNPayFromRawUrl } = useBooking();
+    const didCallCallbackRef = useRef(false);
 
-    const handleNavigationChange = (navState) => {
-        const { url } = navState;
+    const handleVNPayReturn = (url) => {
+        if (didCallCallbackRef.current) return;
+        didCallCallbackRef.current = true;
 
-        if (url.includes('/vnpay-return')) {
-            console.log('Detected return from VNPay:', url);
+        const rawQuery = url.split('?')[1];
+        const txnRef = getTxnRefFromQuery(rawQuery);
 
-            const transactionId = extractTransactionId(url);
-            if (!transactionId) {
-                Alert.alert('Lỗi', 'Không thể xác định mã giao dịch');
-                navigation.replace('BookingDetail', { bookingId });
-                return;
+        setTimeout(async () => {
+            try {
+                await confirmVNPayFromRawUrl(rawQuery);
+            } catch (err) {
+                console.warn('VNPay return handling error:', err.message);
             }
 
             navigation.replace('Confirm', {
-                transactionId,
-                bookingId
+                transactionId: txnRef,
+                bookingId,
+                paymentMethod: 'vnpay',
             });
-        }
+        }, 0);
     };
 
-    const extractTransactionId = (url) => {
-        const match = url.match(/vnp_TxnRef=([^&]+)/);
-        return match ? decodeURIComponent(match[1]) : '';
+    const getTxnRefFromQuery = (query) => {
+        const parts = query.split('&');
+        for (let part of parts) {
+            const [key, value] = part.split('=');
+            if (key === 'vnp_TxnRef') {
+                return decodeURIComponent(value || '');
+            }
+        }
+        return null;
     };
 
     return (
@@ -38,15 +49,22 @@ const VNPayWebViewScreen = ({ route }) => {
             <WebView
                 ref={webViewRef}
                 source={{ uri: payUrl }}
-                onNavigationStateChange={handleNavigationChange}
+                onShouldStartLoadWithRequest={(request) => {
+                    const { url } = request;
+                    if (url.includes('/vnpay-return')) {
+                        handleVNPayReturn(url);
+                        return false;
+                    }
+                    return true;
+                }}
                 startInLoadingState
+                javaScriptEnabled
+                domStorageEnabled
                 renderLoading={() => (
                     <View style={{ flex: 1, justifyContent: 'center' }}>
                         <ActivityIndicator size="large" color="#1167B1" />
                     </View>
                 )}
-                javaScriptEnabled
-                domStorageEnabled
             />
         </View>
     );

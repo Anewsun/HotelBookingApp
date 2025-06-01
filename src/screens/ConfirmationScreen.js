@@ -5,7 +5,7 @@ import { useBooking } from '../contexts/BookingContext';
 import { useNavigation } from '@react-navigation/native';
 
 const ConfirmationScreen = ({ route }) => {
-  const { transactionId, bookingId } = route.params;
+  const { transactionId, bookingId, paymentMethod: routePaymentMethod } = route.params;
   const { checkPaymentSmart, sendFakeZaloCallback, getDetails } = useBooking();
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -19,7 +19,7 @@ const ConfirmationScreen = ({ route }) => {
     const verifyAndHandlePayment = async () => {
       try {
         const bookingDetail = await getDetails(bookingId);
-        const paymentMethod = bookingDetail?.paymentMethod;
+        const paymentMethod = routePaymentMethod || bookingDetail?.paymentMethod;
 
         const handleSuccess = async (result) => {
           if (paymentMethod === 'zalopay') {
@@ -63,10 +63,10 @@ const ConfirmationScreen = ({ route }) => {
           }
         };
 
-        let result = await checkPaymentSmart(transactionId, bookingId);
+        let result = await checkPaymentSmart(transactionId, bookingId, paymentMethod);
         console.log('Payment verification result:', result);
 
-        if (result.return_code === 1) {
+        if (result.return_code === 1 || result.status === 'paid') {
           clearInterval(intervalId);
           await handleSuccess(result);
           return;
@@ -81,19 +81,47 @@ const ConfirmationScreen = ({ route }) => {
 
           if (retryCount >= maxRetries) {
             clearInterval(intervalId);
-            if (isMounted) {
-              setStatus('failed');
-              setError('Không thể xác nhận thanh toán sau nhiều lần thử');
-              setLoading(false);
+
+            try {
+              const lastCheck = await checkPaymentSmart(transactionId, bookingId, paymentMethod);
+              console.log('Final retry check result:', lastCheck);
+
+              if (paymentMethod === 'vnpay' && lastCheck?.status === 'pending') {
+                if (isMounted) {
+                  setStatus('pending');
+                  setError('Thanh toán chưa được ghi nhận từ VNPay. Vui lòng kiểm tra lại sau hoặc thử thanh toán lại.');
+                  setLoading(false);
+                }
+                return;
+              }
+
+              if (lastCheck.status === 'paid') {
+                await handleSuccess(lastCheck);
+                return;
+              }
+
+              if (isMounted) {
+                setStatus('failed');
+                setError('Không thể xác nhận thanh toán sau nhiều lần thử');
+                setLoading(false);
+              }
+            } catch (finalErr) {
+              console.error('Final retry error:', finalErr);
+              if (isMounted) {
+                setStatus('failed');
+                setError(finalErr.message || 'Lỗi xác nhận thanh toán');
+                setLoading(false);
+              }
             }
+
             return;
           }
 
           try {
-            const retryResult = await checkPaymentSmart(transactionId, bookingId);
+            const retryResult = await checkPaymentSmart(transactionId, bookingId, paymentMethod);
             console.log(`Retry ${retryCount + 1} result:`, retryResult);
 
-            if (retryResult.return_code === 1) {
+            if (retryResult.status === 'paid') {
               clearInterval(intervalId);
               await handleSuccess(retryResult);
             }

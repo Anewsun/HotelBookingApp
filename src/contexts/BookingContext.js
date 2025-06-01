@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
-import { createBooking, getMyBookings, getBookingDetails, cancelBooking, retryPayment, forceZaloPayCallback, checkVNPayPaymentStatus, checkZaloPaymentStatus } from '../services/bookingService';
+import { createBooking, getMyBookings, getBookingDetails, cancelBooking, retryPayment, forceZaloPayCallback, checkVNPayPaymentStatus, checkZaloPaymentStatus, confirmVNPayFromRawUrl as apiConfirmVNPayFromRawUrl } from '../services/bookingService';
 
 const BookingContext = createContext();
 
@@ -90,10 +90,23 @@ export const BookingProvider = ({ children }) => {
         }
     };
 
-    const checkPaymentSmart = async (transactionId, bookingId) => {
+    const confirmVNPayFromRawUrl = async (queryString) => {
         try {
-            const booking = await getDetails(bookingId);
-            const paymentMethod = booking?.paymentMethod;
+            return await apiConfirmVNPayFromRawUrl(queryString);
+        } catch (err) {
+            throw err;
+        }
+    };
+
+    const checkPaymentSmart = async (transactionId, bookingId, overrideMethod) => {
+        try {
+            let paymentMethod = overrideMethod;
+
+            if (!paymentMethod) {
+                const booking = await getDetails(bookingId);
+                paymentMethod = booking?.paymentMethod;
+            }
+
             console.log('[Smart Check] Using payment method:', paymentMethod);
 
             if (paymentMethod === 'zalopay') {
@@ -132,6 +145,7 @@ export const BookingProvider = ({ children }) => {
                 retryPayment: retryPaymentForBooking,
                 sendFakeZaloCallback,
                 checkPaymentSmart,
+                confirmVNPayFromRawUrl,
             }}
         >
             {children}

@@ -352,7 +352,6 @@ const BookingDetailScreen = () => {
                                                     Alert.alert('Lỗi', 'Phương thức thanh toán không được hỗ trợ');
                                                 }
                                             } catch (error) {
-                                                console.error('Payment error:', error);
                                                 Alert.alert('Lỗi', error.message || 'Không thể khởi tạo thanh toán lại.');
                                             } finally {
                                                 setLoading(false);
