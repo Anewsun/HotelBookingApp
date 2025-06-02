@@ -421,7 +421,7 @@ const BookingDetailScreen = () => {
                                 });
                             }}
                         >
-                            <Text style={styles.qrButtonText}>Đã quét xong</Text>
+                            <Text style={styles.qrButtonText}>Đã thanh toán</Text>
                         </TouchableOpacity>
                     </View>
                 </Modal>

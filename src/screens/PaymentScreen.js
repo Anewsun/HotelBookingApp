@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image, Modal, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image, Modal as RNModal, Alert, ActivityIndicator } from 'react-native';
 import { Stepper } from '../components/Stepper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../components/Header';
@@ -8,6 +8,8 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useVoucher } from '../hooks/useVoucher';
 import { useBooking } from '../contexts/BookingContext';
 import { formatDate } from '../utils/dateUtils';
+import QRCodeCustom from '../components/QRCodeCustom';
+import Modal from 'react-native-modal';
 
 const PaymentScreen = ({ navigation, route }) => {
   const { bookingData } = route.params;
@@ -16,7 +18,7 @@ const PaymentScreen = ({ navigation, route }) => {
   const [selectedVoucher, setSelectedVoucher] = useState(null);
   const [availableVouchers, setAvailableVouchers] = useState([]);
   const { fetchAvailableVouchers, isLoading, error } = useVoucher();
-  const { addBooking, getDetails } = useBooking();
+  const { addBooking, checkPaymentSmart } = useBooking();
   const [isProcessing, setIsProcessing] = useState(false);
   const checkInDate = new Date(bookingData.checkIn.date);
   const checkOutDate = new Date(bookingData.checkOut.date);
@@ -29,6 +31,12 @@ const PaymentScreen = ({ navigation, route }) => {
     return pricePerNight * nights;
   }, [bookingData.room.price, nights]);
   const [total, setTotal] = useState(basePrice);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [qrData, setQrData] = useState(null);
+  const [transactionId, setTransactionId] = useState(null);
+  const [qrChecking, setQrChecking] = useState(false);
+  const [createdBooking, setCreatedBooking] = useState(null);
+
   const paymentMethods = [
     {
       id: 'zalopay',
@@ -90,6 +98,36 @@ const PaymentScreen = ({ navigation, route }) => {
     setShowVouchers(false);
   }, [basePrice]);
 
+  const buildBookingPayload = () => {
+    const payload = {
+      roomId: bookingData.room?._id,
+      hotelId: bookingData.hotel._id,
+      checkIn: new Date(bookingData.checkIn.date).toISOString(),
+      checkOut: new Date(bookingData.checkOut.date).toISOString(),
+      paymentMethod: selectedMethod,
+      voucherId: selectedVoucher?._id,
+      contactInfo: {
+        name: bookingData.userInfo.name.trim(),
+        email: bookingData.userInfo.email.trim(),
+        phone: bookingData.userInfo.phone.trim()
+      },
+      specialRequests: bookingData.specialRequests
+    };
+
+    if (bookingData.guestInfo) {
+      payload.bookingFor = 'other';
+      payload.guestInfo = {
+        name: bookingData.guestInfo.name.trim(),
+        email: bookingData.guestInfo.email?.trim() || '',
+        phone: bookingData.guestInfo.phone.trim()
+      };
+    } else {
+      payload.bookingFor = 'self';
+    }
+
+    return payload;
+  };
+
   const handlePayment = async () => {
     setIsProcessing(true);
     try {
@@ -98,37 +136,51 @@ const PaymentScreen = ({ navigation, route }) => {
         return;
       }
 
-      const bookingPayload = {
-        roomId: bookingData.room?._id,
-        hotelId: bookingData.hotel._id,
-        checkIn: new Date(bookingData.checkIn.date).toISOString(),
-        checkOut: new Date(bookingData.checkOut.date).toISOString(),
-        paymentMethod: selectedMethod,
-        voucherId: selectedVoucher?._id,
-        contactInfo: {
-          name: bookingData.userInfo.name.trim(),
-          email: bookingData.userInfo.email.trim(),
-          phone: bookingData.userInfo.phone.trim()
-        },
-        specialRequests: bookingData.specialRequests
-      };
-
-      if (bookingData.guestInfo) {
-        bookingPayload.bookingFor = 'other';
-        bookingPayload.guestInfo = {
-          name: bookingData.guestInfo.name.trim(),
-          email: bookingData.guestInfo.email?.trim() || '',
-          phone: bookingData.guestInfo.phone.trim()
-        };
-      } else {
-        bookingPayload.bookingFor = 'self';
-      }
+      const bookingPayload = buildBookingPayload();
 
       console.log('Payload gửi đi:', bookingPayload);
       const result = await addBooking(bookingPayload);
 
       Alert.alert('Thành công', 'Đặt phòng thành công! Bạn có thể thanh toán sau trong Lịch sử đặt phòng.');
       navigation.navigate('Booking');
+    } catch (error) {
+      console.error('Lỗi chi tiết:', {
+        message: error.message,
+        stack: error.stack,
+        response: error.result?.data
+      });
+      Alert.alert('Lỗi', error.message || 'Thanh toán thất bại');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handlePayNow = async () => {
+    setIsProcessing(true);
+    try {
+      if (!selectedMethod) {
+        Alert.alert('Lỗi', 'Vui lòng chọn phương thức thanh toán');
+        return;
+      }
+
+      const bookingPayload = buildBookingPayload();
+
+      const result = await addBooking(bookingPayload);
+      const { data: booking, paymentUrl } = result;
+
+      setCreatedBooking(booking);
+
+      if (selectedMethod === 'vnpay') {
+        navigation.navigate('VNPayWebView', {
+          payUrl: paymentUrl,
+          bookingId: booking._id,
+        });
+      } else if (selectedMethod === 'zalopay') {
+        setShowQRModal(true);
+        setQrData(paymentUrl);
+        setTransactionId(result.transactionId);
+        return;
+      };
     } catch (error) {
       console.error('Lỗi chi tiết:', {
         message: error.message,
@@ -297,19 +349,41 @@ const PaymentScreen = ({ navigation, route }) => {
         </View>
       </ScrollView>
 
-      <TouchableOpacity
-        style={[styles.confirmButton, (!selectedMethod || isProcessing) && styles.disabledButton]}
-        onPress={handlePayment}
-        disabled={!selectedMethod || isProcessing}
-      >
-        {isProcessing ? (
-          <ActivityIndicator color="blue" />
-        ) : (
-          <Text style={styles.confirmText}>Đặt phòng ngay</Text>
-        )}
-      </TouchableOpacity>
+      <View style={{ marginHorizontal: 16, marginBottom: 20 }}>
+        <TouchableOpacity
+          style={[
+            styles.confirmButton,
+            (!selectedMethod || isProcessing) && styles.disabledButton,
+          ]}
+          onPress={handlePayNow}
+          disabled={!selectedMethod || isProcessing}
+        >
+          {isProcessing ? (
+            <ActivityIndicator color="#1167B1" />
+          ) : (
+            <Text style={styles.confirmText}>Thanh toán ngay</Text>
+          )}
+        </TouchableOpacity>
 
-      <Modal visible={showVouchers} transparent animationType="slide">
+        <View style={{ height: 12 }} />
+
+        <TouchableOpacity
+          style={[
+            styles.confirmButtonLater,
+            (!selectedMethod || isProcessing) && styles.disabledButton,
+          ]}
+          onPress={handlePayment}
+          disabled={!selectedMethod || isProcessing}
+        >
+          {isProcessing ? (
+            <ActivityIndicator color="blue" />
+          ) : (
+            <Text style={styles.confirmText}>Thanh toán sau</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+
+      <RNModal visible={showVouchers} transparent animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Voucher khả dụng</Text>
@@ -360,6 +434,57 @@ const PaymentScreen = ({ navigation, route }) => {
               <Text style={styles.closeButtonText}>Đóng</Text>
             </TouchableOpacity>
           </View>
+        </View>
+      </RNModal>
+
+      <Modal isVisible={showQRModal}>
+        <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}>
+          <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 10 }}>Quét mã QR ZaloPay</Text>
+
+          {createdBooking && (
+            <Text style={{ fontSize: 16, marginBottom: 10 }}>
+              Số tiền: {formatCurrency(createdBooking.finalPrice)}
+            </Text>
+          )}
+
+          {qrData && (
+            <QRCodeCustom value={qrData} size={220} />
+          )}
+
+          <TouchableOpacity
+            style={[styles.confirmButton, { marginTop: 20 }]}
+            onPress={async () => {
+              try {
+                setQrChecking(true);
+                const result = await checkPaymentSmart(transactionId, createdBooking._id, 'zalopay');
+
+                if (result.status === 'paid' || result.return_code === 1) {
+                  setShowQRModal(false);
+                  navigation.replace('Confirm', {
+                    transactionId,
+                    bookingId: createdBooking._id,
+                    paymentMethod: 'zalopay',
+                  });
+                } else {
+                  Alert.alert('Chưa thanh toán', 'Giao dịch chưa được thực hiện. Hãy thử lại sau khi đã thanh toán.');
+                }
+              } catch (err) {
+                Alert.alert('Lỗi', err.message || 'Không thể xác minh giao dịch');
+              } finally {
+                setQrChecking(false);
+              }
+            }}
+            disabled={qrChecking}
+          >
+            {qrChecking ? <ActivityIndicator color="white" /> : <Text style={styles.confirmText}>Tôi đã thanh toán</Text>}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setShowQRModal(false)}
+            style={{ marginTop: 12, alignItems: 'center' }}
+          >
+            <Text style={{ color: '#1167B1' }}>Đóng</Text>
+          </TouchableOpacity>
         </View>
       </Modal>
     </SafeAreaView>
@@ -565,6 +690,13 @@ const styles = StyleSheet.create({
   },
   confirmButton: {
     backgroundColor: '#1167B1',
+    padding: 16,
+    borderRadius: 25,
+    alignItems: 'center',
+    marginVertical: 8,
+  },
+  confirmButtonLater: {
+    backgroundColor: 'green',
     padding: 16,
     borderRadius: 25,
     alignItems: 'center',

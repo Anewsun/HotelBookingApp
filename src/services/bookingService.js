@@ -43,7 +43,6 @@ export const retryPayment = async (bookingId, paymentMethod) => {
         const response = await axios.post(`${API_URL}bookings/retry-payment`, { bookingId, paymentMethod });
         return response.data;
     } catch (error) {
-        console.error('Retry payment API error response:', error.response);
         throw new Error(error.response?.data?.message || 'Request failed');
     }
 };

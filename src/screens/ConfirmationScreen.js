@@ -148,7 +148,7 @@ const ConfirmationScreen = ({ route }) => {
       isMounted = false;
       if (intervalId) clearInterval(intervalId);
     };
-  }, [transactionId, bookingId]);
+  }, []);
 
   const handleViewBooking = () => {
     navigation.navigate('BookingDetail', { bookingId });

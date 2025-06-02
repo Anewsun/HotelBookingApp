@@ -17,7 +17,6 @@ const AddInformationScreen = ({ navigation, route }) => {
         specialRequests
     } = route.params;
 
-    // State cho form
     const [name, setName] = useState(user?.name || '');
     const [email, setEmail] = useState(user?.email || '');
     const [phone, setPhone] = useState(user?.phone || '');
@@ -29,9 +28,8 @@ const AddInformationScreen = ({ navigation, route }) => {
     const isFormValid = () => {
         const basicInfoValid = name.trim() && email.trim() && phone.trim();
 
-        // Nếu đặt cho người khác, kiểm tra thêm thông tin khách
         if (bookForOthers) {
-            return basicInfoValid && guestName.trim() && guestEmail.trim();
+            return basicInfoValid && guestName.trim() && guestPhone.trim();
         }
         return basicInfoValid;
     };
@@ -125,12 +123,12 @@ const AddInformationScreen = ({ navigation, route }) => {
                             placeholder="Nhập tên khách"
                         />
 
-                        <Text style={styles.sectionTitle}>Email khách</Text>
+                        <Text style={styles.sectionTitle}>Email khách (không bắt buộc)</Text>
                         <TextInput
                             style={styles.input}
                             value={guestEmail}
                             onChangeText={setGuestEmail}
-                            placeholder="Nhập email khách"
+                            placeholder="Nhập email khách (không bắt buộc)"
                             keyboardType="email-address"
                         />
 
