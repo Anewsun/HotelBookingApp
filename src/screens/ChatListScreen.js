@@ -1,18 +1,17 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { View, FlatList, TouchableOpacity, Text, StyleSheet, Image } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { getConversations } from '../services/chatService';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { formatTime } from '../utils/dateUtils';
+import { formatTime, formatDate } from '../utils/dateUtils';
 import BottomNav from '../components/BottomNav';
 import Header from '../components/Header';
-import { getSocket, waitForSocketConnection, initSocket } from '../utils/socket';
+import { getSocket, initSocket } from '../utils/socket';
 import { useFocusEffect } from '@react-navigation/native';
 
 const ChatListScreen = ({ navigation }) => {
     const [conversations, setConversations] = useState([]);
-    const [socketReady, setSocketReady] = useState(false);
     const { user } = useAuth();
     const socketRef = useRef(null);
 
@@ -94,9 +93,14 @@ const ChatListScreen = ({ navigation }) => {
                     <Text style={styles.chatName} numberOfLines={1}>
                         {item.hotelName || item.name}
                     </Text>
-                    <Text style={styles.chatTime}>
-                        {formatTime(item.lastMessageDate)}
-                    </Text>
+                    <View style={styles.timeContainer}>
+                        <Text style={styles.chatDate}>
+                            {formatDate(item.lastMessageDate)}
+                        </Text>
+                        <Text style={styles.chatTime}>
+                            {formatTime(item.lastMessageDate)}
+                        </Text>
+                    </View>
                 </View>
 
                 <Text style={styles.lastMessage} numberOfLines={1}>
@@ -175,7 +179,6 @@ const styles = StyleSheet.create({
     chatHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 4
     },
     chatName: {
         fontSize: 17,
@@ -183,12 +186,8 @@ const styles = StyleSheet.create({
         color: '#333',
         maxWidth: '70%'
     },
-    chatTime: {
-        fontSize: 14,
-        color: 'black'
-    },
     lastMessage: {
-        fontSize: 15,
+        fontSize: 17,
         color: '#666',
         maxWidth: '90%'
     },
@@ -202,8 +201,8 @@ const styles = StyleSheet.create({
         marginLeft: 8
     },
     unreadText: {
-        color: '#FFF',
-        fontSize: 14,
+        color: 'black',
+        fontSize: 15,
         fontWeight: 'bold'
     },
     emptyContainer: {
@@ -226,6 +225,18 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#666',
         textAlign: 'center',
+    },
+    timeContainer: {
+        alignItems: 'flex-end',
+    },
+    chatDate: {
+        fontSize: 15,
+        color: 'gray',
+        marginBottom: 2,
+    },
+    chatTime: {
+        fontSize: 15,
+        color: 'black'
     },
 });
 

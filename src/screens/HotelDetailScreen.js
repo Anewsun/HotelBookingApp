@@ -30,6 +30,7 @@ const HotelDetailScreen = () => {
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
   const [reviewsData, setReviewsData] = useState([]);
   const { user } = useAuth();
+  const [isCurrentUserHotelOwner, setIsCurrentUserHotelOwner] = useState(false);
 
   const loadData = async () => {
     try {
@@ -80,6 +81,13 @@ const HotelDetailScreen = () => {
     // Reset selected rooms khi availableRooms thay đổi
     setSelectedRoomIndex(null);
   }, [availableRooms]);
+
+  useEffect(() => {
+    if (hotel && user) {
+      const isOwner = user.role === 'partner' && hotel.ownerId === user._id;
+      setIsCurrentUserHotelOwner(isOwner);
+    }
+  }, [hotel, user]);
 
   const handleSubmitReview = async (data) => {
     try {
@@ -220,12 +228,18 @@ const HotelDetailScreen = () => {
               />
 
               <TouchableOpacity
-                style={styles.chatButton}
+                style={[
+                  styles.chatButton,
+                  isCurrentUserHotelOwner && styles.disabledButton
+                ]}
                 onPress={() => {
+                  if (isCurrentUserHotelOwner) return;
+
                   if (!user) {
                     Alert.alert('Yêu cầu đăng nhập', 'Vui lòng đăng nhập để nhắn tin');
                     return;
                   }
+
                   navigation.navigate('Chat', {
                     userId: hotel.ownerId,
                     hotelId: hotel._id,
@@ -233,9 +247,19 @@ const HotelDetailScreen = () => {
                     receiverName: "Chủ khách sạn"
                   });
                 }}
+                disabled={isCurrentUserHotelOwner}
               >
-                <Icon name="comments" size={20} color="#FFF" />
-                <Text style={styles.chatButtonText}>Nhắn tin với chủ khách sạn</Text>
+                <Icon
+                  name="comments"
+                  size={20}
+                  color={isCurrentUserHotelOwner ? "#888" : "#FFF"}
+                />
+                <Text style={[
+                  styles.chatButtonText,
+                  isCurrentUserHotelOwner && { color: "#888" }
+                ]}>
+                  Nhắn tin với chủ khách sạn
+                </Text>
               </TouchableOpacity>
 
               <ReviewsSection

@@ -204,12 +204,22 @@ const ChatScreen = ({ route }) => {
                 <FlatList
                     ref={flatListRef}
                     data={state.messages}
-                    renderItem={({ item }) => (
-                        <ChatBubble
-                            message={item}
-                            isSender={item.senderId._id === user._id}
-                        />
-                    )}
+                    renderItem={({ item, index }) => {
+                        const isSender = item.senderId._id === user._id;
+                        const currentDate = new Date(item.createdAt).toDateString();
+                        const prevDate = index > 0
+                            ? new Date(state.messages[index - 1].createdAt).toDateString()
+                            : null;
+                        const showDate = currentDate !== prevDate || index === 0;
+
+                        return (
+                            <ChatBubble
+                                message={item}
+                                isSender={isSender}
+                                showDate={showDate}
+                            />
+                        );
+                    }}
                     keyExtractor={(item) => item._id}
                     contentContainerStyle={styles.messagesContainer}
                     onEndReached={handleLoadMore}
