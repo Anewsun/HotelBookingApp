@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { searchHotelsWithAvailableRooms } from '../services/hotelService';
 import { useFavorite } from '../contexts/FavoriteContext';
 import { getLocations } from '../services/locationService';
+import SortOptions from '../components/SortOptions';
 
 const SearchResultScreen = () => {
     const route = useRoute();
@@ -24,6 +25,8 @@ const SearchResultScreen = () => {
     const [showLocationDropdown, setShowLocationDropdown] = useState(false);
     const { favoriteIds, toggleFavorite } = useFavorite();
     const navigation = useNavigation();
+    const [selectedSort, setSelectedSort] = useState(currentFilters?.sort || '-rating');
+    const [showSortOptions, setShowSortOptions] = useState(false);
 
     useEffect(() => {
         const fetchLocations = async () => {
@@ -102,6 +105,11 @@ const SearchResultScreen = () => {
         setLocation(selectedLocation.name);
         setLocationId(selectedLocation._id);
         setShowLocationDropdown(false);
+    };
+
+    const handleSortChange = (sortValue) => {
+        setSelectedSort(sortValue);
+        setCurrentFilters(prev => ({ ...prev, sort: sortValue }));
     };
 
     const handleSearch = () => {
@@ -237,6 +245,12 @@ const SearchResultScreen = () => {
                     >
                         <Icon name="options-outline" size={25} color="#FF385C" />
                     </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.sortButton}
+                        onPress={() => setShowSortOptions(true)}
+                    >
+                        <Icon name="swap-vertical" size={25} color="#FF385C" />
+                    </TouchableOpacity>
                 </View>
             </View>
 
@@ -287,6 +301,29 @@ const SearchResultScreen = () => {
                 columnWrapperStyle={styles.row}
                 contentContainerStyle={styles.listContainer}
             />
+
+            <Modal
+                transparent
+                visible={showSortOptions}
+                onRequestClose={() => setShowSortOptions(false)}
+            >
+                <TouchableOpacity
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setShowSortOptions(false)}
+                >
+                    <View style={styles.sortModalContainer}>
+                        <Text style={styles.sortTitle}>Sắp xếp theo</Text>
+                        <SortOptions
+                            selectedSort={selectedSort}
+                            onSelect={(value) => {
+                                handleSortChange(value);
+                                setShowSortOptions(false);
+                            }}
+                        />
+                    </View>
+                </TouchableOpacity>
+            </Modal>
         </SafeAreaView>
     );
 };
@@ -452,6 +489,23 @@ const styles = StyleSheet.create({
     separator: {
         height: 1,
         backgroundColor: '#eee',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    sortModalContainer: {
+        backgroundColor: 'white',
+        borderRadius: 10,
+        padding: 16,
+        width: '80%',
+    },
+    sortTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 10,
     },
 });
 

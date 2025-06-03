@@ -94,7 +94,7 @@ const BookingScreen = () => {
                 onDismiss={closeMenu}
                 anchor={
                   <TouchableOpacity onPress={openMenu}>
-                    <Icon name="filter-list" size={24} color="#003366" />
+                    <Icon name="filter-list" size={30} color="#003366" />
                   </TouchableOpacity>
                 }
                 contentStyle={styles.menuContent}

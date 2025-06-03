@@ -6,6 +6,7 @@ import Slider from '@react-native-community/slider';
 import Header from '../components/Header';
 import { getAmenityIcon } from '../utils/AmenityIcons';
 import { fetchAllAmenities } from '../services/hotelService';
+import SortOptions from '../components/SortOptions';
 
 const FilterScreen = ({ navigation, route }) => {
   const [priceRange, setPriceRange] = useState({ min: 0, max: 10000000 });
@@ -14,6 +15,7 @@ const FilterScreen = ({ navigation, route }) => {
   const [selectedRating, setSelectedRating] = useState(0);
   const [amenities, setAmenities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedSort, setSelectedSort] = useState(route.params?.filters?.sort || '-rating');
 
   useEffect(() => {
     const fetchAmenities = async () => {
@@ -35,11 +37,13 @@ const FilterScreen = ({ navigation, route }) => {
     navigation.navigate('SearchResult', {
       searchParams: route.params?.searchParams,
       filters: {
+        ...(route.params?.filters || {}),
         minPrice: priceRange.min,
         maxPrice: priceRange.max,
         rating: selectedRating || 1,
         amenities: selectedRoomAmenities.length > 0 ? selectedRoomAmenities : undefined,
         roomType: selectedRoomType,
+        sort: selectedSort,
       }
     });
     console.log('FilterScreen received:', route.params?.searchParams);
@@ -87,7 +91,7 @@ const FilterScreen = ({ navigation, route }) => {
       />
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.sectionTitle}>Đánh giá sao</Text>
+        {/* <Text style={styles.sectionTitle}>Đánh giá sao</Text>
         <View style={styles.ratingContainer}>
           {[5, 4, 3, 2, 1].map(rating => (
             <TouchableOpacity
@@ -99,7 +103,13 @@ const FilterScreen = ({ navigation, route }) => {
               <Icon name="star" size={16} color="#FFD700" />
             </TouchableOpacity>
           ))}
-        </View>
+        </View> */}
+
+        <Text style={styles.sectionTitle}>Sắp xếp</Text>
+        <SortOptions
+          selectedSort={selectedSort}
+          onSelect={setSelectedSort}
+        />
 
         {/* Lọc theo giá */}
         <Text style={styles.sectionTitle}>Khoảng giá (VND)</Text>

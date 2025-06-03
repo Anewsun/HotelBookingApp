@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, Alert, FlatList } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, Alert, FlatList, TouchableWithoutFeedback } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { useNavigation } from '@react-navigation/native';
@@ -84,125 +84,131 @@ const SearchBox = () => {
   };
 
   return (
-    <View style={styles.outerContainer}>
-      <View style={styles.container}>
-        <Text style={styles.label}>Địa điểm</Text>
-        <View style={styles.inputContainer}>
-          <Icon name="location" size={20} color="#888" />
-          <TextInput
-            style={styles.input}
-            placeholder="Chọn điểm đến"
-            placeholderTextColor="#666"
-            value={location}
-            onChangeText={handleLocationSearch}
-            onFocus={() => setShowLocationDropdown(true)}
-          />
-        </View>
-
-        {showLocationDropdown && (
-          <View style={styles.dropdown}>
-            <FlatList
-              data={filteredLocations}
-              keyExtractor={(item) => item._id}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.dropdownItem}
-                  onPress={() => selectLocation(item)}
-                >
-                  <Text style={styles.dropdownItemText}>{item.name}</Text>
-                </TouchableOpacity>
-              )}
-              ItemSeparatorComponent={() => <View style={styles.separator} />}
-              keyboardShouldPersistTaps="handled"
+    <TouchableWithoutFeedback onPress={() => setShowLocationDropdown(false)}>
+      <View style={styles.outerContainer}>
+        <View style={styles.container}>
+          <Text style={styles.label}>Địa điểm</Text>
+          <View style={styles.inputContainer}>
+            <Icon name="location" size={20} color="#888" />
+            <TextInput
+              style={styles.input}
+              placeholder="Chọn điểm đến"
+              placeholderTextColor="#666"
+              value={location}
+              onChangeText={handleLocationSearch}
+              onFocus={() => setShowLocationDropdown(true)}
             />
           </View>
-        )}
 
-        <View style={styles.row}>
-          <View style={styles.column}>
-            <Text style={styles.label}>Ngày đến</Text>
-            <TouchableOpacity style={styles.inputContainer} onPress={() => openDatePicker('checkIn')}>
-              <Icon name="calendar" size={20} color="#888" />
-              <Text style={styles.input}>{formatDate(checkInDate)}</Text>
-            </TouchableOpacity>
+          {showLocationDropdown && (
+            <View style={styles.dropdown}>
+              <FlatList
+                data={filteredLocations}
+                keyExtractor={(item) => item._id}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.dropdownItem}
+                    onPress={() => selectLocation(item)}
+                  >
+                    <Text style={styles.dropdownItemText}>{item.name}</Text>
+                  </TouchableOpacity>
+                )}
+                ItemSeparatorComponent={() => <View style={styles.separator} />}
+                keyboardShouldPersistTaps="handled"
+                style={styles.dropdownList}
+              />
+            </View>
+          )}
+
+          <View style={styles.row}>
+            <View style={styles.column}>
+              <Text style={styles.label}>Ngày đến</Text>
+              <TouchableOpacity style={styles.inputContainer} onPress={() => openDatePicker('checkIn')}>
+                <Icon name="calendar" size={20} color="#888" />
+                <Text style={styles.input}>{formatDate(checkInDate)}</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.column}>
+              <Text style={styles.label}>Ngày trả phòng</Text>
+              <TouchableOpacity style={styles.inputContainer} onPress={() => openDatePicker('checkOut')}>
+                <Icon name="calendar" size={20} color="#888" />
+                <Text style={styles.input}>{formatDate(checkOutDate)}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View style={styles.column}>
-            <Text style={styles.label}>Ngày trả phòng</Text>
-            <TouchableOpacity style={styles.inputContainer} onPress={() => openDatePicker('checkOut')}>
-              <Icon name="calendar" size={20} color="#888" />
-              <Text style={styles.input}>{formatDate(checkOutDate)}</Text>
+            <Text style={styles.label}>Số người</Text>
+            <TouchableOpacity style={styles.inputContainer} onPress={() => setGuestModalVisible(true)}>
+              <Icon name="person" size={20} color="#888" />
+              <Text style={styles.input}>{totalGuests()} khách</Text>
             </TouchableOpacity>
           </View>
-        </View>
 
-        <View style={styles.column}>
-          <Text style={styles.label}>Số người</Text>
-          <TouchableOpacity style={styles.inputContainer} onPress={() => setGuestModalVisible(true)}>
-            <Icon name="person" size={20} color="#888" />
-            <Text style={styles.input}>{totalGuests()} khách</Text>
+          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+            <Text style={styles.searchText}>Tìm kiếm</Text>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-          <Text style={styles.searchText}>Tìm kiếm</Text>
-        </TouchableOpacity>
-      </View>
+        <DateTimePickerModal
+          isVisible={dateModalVisible}
+          mode="date"
+          onConfirm={(date) => {
+            if (selectedDateType === 'checkIn') {
+              setCheckInDate(date);
+              const nextDay = new Date(date);
+              nextDay.setDate(nextDay.getDate() + 1);
+              setCheckOutDate(nextDay);
+            } else {
+              setCheckOutDate(date);
+            }
+            setDateModalVisible(false);
+          }}
+          onCancel={() => setDateModalVisible(false)}
+          date={selectedDateType === 'checkIn' ? checkInDate : checkOutDate}
+          minimumDate={selectedDateType === 'checkOut' ? checkInDate : new Date()}
+          display="inline"
+          headerTextIOS={selectedDateType === 'checkIn' ? "Chọn ngày đến" : "Chọn ngày trả phòng"}
+          confirmTextIOS="Xác nhận"
+          cancelTextIOS="Hủy"
+          locale="vi"
+          theme="light"
+        />
 
-      <DateTimePickerModal
-        isVisible={dateModalVisible}
-        mode="date"
-        onConfirm={(date) => {
-          if (selectedDateType === 'checkIn') {
-            setCheckInDate(date);
-            const nextDay = new Date(date);
-            nextDay.setDate(nextDay.getDate() + 1);
-            setCheckOutDate(nextDay);
-          } else {
-            setCheckOutDate(date);
-          }
-          setDateModalVisible(false);
-        }}
-        onCancel={() => setDateModalVisible(false)}
-        date={selectedDateType === 'checkIn' ? checkInDate : checkOutDate}
-        minimumDate={selectedDateType === 'checkOut' ? checkInDate : new Date()}
-        display="inline"
-        headerTextIOS={selectedDateType === 'checkIn' ? "Chọn ngày đến" : "Chọn ngày trả phòng"}
-        theme="light"
-      />
+        <Modal visible={guestModalVisible} transparent animationType="slide">
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Chọn khách</Text>
 
-      <Modal visible={guestModalVisible} transparent animationType="slide">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Chọn khách</Text>
-
-            {[{ label: "Người lớn", state: adults, setState: setAdults, note: "Từ 13 tuổi trở lên" },
-            { label: "Trẻ em", state: children, setState: setChildren, note: "Từ 2 - 12 tuổi" },
-            ].map(({ label, state, setState, note }) => (
-              <View key={label} style={styles.rowBetween}>
-                <View>
-                  <Text style={styles.guestLabel}>{label}</Text>
-                  <Text style={styles.guestNote}>{note}</Text>
+              {[{ label: "Người lớn", state: adults, setState: setAdults, note: "Từ 13 tuổi trở lên" },
+              { label: "Trẻ em", state: children, setState: setChildren, note: "Từ 2 - 12 tuổi" },
+              ].map(({ label, state, setState, note }) => (
+                <View key={label} style={styles.rowBetween}>
+                  <View>
+                    <Text style={styles.guestLabel}>{label}</Text>
+                    <Text style={styles.guestNote}>{note}</Text>
+                  </View>
+                  <View style={styles.counterContainer}>
+                    <TouchableOpacity onPress={() => setState(Math.max(0, state - 1))} style={styles.counterButton}>
+                      <Text style={styles.counterText}>-</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.counterValue}>{state}</Text>
+                    <TouchableOpacity onPress={() => setState(state + 1)} style={styles.counterButton}>
+                      <Text style={styles.counterText}>+</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-                <View style={styles.counterContainer}>
-                  <TouchableOpacity onPress={() => setState(Math.max(0, state - 1))} style={styles.counterButton}>
-                    <Text style={styles.counterText}>-</Text>
-                  </TouchableOpacity>
-                  <Text style={styles.counterValue}>{state}</Text>
-                  <TouchableOpacity onPress={() => setState(state + 1)} style={styles.counterButton}>
-                    <Text style={styles.counterText}>+</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))}
+              ))}
 
-            <TouchableOpacity style={styles.confirmButton} onPress={() => setGuestModalVisible(false)}>
-              <Text style={styles.confirmText}>Xác nhận</Text>
-            </TouchableOpacity>
+              <TouchableOpacity style={styles.confirmButton} onPress={() => setGuestModalVisible(false)}>
+                <Text style={styles.confirmText}>Xác nhận</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </Modal>
-    </View>
+        </Modal>
+      </View>
+    </TouchableWithoutFeedback>
   );
 };
 
@@ -245,7 +251,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   dropdown: {
-    maxHeight: 200,
+    maxHeight: 300,
     backgroundColor: '#fff',
     borderRadius: 8,
     borderWidth: 1,
@@ -253,9 +259,17 @@ const styles = StyleSheet.create({
     marginTop: -10,
     marginBottom: 10,
     zIndex: 1000,
+    elevation: 5,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  dropdownList: {
+    flexGrow: 0,
   },
   dropdownItem: {
     padding: 12,
+    minHeight: 44,
   },
   dropdownItemText: {
     fontSize: 16,
