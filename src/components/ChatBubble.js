@@ -4,6 +4,8 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { formatTime, formatDate } from '../utils/dateUtils';
 
 const ChatBubble = memo(({ message, isSender, showDate }) => {
+    const isAI = message.senderId._id === 'ai';
+
     return (
         <View style={styles.fullContainer}>
             {showDate && (
@@ -19,14 +21,15 @@ const ChatBubble = memo(({ message, isSender, showDate }) => {
             ]}>
                 <View style={[
                     styles.bubble,
-                    isSender ? styles.senderBubble : styles.receiverBubble
+                    isSender ? styles.senderBubble :
+                        isAI ? styles.aiBubble : styles.receiverBubble
                 ]}>
                     <Text style={styles.messageText}>{message.message}</Text>
                     <View style={styles.statusContainer}>
                         <Text style={styles.time}>
                             {formatTime(message.createdAt)}
                         </Text>
-                        {isSender && (
+                        {isSender && !isAI && (
                             <Ionicons
                                 name={message.status === 'read' ? 'checkmark-done' : 'checkmark'}
                                 size={14}
@@ -93,6 +96,10 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: '#666',
         marginRight: 4,
+    },
+    aiBubble: {
+        backgroundColor: '#E3F2FD',
+        borderBottomLeftRadius: 2,
     },
 });
 

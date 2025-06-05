@@ -24,6 +24,7 @@ import BlogListScreen from '../screens/BlogListScreen';
 import BlogDetailScreen from '../screens/BlogDetailScreen';
 import ChatListScreen from '../screens/ChatListScreen';
 import ChatScreen from '../screens/ChatScreen';
+import ChatAIScreen from '../screens/ChatAIScreen';
 
 import { useAuth } from "../contexts/AuthContext";
 import { createStackNavigator } from "@react-navigation/stack";
@@ -65,6 +66,7 @@ const AppStack = () => (
     <Stack.Screen name="BlogDetail" component={BlogDetailScreen} />
     <Stack.Screen name="ChatList" component={ChatListScreen} />
     <Stack.Screen name="Chat" component={ChatScreen} />
+    <Stack.Screen name="ChatAI" component={ChatAIScreen} />
   </Stack.Navigator>
 );
 
