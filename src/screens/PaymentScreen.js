@@ -144,11 +144,11 @@ const PaymentScreen = ({ navigation, route }) => {
       Alert.alert('Thành công', 'Đặt phòng thành công! Bạn có thể thanh toán sau trong Lịch sử đặt phòng.');
       navigation.navigate('Booking');
     } catch (error) {
-      console.error('Lỗi chi tiết:', {
-        message: error.message,
-        stack: error.stack,
-        response: error.result?.data
-      });
+      // console.error('Lỗi chi tiết:', {
+      //   message: error.message,
+      //   stack: error.stack,
+      //   response: error.result?.data
+      // });
       Alert.alert('Lỗi', error.message || 'Thanh toán thất bại');
     } finally {
       setIsProcessing(false);
@@ -182,11 +182,11 @@ const PaymentScreen = ({ navigation, route }) => {
         return;
       };
     } catch (error) {
-      console.error('Lỗi chi tiết:', {
-        message: error.message,
-        stack: error.stack,
-        response: error.result?.data
-      });
+      // console.error('Lỗi chi tiết:', {
+      //   message: error.message,
+      //   stack: error.stack,
+      //   response: error.result?.data
+      // });
       Alert.alert('Lỗi', error.message || 'Thanh toán thất bại');
     } finally {
       setIsProcessing(false);
@@ -466,7 +466,7 @@ const PaymentScreen = ({ navigation, route }) => {
                     paymentMethod: 'zalopay',
                   });
                 } else {
-                  Alert.alert('Chưa thanh toán', 'Giao dịch chưa được thực hiện. Hãy thử lại sau khi đã thanh toán.');
+                  Alert.alert('Chưa thanh toán', 'Giao dịch chưa được thực hiện. Hãy thử thanh toán lại trong chi tiết đặt phòng.');
                 }
               } catch (err) {
                 Alert.alert('Lỗi', err.message || 'Không thể xác minh giao dịch');
@@ -477,13 +477,6 @@ const PaymentScreen = ({ navigation, route }) => {
             disabled={qrChecking}
           >
             {qrChecking ? <ActivityIndicator color="white" /> : <Text style={styles.confirmText}>Tôi đã thanh toán</Text>}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => setShowQRModal(false)}
-            style={{ marginTop: 12, alignItems: 'center' }}
-          >
-            <Text style={{ color: '#1167B1' }}>Đóng</Text>
           </TouchableOpacity>
         </View>
       </Modal>
