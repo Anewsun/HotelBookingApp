@@ -12,7 +12,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 const menuItems = [
     { title: 'Trang cá nhân của tôi', icon: 'user', screen: 'MyProfile' },
-    { title: 'Chat với AI', icon: 'twitch', screen: 'ChatAI' },
     { title: 'Liên hệ', icon: 'help-circle', screen: 'ContactUs' },
     { title: 'Chính sách bảo mật', icon: 'lock', screen: 'PrivacyPolicy' },
     { title: 'Đăng xuất', icon: 'log-out', action: 'logout' },

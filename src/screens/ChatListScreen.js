@@ -69,6 +69,12 @@ const ChatListScreen = ({ navigation }) => {
         }, [loadConversations, setupSocket])
     );
 
+    const aiIcon = (
+        <TouchableOpacity onPress={() => navigation.navigate('ChatAI')}>
+            <Icon name="smart-toy" size={24} color="blue" style={styles.aiIcon} />
+        </TouchableOpacity>
+    );
+
     const renderItem = ({ item }) => (
         <TouchableOpacity
             style={styles.chatItem}
@@ -118,7 +124,7 @@ const ChatListScreen = ({ navigation }) => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <Header title="Tin nhắn" />
+            <Header title="Tin nhắn" rightComponent={aiIcon} />
 
             {conversations.length === 0 ? (
                 <View style={styles.emptyContainer}>
@@ -237,6 +243,9 @@ const styles = StyleSheet.create({
     chatTime: {
         fontSize: 15,
         color: 'black'
+    },
+    aiIcon: {
+        marginRight: 10,
     },
 });
 

@@ -10,42 +10,42 @@ const BottomNav = () => {
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        style={[styles.navItem, { backgroundColor: currentRouteName === 'Home' ? '#1167B1' : 'white' }]}
+        style={[styles.navItem, { backgroundColor: currentRouteName === 'Home' ? '#0543FF' : 'white' }]}
         onPress={() => navigation.navigate('Home')}
       >
         <Icon name="home-outline" size={20} />
         <Text style={styles.navText}>Trang chủ</Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={[styles.navItem, { backgroundColor: currentRouteName === 'Fav' ? '#1167B1' : 'white' }]}
+        style={[styles.navItem, { backgroundColor: currentRouteName === 'Fav' ? '#0543FF' : 'white' }]}
         onPress={() => navigation.navigate('Fav')}
       >
         <Icon name="heart-outline" size={20} />
         <Text style={styles.navText}>Yêu thích</Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={[styles.navItem, { backgroundColor: currentRouteName === 'Booking' ? '#1167B1' : 'white' }]}
+        style={[styles.navItem, { backgroundColor: currentRouteName === 'Booking' ? '#0543FF' : 'white' }]}
         onPress={() => navigation.navigate('Booking')}
       >
         <Icon name="calendar-outline" size={20} />
         <Text style={styles.navText}>Lịch đặt</Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={[styles.navItem, { backgroundColor: currentRouteName === 'BlogList' ? '#1167B1' : 'white' }]}
+        style={[styles.navItem, { backgroundColor: currentRouteName === 'BlogList' ? '#0543FF' : 'white' }]}
         onPress={() => navigation.navigate('BlogList')}
       >
         <Icon name="document-outline" size={20} />
         <Text style={styles.navText}>Bài viết</Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={[styles.navItem, { backgroundColor: currentRouteName === 'ChatList' ? '#1167B1' : 'white' }]}
+        style={[styles.navItem, { backgroundColor: currentRouteName === 'ChatList' ? '#0543FF' : 'white' }]}
         onPress={() => navigation.navigate('ChatList')}
       >
         <Icon name="chatbubble-ellipses-outline" size={20} />
-        <Text style={styles.navText}>Chat</Text>
+        <Text style={styles.navText}>Tin nhắn</Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={[styles.navItem, { backgroundColor: currentRouteName === 'Profile' ? '#1167B1' : 'white' }]}
+        style={[styles.navItem, { backgroundColor: currentRouteName === 'Profile' ? '#0543FF' : 'white' }]}
         onPress={() => navigation.navigate('Profile')}
       >
         <Icon name="person-outline" size={20} />

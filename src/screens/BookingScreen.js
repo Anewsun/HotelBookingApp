@@ -77,6 +77,16 @@ const BookingScreen = () => {
     return statusLabels[status] || status;
   };
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'confirmed': return '#4CAF50';
+      case 'completed': return '#2196F3';
+      case 'cancelled': return '#F44336';
+      case 'pending': return '#FFC107';
+      default: return '#003366';
+    }
+  };
+
   return (
     <PaperProvider>
       <SafeAreaView style={styles.container}>
@@ -84,17 +94,12 @@ const BookingScreen = () => {
           title="Lịch sử đặt phòng"
           rightComponent={
             <View style={styles.filterContainer}>
-              {filterStatus && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>!</Text>
-                </View>
-              )}
               <Menu
                 visible={visible}
                 onDismiss={closeMenu}
                 anchor={
                   <TouchableOpacity onPress={openMenu}>
-                    <Icon name="filter-list" size={30} color="#003366" />
+                    <Icon name="filter-list" size={30} color={getStatusColor(filterStatus)} />
                   </TouchableOpacity>
                 }
                 contentStyle={styles.menuContent}
@@ -212,23 +217,6 @@ const styles = StyleSheet.create({
   },
   selectedMenuText: {
     color: '#003366',
-    fontWeight: 'bold',
-  },
-  badge: {
-    position: 'absolute',
-    right: -5,
-    top: -5,
-    backgroundColor: 'red',
-    borderRadius: 10,
-    width: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1,
-  },
-  badgeText: {
-    color: 'white',
-    fontSize: 12,
     fontWeight: 'bold',
   },
 });

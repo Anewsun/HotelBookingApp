@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, TextInput, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Icon from 'react-native-vector-icons/Ionicons';
 import Slider from '@react-native-community/slider';
 import Header from '../components/Header';
 import { getAmenityIcon } from '../utils/AmenityIcons';
 import { fetchAllAmenities } from '../services/hotelService';
-import SortOptions from '../components/SortOptions';
 
 const FilterScreen = ({ navigation, route }) => {
   const [priceRange, setPriceRange] = useState({ min: 0, max: 10000000 });
@@ -15,7 +13,6 @@ const FilterScreen = ({ navigation, route }) => {
   const [selectedRating, setSelectedRating] = useState(0);
   const [amenities, setAmenities] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedSort, setSelectedSort] = useState(route.params?.filters?.sort || '-rating');
 
   useEffect(() => {
     const fetchAmenities = async () => {
@@ -43,7 +40,7 @@ const FilterScreen = ({ navigation, route }) => {
         rating: selectedRating || 1,
         amenities: selectedRoomAmenities.length > 0 ? selectedRoomAmenities : undefined,
         roomType: selectedRoomType,
-        sort: selectedSort,
+        sort: '-rating',
       }
     });
     console.log('FilterScreen received:', route.params?.searchParams);
@@ -62,7 +59,7 @@ const FilterScreen = ({ navigation, route }) => {
   };
 
   const resetFilters = () => {
-    setPriceRange({ min: 0, max: 5000000 });
+    setPriceRange({ min: 0, max: 10000000 });
     setSelectedRating(0);
     setSelectedRoomType(null);
     setSelectedRoomAmenities([]);
@@ -105,12 +102,6 @@ const FilterScreen = ({ navigation, route }) => {
           ))}
         </View> */}
 
-        <Text style={styles.sectionTitle}>Sắp xếp</Text>
-        <SortOptions
-          selectedSort={selectedSort}
-          onSelect={setSelectedSort}
-        />
-
         {/* Lọc theo giá */}
         <Text style={styles.sectionTitle}>Khoảng giá (VND)</Text>
         <Slider
@@ -139,14 +130,14 @@ const FilterScreen = ({ navigation, route }) => {
         </View>
 
         <Text style={styles.sectionTitle}>Loại phòng</Text>
-        <View style={styles.amenitiesContainer}>
+        <View style={styles.roomTypeContainer}>
           {['Standard', 'Superior', 'Deluxe', 'Suite', 'Family'].map(type => (
             <TouchableOpacity
               key={type}
-              style={[styles.amenityButton, selectedRoomType === type && styles.selectedAmenity]}
+              style={[styles.roomTypeButton, selectedRoomType === type && styles.selectedRoomType]}
               onPress={() => selectRoomType(type)}
             >
-              <Text style={styles.amenityText}>{type}</Text>
+              <Text style={styles.roomTypeText}>{type}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -248,14 +239,14 @@ const styles = StyleSheet.create({
   amenitiesContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
     marginBottom: 16,
   },
   amenityButton: {
-    width: '30%',
+    width: '25%',
     alignItems: 'center',
     padding: 12,
     marginBottom: 8,
+    marginRight: '8%',
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,
@@ -307,6 +298,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: 'white',
     fontWeight: 'bold',
+  },
+  roomTypeContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 16,
+  },
+  roomTypeButton: {
+    width: '25%',
+    marginBottom: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    alignItems: 'center',
+    marginRight: '8%',
+  },
+  selectedRoomType: {
+    backgroundColor: '#E3F2FD',
+    borderColor: '#1E90FF',
+  },
+  roomTypeText: {
+    fontSize: 14,
+    color: 'black',
   },
 });
 

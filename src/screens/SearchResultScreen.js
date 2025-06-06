@@ -88,6 +88,14 @@ const SearchResultScreen = () => {
         }
     }, [searchParams, currentFilters]);
 
+    useEffect(() => {
+        if (route.params?.filters?.sort) {
+            setSelectedSort(route.params.filters.sort);
+        } else {
+            setSelectedSort('-rating');
+        }
+    }, [route.params?.filters]);
+
     const handleLocationSearch = (text) => {
         setLocation(text);
         if (text.length > 0) {
