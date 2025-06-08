@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, Alert, FlatList, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Alert, ScrollView, TouchableWithoutFeedback } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { useNavigation } from '@react-navigation/native';
@@ -64,19 +64,6 @@ const SearchBox = () => {
     });
   };
 
-  const handleLocationSearch = (text) => {
-    setLocation(text);
-    if (text.length > 0) {
-      const filtered = locationsList.filter(item =>
-        item.name.toLowerCase().includes(text.toLowerCase())
-      );
-      setFilteredLocations(filtered);
-    } else {
-      setFilteredLocations(locationsList);
-    }
-    setShowLocationDropdown(true);
-  };
-
   const selectLocation = (selectedLocation) => {
     setLocation(selectedLocation.name);
     setLocationId(selectedLocation._id);
@@ -84,39 +71,41 @@ const SearchBox = () => {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={() => setShowLocationDropdown(false)}>
+    <TouchableWithoutFeedback onPress={() => setShowLocationDropdown(false)} accessible={false} importantForAccessibility="no">
       <View style={styles.outerContainer}>
         <View style={styles.container}>
           <Text style={styles.label}>Địa điểm</Text>
-          <View style={styles.inputContainer}>
+          <TouchableOpacity
+            style={styles.inputContainer}
+            onPress={() => setShowLocationDropdown(!showLocationDropdown)}
+          >
             <Icon name="location" size={20} color="#888" />
-            <TextInput
-              style={styles.input}
-              placeholder="Chọn điểm đến"
-              placeholderTextColor="#666"
-              value={location}
-              onChangeText={handleLocationSearch}
-              onFocus={() => setShowLocationDropdown(true)}
-            />
-          </View>
+            <Text style={styles.input}>
+              {location || 'Chọn điểm đến'}
+            </Text>
+          </TouchableOpacity>
 
           {showLocationDropdown && (
-            <View style={styles.dropdown}>
-              <FlatList
-                data={filteredLocations}
-                keyExtractor={(item) => item._id}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.dropdownItem}
-                    onPress={() => selectLocation(item)}
-                  >
-                    <Text style={styles.dropdownItemText}>{item.name}</Text>
-                  </TouchableOpacity>
-                )}
-                ItemSeparatorComponent={() => <View style={styles.separator} />}
-                keyboardShouldPersistTaps="handled"
-                style={styles.dropdownList}
-              />
+            <View style={styles.dropdownWrapper}>
+              <View
+                style={styles.dropdownContainer}
+                onStartShouldSetResponder={() => true}
+              >
+                <ScrollView
+                  style={styles.scrollView}
+                  nestedScrollEnabled={true}
+                >
+                  {locationsList.map(item => (
+                    <TouchableOpacity
+                      key={item._id}
+                      style={styles.dropdownItem}
+                      onPress={() => selectLocation(item)}
+                    >
+                      <Text style={styles.dropdownItemText}>{item.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
             </View>
           )}
 
@@ -243,6 +232,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: '#ddd',
+    position: 'relative',
+    zIndex: 1,
   },
   input: {
     marginLeft: 10,
@@ -250,26 +241,36 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
   },
-  dropdown: {
-    maxHeight: 300,
+  dropdownWrapper: {
+    position: 'absolute',
+    top: 90,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+  },
+  dropdownContainer: {
+    maxHeight: 200,
     backgroundColor: '#fff',
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#ddd',
-    marginTop: -10,
-    marginBottom: 10,
-    zIndex: 1000,
     elevation: 5,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
+    overflow: 'hidden',
+    zIndex: 1000,
+  },
+  scrollView: {
+    flexGrow: 1,
   },
   dropdownList: {
-    flexGrow: 0,
+    flexGrow: 1,
+    minHeight: 100,
   },
   dropdownItem: {
     padding: 12,
-    minHeight: 44,
   },
   dropdownItemText: {
     fontSize: 16,
@@ -278,6 +279,7 @@ const styles = StyleSheet.create({
   separator: {
     height: 1,
     backgroundColor: '#eee',
+    marginHorizontal: 10,
   },
   row: {
     flexDirection: 'row',
