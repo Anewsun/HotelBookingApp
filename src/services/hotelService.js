@@ -49,7 +49,7 @@ export const searchHotelsWithAvailableRooms = async (params) => {
         maxPrice: params.maxPrice,
         roomType: params.roomType,
         amenities: params.amenities?.length ? params.amenities : undefined,
-        sort: params.sort || '-rating',
+        sort: convertSortParam(params.sort || 'price'),
         page: params.page || 1,
         limit: params.limit || 10
       },
@@ -81,5 +81,19 @@ export const searchHotelsWithAvailableRooms = async (params) => {
       data: [],
       error: error.response?.data?.message || error.message || 'Lỗi khi tải dữ liệu'
     };
+  }
+};
+
+const convertSortParam = (sort) => {
+  switch(sort) {
+    case '-rating': 
+      return '-rating';
+    case 'rating':
+      return 'rating';
+    case '-price':
+      return '-price';
+    case 'price':
+    default:
+      return 'price';
   }
 };

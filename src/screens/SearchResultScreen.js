@@ -25,7 +25,7 @@ const SearchResultScreen = () => {
     const [showLocationDropdown, setShowLocationDropdown] = useState(false);
     const { favoriteIds, toggleFavorite } = useFavorite();
     const navigation = useNavigation();
-    const [selectedSort, setSelectedSort] = useState(currentFilters?.sort || '-rating');
+    const [selectedSort, setSelectedSort] = useState(currentFilters?.sort || 'price');
     const [showSortOptions, setShowSortOptions] = useState(false);
 
     useEffect(() => {
@@ -116,8 +116,24 @@ const SearchResultScreen = () => {
     };
 
     const handleSortChange = (sortValue) => {
+        let backendSortValue;
+        switch (sortValue) {
+            case '-rating':
+                backendSortValue = '-rating';
+                break;
+            case 'rating':
+                backendSortValue = 'rating';
+                break;
+            case '-price':
+                backendSortValue = '-price';
+                break;
+            case 'price':
+            default:
+                backendSortValue = 'price';
+        }
+
         setSelectedSort(sortValue);
-        setCurrentFilters(prev => ({ ...prev, sort: sortValue }));
+        setCurrentFilters(prev => ({ ...prev, sort: backendSortValue }));
     };
 
     const handleSearch = () => {
