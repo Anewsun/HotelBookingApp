@@ -11,6 +11,7 @@ import ReviewFormModal from "../components/ReviewFormModal";
 import { createReview } from "../services/reviewService";
 import QRCodeCustom from '../components/QRCodeCustom';
 import Modal from 'react-native-modal';
+import ImageView from "react-native-image-viewing";
 
 const BookingDetailScreen = () => {
     const navigation = useNavigation();
@@ -26,6 +27,8 @@ const BookingDetailScreen = () => {
     const [qrData, setQrData] = useState(null);
     const [transactionId, setTransactionId] = useState(null);
     const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+    const [imageViewerVisible, setImageViewerVisible] = useState(false);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     useEffect(() => {
         const fetchBookingDetails = async () => {
@@ -130,6 +133,23 @@ const BookingDetailScreen = () => {
         return require('../assets/images/hotel1.jpg');
     };
 
+    const getAllImages = () => {
+        try {
+            const images = [];
+
+            const roomImage = booking.room?.images?.[0]?.url ||
+                booking.room?.imageUrl ||
+                booking.room?.hotelId?.images?.[0]?.url;
+
+            if (roomImage) images.push({ uri: roomImage });
+
+            return images.length > 0 ? images : [require('../assets/images/hotel1.jpg')];
+        } catch (error) {
+            console.error('Error getting images:', error);
+            return [require('../assets/images/hotel1.jpg')];
+        }
+    };
+
     const formatDate = (date) => {
         return format(new Date(date), 'dd/MM/yyyy', { locale: vi });
     };
@@ -141,7 +161,12 @@ const BookingDetailScreen = () => {
             <ScrollView>
                 <Header title="Chi tiết booking" onBackPress={() => navigation.goBack()} showBackIcon={true} />
 
-                <Image source={getRoomImageSource()} style={styles.detailImage} />
+                <TouchableOpacity onPress={() => {
+                    setCurrentImageIndex(0);
+                    setImageViewerVisible(true);
+                }}>
+                    <Image source={getRoomImageSource()} style={styles.detailImage} />
+                </TouchableOpacity>
 
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Thông tin đặt phòng</Text>
@@ -431,6 +456,17 @@ const BookingDetailScreen = () => {
                     <Text style={styles.successAlertText}>Đánh giá thành công!</Text>
                 </View>
             )}
+
+            <ImageView
+                images={getAllImages()}
+                imageIndex={currentImageIndex}
+                visible={imageViewerVisible}
+                onRequestClose={() => setImageViewerVisible(false)}
+                presentationStyle="overFullScreen"
+                backgroundColor="rgba(0,0,0,0.9)"
+                swipeToCloseEnabled={true}
+                doubleTapToZoomEnabled={true}
+            />
         </SafeAreaView>
     );
 };

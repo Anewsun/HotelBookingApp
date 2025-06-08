@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Dimensions
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import { getAmenityIcon } from '../utils/AmenityIcons';
 import { formatDate } from '../utils/dateUtils';
+import ImageView from "react-native-image-viewing";
 
 const { width: viewportWidth } = Dimensions.get('window');
 
@@ -17,6 +18,9 @@ const RoomTypeSelection = ({
   const initialRoomCount = 2;
   const displayedRooms = showAllRooms ? rooms : rooms.slice(0, initialRoomCount);
   const [localSelectedIndex, setLocalSelectedIndex] = useState(selectedRoomIndex);
+  const [imageViewerVisible, setImageViewerVisible] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [currentRoomImages, setCurrentRoomImages] = useState([]);
 
   // Kiểm tra chế độ tìm kiếm
   const isSearchMode = searchParams?.checkIn && searchParams?.checkOut && searchParams?.capacity;
@@ -54,6 +58,12 @@ const RoomTypeSelection = ({
         ? currentExpanded.filter(i => i !== index)
         : [...currentExpanded, index];
     });
+  };
+
+  const openImageViewer = (images, index) => {
+    setCurrentRoomImages(images.map(img => ({ uri: img.url })));
+    setCurrentImageIndex(index);
+    setImageViewerVisible(true);
   };
 
   const renderSearchInfo = () => {
@@ -116,11 +126,16 @@ const RoomTypeSelection = ({
                   style={styles.imageScrollView}
                 >
                   {room.images.map((img, imgIndex) => (
-                    <Image
+                    <TouchableOpacity
                       key={img._id || imgIndex}
-                      source={{ uri: img.url }}
-                      style={styles.roomImage}
-                    />
+                      onPress={() => openImageViewer(room.images, imgIndex)}
+                      activeOpacity={0.8}
+                    >
+                      <Image
+                        source={{ uri: img.url }}
+                        style={styles.roomImage}
+                      />
+                    </TouchableOpacity>
                   ))}
                 </ScrollView>
               )}
@@ -229,6 +244,17 @@ const RoomTypeSelection = ({
           />
         </TouchableOpacity>
       )}
+
+      <ImageView
+        images={currentRoomImages}
+        imageIndex={currentImageIndex}
+        visible={imageViewerVisible}
+        onRequestClose={() => setImageViewerVisible(false)}
+        presentationStyle="overFullScreen"
+        backgroundColor="rgba(0,0,0,0.9)"
+        swipeToCloseEnabled={true}
+        doubleTapToZoomEnabled={true}
+      />
     </ScrollView>
   );
 };

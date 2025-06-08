@@ -466,7 +466,19 @@ const PaymentScreen = ({ navigation, route }) => {
                     paymentMethod: 'zalopay',
                   });
                 } else {
-                  Alert.alert('Chưa thanh toán', 'Giao dịch chưa được thực hiện. Hãy thử thanh toán lại trong chi tiết đặt phòng.');
+                  Alert.alert('Chưa thanh toán', 'Giao dịch chưa được thực hiện. Hãy thử thanh toán lại trong chi tiết đặt phòng.',
+                    [
+                      {
+                        text: 'OK',
+                        onPress: () => {
+                          navigation.reset({
+                            index: 0,
+                            routes: [{ name: 'Home' }],
+                          });
+                        }
+                      }
+                    ]
+                  );
                 }
               } catch (err) {
                 Alert.alert('Lỗi', err.message || 'Không thể xác minh giao dịch');

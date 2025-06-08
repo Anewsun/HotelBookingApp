@@ -11,6 +11,7 @@ import { getAmenityIcon } from '../utils/AmenityIcons';
 import { getReviewsByHotel, createReview, updateReview } from '../services/reviewService';
 import ReviewFormModal from '../components/ReviewFormModal';
 import { useAuth } from '../contexts/AuthContext';
+import ImageView from "react-native-image-viewing";
 
 const starIcon = require('../assets/images/star.png');
 
@@ -31,6 +32,8 @@ const HotelDetailScreen = () => {
   const [reviewsData, setReviewsData] = useState([]);
   const { user } = useAuth();
   const [isCurrentUserHotelOwner, setIsCurrentUserHotelOwner] = useState(false);
+  const [imageViewerVisible, setImageViewerVisible] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const loadData = async () => {
     try {
@@ -128,6 +131,14 @@ const HotelDetailScreen = () => {
     );
   };
 
+  const getAllHotelImages = () => {
+    if (!hotel) return [];
+    return [
+      ...(hotel.images || []),
+      ...(hotel.roomTypes?.flatMap(room => room.images) || [])
+    ].map(img => ({ uri: img.url }));
+  };
+
   if (loading || !hotel) {
     return (
       <View style={{ flex: 1, justifyContent: 'center' }}>
@@ -147,9 +158,14 @@ const HotelDetailScreen = () => {
         keyExtractor={() => 'hotel-detail'}
         renderItem={() => (
           <View>
-            <HotelHeader
-              hotel={hotel}
-            />
+            <TouchableOpacity onPress={() => {
+              if (hotel?.images?.length > 0) {
+                setCurrentImageIndex(0);
+                setImageViewerVisible(true);
+              }
+            }}>
+              <HotelHeader hotel={hotel} />
+            </TouchableOpacity>
             <View style={styles.container}>
               <View style={styles.hotelInfo}>
                 <Text style={styles.hotelName}>{hotel.name}</Text>
@@ -271,6 +287,17 @@ const HotelDetailScreen = () => {
                 onReviewSubmit={loadData}
               />
             </View>
+
+            <ImageView
+              images={getAllHotelImages()}
+              imageIndex={currentImageIndex}
+              visible={imageViewerVisible}
+              onRequestClose={() => setImageViewerVisible(false)}
+              presentationStyle="overFullScreen"
+              backgroundColor="rgba(0,0,0,0.9)"
+              swipeToCloseEnabled={true}
+              doubleTapToZoomEnabled={true}
+            />
           </View>
         )}
         ListFooterComponent={

@@ -9,6 +9,7 @@ import { logout, getMe } from '../services/authService';
 import { uploadAvatar } from '../services/userService';
 import { useAuth } from '../contexts/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import ImageView from "react-native-image-viewing";
 
 const menuItems = [
     { title: 'Trang cá nhân của tôi', icon: 'user', screen: 'MyProfile' },
@@ -21,6 +22,8 @@ const ProfileScreen = () => {
     const navigation = useNavigation();
     const { user, refreshUserData, logout: logoutContext } = useAuth();
     const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+    const [imageViewerVisible, setImageViewerVisible] = useState(false);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     const handleMenuPress = (item) => {
         if (item.action === 'logout') {
@@ -68,6 +71,13 @@ const ProfileScreen = () => {
         }
     };
 
+    const getAvatarImages = () => {
+        if (user?.avatar?.url) {
+            return [{ uri: user.avatar.url }];
+        }
+        return [require('../assets/images/default-avatar.jpg')];
+    };
+
     const renderItem = ({ item }) => (
         <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress(item)}>
             <View style={styles.menuIconContainer}>
@@ -84,12 +94,17 @@ const ProfileScreen = () => {
             <Header title="Profile" />
 
             <View style={styles.profileImageContainer}>
-                <Image
-                    source={{
-                        uri: user?.avatar?.url || require('../assets/images/default-avatar.jpg')
-                    }}
-                    style={styles.profileImage}
-                />
+                <TouchableOpacity onPress={() => {
+                    setCurrentImageIndex(0);
+                    setImageViewerVisible(true);
+                }}>
+                    <Image
+                        source={{
+                            uri: user?.avatar?.url || require('../assets/images/default-avatar.jpg')
+                        }}
+                        style={styles.profileImage}
+                    />
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.editIconContainer} onPress={handleChangeAvatar}>
                     <Feather name="edit-2" size={15} color="white" />
                 </TouchableOpacity>
@@ -106,7 +121,6 @@ const ProfileScreen = () => {
                 ItemSeparatorComponent={() => <View style={styles.separator} />}
             />
 
-            {/* Modal xác nhận đăng xuất */}
             <Modal
                 animationType="slide"
                 transparent
@@ -136,6 +150,17 @@ const ProfileScreen = () => {
                     </View>
                 </View>
             </Modal>
+
+            <ImageView
+                images={getAvatarImages()}
+                imageIndex={currentImageIndex}
+                visible={imageViewerVisible}
+                onRequestClose={() => setImageViewerVisible(false)}
+                presentationStyle="overFullScreen"
+                backgroundColor="rgba(0,0,0,0.9)"
+                swipeToCloseEnabled={true}
+                doubleTapToZoomEnabled={true}
+            />
 
             <BottomNav />
         </SafeAreaView>
