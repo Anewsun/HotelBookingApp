@@ -133,10 +133,16 @@ const HotelDetailScreen = () => {
 
   const getAllHotelImages = () => {
     if (!hotel) return [];
-    return [
+    const images = [
       ...(hotel.images || []),
       ...(hotel.roomTypes?.flatMap(room => room.images) || [])
-    ].map(img => ({ uri: img.url }));
+    ];
+
+    // Thêm unique key cho mỗi hình ảnh bằng cách kết hợp URL và index
+    return images.map((img, index) => ({
+      uri: img.url,
+      key: `${img.url}-${index}`
+    }));
   };
 
   if (loading || !hotel) {
@@ -297,6 +303,7 @@ const HotelDetailScreen = () => {
               backgroundColor="rgba(0,0,0,0.9)"
               swipeToCloseEnabled={true}
               doubleTapToZoomEnabled={true}
+              keyExtractor={(item) => item.key}
             />
           </View>
         )}
