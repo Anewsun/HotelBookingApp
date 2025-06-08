@@ -26,10 +26,15 @@ export const getRoomDetails = async (roomId) => {
 
 export const getAvailableRoomsByHotel = async (hotelId, params) => {
   try {
+    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const formatDate = (date) => date.toISOString().split('T')[0];
+
     const response = await axios.get(`${API_URL}/hotels/${hotelId}/rooms/available`, {
       params: {
-        checkIn: params.checkIn || getDefaultDates().checkIn,
-        checkOut: params.checkOut || getDefaultDates().checkOut,
+        checkIn: params.checkIn || formatDate(today),
+        checkOut: params.checkOut || formatDate(tomorrow),
         capacity: params.capacity || 1,
         minPrice: params.minPrice,
         maxPrice: params.maxPrice,

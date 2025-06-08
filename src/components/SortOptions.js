@@ -3,10 +3,10 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const SORT_OPTIONS = [
-    { label: "Đánh giá: cao đến thấp", value: "-rating" },
-    { label: "Đánh giá: thấp đến cao", value: "rating" },
     { label: "Giá: Thấp đến cao", value: "price" },
     { label: "Giá: Cao đến thấp", value: "-price" },
+    { label: "Đánh giá: cao đến thấp", value: "-rating" },
+    { label: "Đánh giá: thấp đến cao", value: "rating" },
     { label: "Giảm giá nhiều nhất", value: "-discountPercent" },
     { label: "Giảm giá ít nhất", value: "discountPercent" },
 ];

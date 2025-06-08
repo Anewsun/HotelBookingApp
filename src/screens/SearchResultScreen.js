@@ -74,16 +74,24 @@ const SearchResultScreen = () => {
     useEffect(() => {
         console.log('Route changed:', route.params);
         if (route.params?.searchParams) {
-            setSearchParams(route.params.searchParams);
-            setLocation(route.params.searchParams.locationName);
-            setLocationId(route.params.searchParams.locationId);
+            const { locationId, locationName, checkIn, checkOut, capacity } = route.params.searchParams;
+            const newSearchParams = {
+                locationId,
+                locationName,
+                checkIn,
+                checkOut,
+                capacity,
+            };
+            setSearchParams(newSearchParams);
+            setLocation(locationName);
+            setLocationId(locationId);
             setCurrentFilters(route.params.filters || null);
         }
     }, [route.params]);
 
     useEffect(() => {
         console.log('searchParams/currentFilters changed:', searchParams, currentFilters);
-        if (searchParams) {
+        if (searchParams?.locationId && searchParams?.checkIn && searchParams?.checkOut) {
             fetchData();
         }
     }, [searchParams, currentFilters]);
@@ -91,8 +99,6 @@ const SearchResultScreen = () => {
     useEffect(() => {
         if (route.params?.filters?.sort) {
             setSelectedSort(route.params.filters.sort);
-        } else {
-            setSelectedSort('-rating');
         }
     }, [route.params?.filters]);
 
@@ -133,7 +139,7 @@ const SearchResultScreen = () => {
         }
 
         setSelectedSort(sortValue);
-        setCurrentFilters(prev => ({ ...prev, sort: backendSortValue }));
+        setCurrentFilters(prev => ({ ...prev, sort: sortValue }));
     };
 
     const handleSearch = () => {
@@ -154,7 +160,7 @@ const SearchResultScreen = () => {
                     );
 
                     if (!isValidLocation) {
-                        setError('Không tìm thấy địa điểm du lịch này');
+                        setError('Không tìm thấy khách sạn ở địa điểm du lịch này');
                         setHotels([]);
                         return;
                     }
@@ -188,20 +194,20 @@ const SearchResultScreen = () => {
     }
 
     const navigateToHotelDetail = (hotelId) => {
-        if (!searchParams) return;
+        const defaultParams = {
+            checkIn: new Date().toISOString().split('T')[0],
+            checkOut: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+            capacity: 1,
+            fromSearch: true
+        };
 
         navigation.navigate('Detail', {
             hotelId,
-            searchParams: {
-                checkIn: searchParams.checkIn,
-                checkOut: searchParams.checkOut,
-                capacity: searchParams.capacity,
-                fromSearch: true
-            }
+            searchParams: searchParams || defaultParams
         });
     };
 
-    if (error || !hotels || hotels.length === 0) {
+    if (!loading && (error || !hotels || hotels.length === 0)) {
         const isLocationError = [
             'Không tìm thấy địa điểm du lịch này',
             'Vui lòng chọn địa điểm',

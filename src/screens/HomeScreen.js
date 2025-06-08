@@ -1,5 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SearchBox from '../components/SearchBox';
@@ -13,6 +12,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useHotels } from '../hooks/useHotels';
 import useNotifications from '../hooks/useNotifications';
 import { initSocket, getSocket, isSocketConnected } from '../utils/socket';
+import PopularLocationCard from '../components/PopularLocationCard';
+import { getPopularLocations } from '../services/locationService';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -22,6 +23,7 @@ const HomeScreen = () => {
   const { favoriteIds, toggleFavorite } = useFavorite();
   const [currentPage, setCurrentPage] = useState(1);
   const { notifications, hasUnread } = useNotifications(user?.accessToken);
+  const [popularLocations, setPopularLocations] = useState([]);
   const hotelsPerPage = 6;
 
   const totalPages = Math.ceil(hotels.length / hotelsPerPage);
@@ -61,6 +63,18 @@ const HomeScreen = () => {
     setupSocket();
   }, []);
 
+  useEffect(() => {
+    const fetchPopular = async () => {
+      try {
+        const data = await getPopularLocations();
+        setPopularLocations(data);
+      } catch (error) {
+        console.error('Lỗi khi tải địa điểm nổi tiếng:', error);
+      }
+    };
+    fetchPopular();
+  }, []);
+
   const handlePressHotel = (hotel) => {
     navigation.navigate('Detail', {
       hotelId: hotel._id,
@@ -69,6 +83,22 @@ const HomeScreen = () => {
         checkOut: new Date(Date.now() + 86400000).toLocaleDateString('en-CA'),
         capacity: 1,
         fromSearch: false
+      }
+    });
+  };
+
+  const handlePressLocation = (location) => {
+    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(today.getDate() + 1);
+
+    navigation.navigate('SearchResult', {
+      searchParams: {
+        locationId: location._id,
+        locationName: location.name,
+        checkIn: today.toISOString().split('T')[0],
+        checkOut: tomorrow.toISOString().split('T')[0],
+        capacity: 1,
       }
     });
   };
@@ -131,6 +161,21 @@ const HomeScreen = () => {
             </View>
             <Text style={styles.title}>Bắt đầu đặt phòng ngay nào!</Text>
             <SearchBox />
+
+            <Text style={styles.sectionTitle}>Địa điểm nổi tiếng</Text>
+            <FlatList
+              data={popularLocations}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item) => item._id}
+              contentContainerStyle={{ paddingHorizontal: 15 }}
+              renderItem={({ item }) => (
+                <PopularLocationCard
+                  location={item}
+                  onPress={() => handlePressLocation(item)}
+                />
+              )}
+            />
             <Text style={styles.sectionTitle}>Khách sạn đang có giảm giá</Text>
           </>
         }
