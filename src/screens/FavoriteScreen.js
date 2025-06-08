@@ -1,18 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { View, FlatList, StyleSheet, Text, ActivityIndicator } from 'react-native';
+import React from 'react';
+import { View, FlatList, StyleSheet, Text } from 'react-native';
 import HotelCard from '../components/HotelCard';
 import BottomNav from '../components/BottomNav';
 import Header from '../components/Header';
 import { useNavigation } from '@react-navigation/native';
 import { useFavorite } from '../contexts/FavoriteContext';
-import { useHotels } from '../hooks/useHotels';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const FavoriteScreen = () => {
     const navigation = useNavigation();
-    const { favoriteIds, toggleFavorite } = useFavorite();
-    const { data: hotels = [], isLoading, isError } = useHotels();
-    const favorites = hotels.filter(hotel => favoriteIds.includes(hotel._id));
+    const { favoriteIds, toggleFavorite, favoriteHotels } = useFavorite();
 
     const handlePressHotel = (hotel) => {
         navigation.navigate('Detail', {
@@ -26,19 +23,11 @@ const FavoriteScreen = () => {
         });
     };
 
-    if (isLoading) {
-        return <ActivityIndicator size="large" />;
-    }
-
-    if (isError) {
-        return <Text>Lỗi khi tải dữ liệu</Text>;
-    }
-
     return (
         <SafeAreaView style={styles.container}>
             <Header title="Danh sách yêu thích" onBackPress={() => navigation.goBack()} />
 
-            {favorites.length === 0 ? (
+            {favoriteHotels.length === 0 ? (
                 <View style={styles.emptyContainer}>
                     <Text style={styles.emptyText}>
                         Chưa có khách sạn nào được thêm vào danh sách, hãy chọn khách sạn mà bạn muốn thêm vào đây nhé!
@@ -46,7 +35,7 @@ const FavoriteScreen = () => {
                 </View>
             ) : (
                 <FlatList
-                    data={favorites}
+                    data={favoriteHotels}
                     keyExtractor={(item) => item._id}
                     renderItem={({ item }) => (
                         <HotelCard

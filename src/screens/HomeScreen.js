@@ -16,7 +16,7 @@ import { initSocket, getSocket, isSocketConnected } from '../utils/socket';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
-  const { data: hotels = [], isLoading, isError, refetch } = useHotels();
+  const { data: hotels = [], isLoading, isError, refetch } = useHotels({ discounted: true });
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const { favoriteIds, toggleFavorite } = useFavorite();
@@ -85,6 +85,18 @@ const HomeScreen = () => {
     return <Text>Lỗi loading khách sạn</Text>;
   }
 
+  if (!hotels || hotels.length === 0) {
+    return (
+      <View style={styles.container}>
+        <Image
+          source={require('../assets/icons/error.jpg')}
+          style={styles.noDealsImage}
+        />
+        <Text style={styles.noDealsText}>Hiện không có khách sạn giảm giá</Text>
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
@@ -119,7 +131,7 @@ const HomeScreen = () => {
             </View>
             <Text style={styles.title}>Bắt đầu đặt phòng ngay nào!</Text>
             <SearchBox />
-            <Text style={styles.sectionTitle}>Khách sạn phổ biến</Text>
+            <Text style={styles.sectionTitle}>Khách sạn đang có giảm giá</Text>
           </>
         }
         data={paginatedHotels}
@@ -131,6 +143,7 @@ const HomeScreen = () => {
               onPress={() => handlePressHotel(item)}
               isFavorite={favoriteIds.includes(item._id)}
               onToggleFavorite={() => toggleFavorite(item._id)}
+              showDiscountBadge={true}
             />
           </View>
         )}
@@ -240,6 +253,24 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     fontSize: 12,
+  },
+  noDealsImage: {
+    width: 200,
+    height: 200,
+    alignSelf: 'center',
+    marginTop: 50,
+  },
+  noDealsText: {
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 16,
+    color: 'gray',
+  },
+  errorText: {
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 16,
+    color: 'red',
   },
 });
 

@@ -1,11 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchHotels } from '../services/hotelService';
+import { fetchHotels, fetchDiscountedHotels } from '../services/hotelService';
 
-export const useHotels = () => {
+export const useHotels = (options = {}) => {
+  const { discounted = false, ...queryOptions } = options;
+
   return useQuery({
-    queryKey: ['hotels'],
-    queryFn: fetchHotels,
+    queryKey: discounted ? ['discounted-hotels'] : ['hotels'],
+    queryFn: discounted ? () => fetchDiscountedHotels(queryOptions) : () => fetchHotels(all),
     select: (data) => data || [],
-    refetchOnWindowFocus: true, // Tự động refetch khi màn hình được focus
+    refetchOnWindowFocus: true,
   });
 };

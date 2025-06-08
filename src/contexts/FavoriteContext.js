@@ -9,6 +9,7 @@ export const FavoriteProvider = ({ children }) => {
   const [favoriteIds, setFavoriteIds] = useState([]);
   const queryClient = useQueryClient();
   const { user, logout, isAuthenticated } = useAuth();
+  const [favoriteHotels, setFavoriteHotels] = useState([]);
 
   const loadFavorites = async () => {
     try {
@@ -20,6 +21,7 @@ export const FavoriteProvider = ({ children }) => {
       try {
         const data = await getFavorites();
         setFavoriteIds(data.map(item => item._id));
+        setFavoriteHotels(data);
       } catch (error) {
         const err = error instanceof Error ? error : new Error(String(error));
         console.error('Error loading favorites:', err);
@@ -44,7 +46,7 @@ export const FavoriteProvider = ({ children }) => {
   }, [user, isAuthenticated]);
 
   const toggleFavorite = async (hotelId) => {
-    if (!isAuthenticated) return; // Không làm gì nếu chưa đăng nhập
+    if (!isAuthenticated) return;
 
     try {
       // Optimistic update
@@ -54,16 +56,17 @@ export const FavoriteProvider = ({ children }) => {
 
       setFavoriteIds(newFavorites);
 
-      // Gọi API
       if (favoriteIds.includes(hotelId)) {
         await removeFavorite(hotelId);
+        await loadFavorites();
       } else {
         await addFavorite(hotelId);
+        await loadFavorites();
       }
 
       // Cập nhật cache
       queryClient.invalidateQueries(['favorites']);
-      queryClient.invalidateQueries(['hotels']); // Thêm dòng này
+      queryClient.invalidateQueries(['hotels']);
     } catch (error) {
       // Rollback nếu có lỗi
       setFavoriteIds(favoriteIds);
@@ -72,7 +75,7 @@ export const FavoriteProvider = ({ children }) => {
   };
 
   return (
-    <FavoriteContext.Provider value={{ favoriteIds, toggleFavorite, loadFavorites }}>
+    <FavoriteContext.Provider value={{ favoriteIds, favoriteHotels, toggleFavorite, loadFavorites }}>
       {children}
     </FavoriteContext.Provider>
   );

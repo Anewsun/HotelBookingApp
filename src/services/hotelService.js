@@ -85,8 +85,8 @@ export const searchHotelsWithAvailableRooms = async (params) => {
 };
 
 const convertSortParam = (sort) => {
-  switch(sort) {
-    case '-rating': 
+  switch (sort) {
+    case '-rating':
       return '-rating';
     case 'rating':
       return 'rating';
@@ -95,5 +95,20 @@ const convertSortParam = (sort) => {
     case 'price':
     default:
       return 'price';
+  }
+};
+
+export const fetchDiscountedHotels = async (params = {}) => {
+  try {
+    const response = await axios.get(`${API_URL}/discounts`, {
+      params: {
+        limit: params.limit || 8,
+        sort: params.sort || '-highestDiscountPercent'
+      }
+    });
+    return response.data.data;
+  } catch (error) {
+    console.error('Error fetching discounted hotels:', error);
+    throw error;
   }
 };
