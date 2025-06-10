@@ -84,10 +84,12 @@ const MyProfileScreen = () => {
 
             if (!response.success) {
                 Alert.alert('Lỗi', response.message || 'Vô hiệu hóa thất bại');
+                setShowDeactivateModal(false);
                 return;
             }
 
             await AsyncStorage.multiRemove(['token', 'refreshToken']);
+            setShowDeactivateModal(false);
             Alert.alert('Thành công', response.message);
             navigation.navigate('SignIn');
 
@@ -102,6 +104,7 @@ const MyProfileScreen = () => {
                 error.response?.data?.message ||
                 'Không nhận được phản hồi từ máy chủ'
             );
+            setShowDeactivateModal(false);
         } finally {
             setLoading(false);
         }
