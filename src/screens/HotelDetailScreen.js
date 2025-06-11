@@ -5,6 +5,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import HotelHeader from "../components/HotelHeader";
 import RoomTypeSelection from "../components/RoomTypeSelection";
 import ReviewsSection from "../components/ReviewsSection";
+import HotelMap from '../components/HotelMap';
 import { fetchHotelById, fetchAllAmenities } from '../services/hotelService';
 import { getAvailableRoomsByHotel } from '../services/roomService';
 import { getAmenityIcon } from '../utils/AmenityIcons';
@@ -241,6 +242,16 @@ const HotelDetailScreen = () => {
                     'fire')}
                 </View>
               </View>
+
+              {hotel.address && (
+                <View style={styles.mapSection}>
+                  <Text style={styles.sectionTitle}>Vị trí khách sạn</Text>
+                  <HotelMap address={hotel.address} />
+                  <Text style={styles.mapNote}>
+                    Bản đồ hiển thị qua OpenStreetMap
+                  </Text>
+                </View>
+              )}
 
               <RoomTypeSelection
                 rooms={availableRooms}
@@ -572,7 +583,16 @@ const styles = StyleSheet.create({
     color: 'white',
     marginLeft: 8,
     fontWeight: 'bold'
-  }
+  },
+  mapSection: {
+    marginVertical: 15,
+  },
+  mapNote: {
+    fontSize: 12,
+    color: '#888',
+    textAlign: 'center',
+    marginTop: 5,
+  },
 });
 
 export default HotelDetailScreen;
