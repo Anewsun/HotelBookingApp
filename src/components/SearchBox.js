@@ -16,7 +16,11 @@ const SearchBox = () => {
 
   // State lưu ngày nhận - trả phòng
   const [checkInDate, setCheckInDate] = useState(new Date());
-  const [checkOutDate, setCheckOutDate] = useState(new Date());
+  const [checkOutDate, setCheckOutDate] = useState(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow;
+  });
   const [dateModalVisible, setDateModalVisible] = useState(false);
   const [selectedDateType, setSelectedDateType] = useState('checkIn');
 
@@ -46,9 +50,31 @@ const SearchBox = () => {
     setDateModalVisible(true);
   };
 
+  const handleDateConfirm = (date) => {
+    if (selectedDateType === 'checkIn') {
+      setCheckInDate(date);
+      const nextDay = new Date(date);
+      nextDay.setDate(nextDay.getDate() + 1);
+      setCheckOutDate(nextDay);
+    } else {
+      if (date > checkInDate) {
+        setCheckOutDate(date);
+      } else {
+        Alert.alert('Lỗi', 'Ngày trả phòng phải sau ngày đến');
+        return;
+      }
+    }
+    setDateModalVisible(false);
+  };
+
   const handleSearch = () => {
     if (!locationId || !checkInDate || !checkOutDate || totalGuests() === 0) {
       Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin tìm kiếm');
+      return;
+    }
+
+    if (checkOutDate <= checkInDate) {
+      Alert.alert('Lỗi', 'Ngày trả phòng phải sau ngày đến');
       return;
     }
 
@@ -56,8 +82,8 @@ const SearchBox = () => {
       searchParams: {
         locationId,
         locationName: location,
-        checkIn: checkInDate.toLocaleDateString('en-CA'),
-        checkOut: checkOutDate.toLocaleDateString('en-CA'),
+        checkIn: checkInDate.toISOString().split('T')[0],
+        checkOut: checkOutDate.toISOString().split('T')[0],
         capacity: totalGuests(),
         fromSearch: true
       }
@@ -143,20 +169,10 @@ const SearchBox = () => {
         <DateTimePickerModal
           isVisible={dateModalVisible}
           mode="date"
-          onConfirm={(date) => {
-            if (selectedDateType === 'checkIn') {
-              setCheckInDate(date);
-              const nextDay = new Date(date);
-              nextDay.setDate(nextDay.getDate() + 1);
-              setCheckOutDate(nextDay);
-            } else {
-              setCheckOutDate(date);
-            }
-            setDateModalVisible(false);
-          }}
+          onConfirm={handleDateConfirm}
           onCancel={() => setDateModalVisible(false)}
           date={selectedDateType === 'checkIn' ? checkInDate : checkOutDate}
-          minimumDate={selectedDateType === 'checkOut' ? checkInDate : new Date()}
+          minimumDate={selectedDateType === 'checkIn' ? new Date() : checkInDate}
           display="inline"
           headerTextIOS={selectedDateType === 'checkIn' ? "Chọn ngày đến" : "Chọn ngày trả phòng"}
           confirmTextIOS="Xác nhận"
