@@ -27,6 +27,7 @@ const SearchResultScreen = () => {
     const navigation = useNavigation();
     const [selectedSort, setSelectedSort] = useState(currentFilters?.sort || 'price');
     const [showSortOptions, setShowSortOptions] = useState(false);
+    const [total, setTotal] = useState(0);
 
     useEffect(() => {
         const fetchLocations = async () => {
@@ -59,6 +60,7 @@ const SearchResultScreen = () => {
                 setHotels([]);
             } else {
                 setHotels(response.data);
+                setTotal(response.total || response.data.length);
                 setError(response.data.length === 0 ? 'Không tìm thấy khách sạn phù hợp' : null);
             }
 
@@ -66,6 +68,7 @@ const SearchResultScreen = () => {
             console.error('Fetch error:', err);
             setError('Đã xảy ra lỗi khi tải dữ liệu');
             setHotels([]);
+            setTotal(0);
         } finally {
             setLoading(false);
         }
@@ -207,7 +210,7 @@ const SearchResultScreen = () => {
         });
     };
 
-    if (!loading && (error || !hotels || hotels.length === 0)) {
+    if (!loading && (error || !hotels || total === 0)) {
         const isLocationError = [
             'Không tìm thấy địa điểm du lịch này',
             'Vui lòng chọn địa điểm',
@@ -315,7 +318,7 @@ const SearchResultScreen = () => {
                 </Modal>
             )}
 
-            <Text style={styles.countSearch}>{hotels.length} kết quả được tìm thấy</Text>
+            <Text style={styles.countSearch}>{total} kết quả được tìm thấy</Text>
             <FlatList
                 data={hotels}
                 keyExtractor={(item) => item._id}
