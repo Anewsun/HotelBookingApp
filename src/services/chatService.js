@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://10.0.2.2:3000/api/chats/';
+const API_URL = 'https://hotel-management-backend-ofn4.onrender.com/api/chats/';
 
 const getAuthHeader = async () => {
     const token = await AsyncStorage.getItem('token');

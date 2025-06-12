@@ -15,7 +15,7 @@ export const initSocket = async () => {
       socket.disconnect();
     }
 
-    socket = io('http://10.0.2.2:3000', {
+    socket = io('https://hotel-management-backend-ofn4.onrender.com', {
       auth: { token },
       transports: ['websocket'],
       reconnection: true,

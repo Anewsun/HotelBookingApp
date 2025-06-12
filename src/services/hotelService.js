@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://10.0.2.2:3000/api/hotels';
+const API_URL = 'https://hotel-management-backend-ofn4.onrender.com/api/hotels';
 
 export const fetchHotels = async () => {
   try {
@@ -25,7 +25,7 @@ export const fetchHotelById = async (hotelId) => {
 
 export const fetchAllAmenities = async () => {
   try {
-    const response = await fetch('http://10.0.2.2:3000/api/amenities');
+    const response = await fetch('https://hotel-management-backend-ofn4.onrender.com/api/amenities');
     const data = await response.json();
     return data.data;
   } catch (error) {

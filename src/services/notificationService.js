@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const api = axios.create({
-    baseURL: 'http://10.0.2.2:3000/api/notifications',
+    baseURL: 'https://hotel-management-backend-ofn4.onrender.com/api/notifications',
 });
 
 api.interceptors.request.use(async (config) => {
