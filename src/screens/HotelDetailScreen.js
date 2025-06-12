@@ -6,13 +6,13 @@ import HotelHeader from "../components/HotelHeader";
 import RoomTypeSelection from "../components/RoomTypeSelection";
 import ReviewsSection from "../components/ReviewsSection";
 import HotelMap from '../components/HotelMap';
-import { fetchHotelById, fetchAllAmenities } from '../services/hotelService';
-import { getAvailableRoomsByHotel } from '../services/roomService';
+import { fetchHotelById, fetchAllAmenities, getAvailableRoomsByHotel } from '../services/hotelService';
 import { getAmenityIcon } from '../utils/AmenityIcons';
 import { getReviewsByHotel, createReview, updateReview } from '../services/reviewService';
 import ReviewFormModal from '../components/ReviewFormModal';
 import { useAuth } from '../contexts/AuthContext';
 import ImageView from "react-native-image-viewing";
+import RoomSearchBox from '../components/RoomSearchBox';
 
 const starIcon = require('../assets/images/star.png');
 
@@ -35,20 +35,26 @@ const HotelDetailScreen = () => {
   const [isCurrentUserHotelOwner, setIsCurrentUserHotelOwner] = useState(false);
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [roomSearchParams, setRoomSearchParams] = useState({
+    checkIn: new Date(),
+    checkOut: new Date(Date.now() + 86400000),
+    adults: 1,
+    children: 0
+  });
 
-  const loadData = async () => {
+  const loadData = async (searchParams = roomSearchParams) => {
     try {
       setLoading(true);
-      const searchParams = route.params?.searchParams || {
-        checkIn: new Date().toISOString().split('T')[0],
-        checkOut: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-        capacity: 2
+      const formattedParams = {
+        checkIn: (searchParams.checkIn || new Date()).toISOString().split('T')[0],
+        checkOut: (searchParams.checkOut || new Date(Date.now() + 86400000)).toISOString().split('T')[0],
+        capacity: (searchParams.adults || 1) + (searchParams.children || 0)
       };
 
       const [hotelData, amenitiesData, roomsResponse, reviewsData] = await Promise.all([
         fetchHotelById(hotelId),
         fetchAllAmenities(),
-        getAvailableRoomsByHotel(hotelId, searchParams),
+        getAvailableRoomsByHotel(hotelId, formattedParams),
         getReviewsByHotel(hotelId)
       ]);
 
@@ -92,6 +98,33 @@ const HotelDetailScreen = () => {
       setIsCurrentUserHotelOwner(isOwner);
     }
   }, [hotel, user]);
+
+  useEffect(() => {
+    const { searchParams } = route.params || {};
+
+    if (searchParams) {
+      const checkIn = searchParams.checkIn ? new Date(searchParams.checkIn + 'T00:00:00') : new Date();
+      const checkOut = searchParams.checkOut ? new Date(searchParams.checkOut + 'T00:00:00') : new Date(Date.now() + 86400000);
+
+      setRoomSearchParams({
+        checkIn,
+        checkOut,
+        adults: searchParams.capacity || 1,
+        children: 0
+      });
+    }
+  }, [route.params]);
+
+  const handleRoomSearch = (params) => {
+    const safeParams = {
+      checkIn: params.checkIn || new Date(),
+      checkOut: params.checkOut || new Date(Date.now() + 86400000),
+      adults: params.adults || 1,
+      children: params.children || 0
+    };
+    setRoomSearchParams(safeParams);
+    loadData(safeParams);
+  };
 
   const handleSubmitReview = async (data) => {
     try {
@@ -252,6 +285,14 @@ const HotelDetailScreen = () => {
                   </Text>
                 </View>
               )}
+
+              <RoomSearchBox
+                initialCheckInDate={roomSearchParams.checkIn}
+                initialCheckOutDate={roomSearchParams.checkOut}
+                initialAdults={roomSearchParams.adults}
+                initialChildren={roomSearchParams.children}
+                onSearch={handleRoomSearch}
+              />
 
               <RoomTypeSelection
                 rooms={availableRooms}

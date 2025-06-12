@@ -88,16 +88,12 @@ const HomeScreen = () => {
   };
 
   const handlePressLocation = (location) => {
-    const today = new Date();
-    const tomorrow = new Date();
-    tomorrow.setDate(today.getDate() + 1);
-
     navigation.navigate('SearchResult', {
       searchParams: {
         locationId: location._id,
         locationName: location.name,
-        checkIn: today.toISOString().split('T')[0],
-        checkOut: tomorrow.toISOString().split('T')[0],
+        checkIn: new Date().toLocaleDateString('en-CA'),
+        checkOut: new Date(Date.now() + 86400000).toLocaleDateString('en-CA'),
         capacity: 1,
       }
     });

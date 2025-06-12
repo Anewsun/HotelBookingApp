@@ -25,7 +25,7 @@ const SearchResultScreen = () => {
     const [showLocationDropdown, setShowLocationDropdown] = useState(false);
     const { favoriteIds, toggleFavorite } = useFavorite();
     const navigation = useNavigation();
-    const [selectedSort, setSelectedSort] = useState(currentFilters?.sort || 'price');
+    const [selectedSort, setSelectedSort] = useState(currentFilters?.sort || '-price');
     const [showSortOptions, setShowSortOptions] = useState(false);
     const [total, setTotal] = useState(0);
 
@@ -133,12 +133,12 @@ const SearchResultScreen = () => {
             case 'rating':
                 backendSortValue = 'rating';
                 break;
-            case '-price':
-                backendSortValue = '-price';
-                break;
             case 'price':
-            default:
                 backendSortValue = 'price';
+                break;
+            case '-price':
+            default:
+                backendSortValue = '-price';
         }
 
         setSelectedSort(sortValue);
@@ -197,18 +197,11 @@ const SearchResultScreen = () => {
     }
 
     const navigateToHotelDetail = (hotelId) => {
-        const defaultParams = {
-            checkIn: new Date().toISOString().split('T')[0],
-            checkOut: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-            capacity: 1,
-            fromSearch: true
-        };
-
         navigation.navigate('Detail', {
             hotelId,
-            searchParams: searchParams || defaultParams
+            searchParams: searchParams
         });
-    };
+    }
 
     if (!loading && (error || !hotels || total === 0)) {
         const isLocationError = [

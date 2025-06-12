@@ -82,8 +82,8 @@ const SearchBox = () => {
       searchParams: {
         locationId,
         locationName: location,
-        checkIn: checkInDate.toISOString().split('T')[0],
-        checkOut: checkOutDate.toISOString().split('T')[0],
+        checkIn: checkInDate.toLocaleDateString('en-CA'),
+        checkOut: checkOutDate.toLocaleDateString('en-CA'),
         capacity: totalGuests(),
         fromSearch: true
       }
