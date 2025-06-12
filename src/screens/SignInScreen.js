@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import InputField from '../components/InputField';
 import SocialLogin from '../components/SocialLogin';
-import { login as apiLogin, loginWithGoogle, loginWithFacebook, getMe } from '../services/authService';
+import { login as apiLogin, getMe } from '../services/authService';
 import { useAuth } from '../contexts/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getErrorMessage } from '../utils/errorHandler';
@@ -48,34 +48,12 @@ const SignInScreen = ({ navigation }) => {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    // try {
-    //   const result = await loginWithGoogle();
-    //   Alert.alert('Thành công', 'Đăng nhập bằng Google thành công');
-    //   navigation.navigate('Home');
-    // } catch (error) {
-    //   Alert.alert('Lỗi', getErrorMessage(error));
-    // }
-    Alert.alert(
-      'Thông báo',
-      'Chức năng đăng nhập bằng Google chỉ khả dụng khi sử dụng web. Vui lòng truy cập bookit.com để sử dụng tính năng này.',
-      [{ text: 'OK' }]
-    );
+  const handleGoogleLogin = () => {
+    navigation.navigate('SocialLoginWebView', { provider: 'google' });
   };
 
-  const handleFacebookLogin = async () => {
-    // try {
-    //   const result = await loginWithFacebook();
-    //   Alert.alert('Thành công', 'Đăng nhập bằng Facebook thành công');
-    //   navigation.navigate('Home');
-    // } catch (error) {
-    //   Alert.alert('Lỗi', getErrorMessage(error));
-    // }
-    Alert.alert(
-      'Thông báo',
-      'Chức năng đăng nhập bằng Facebook chỉ khả dụng khi sử dụng web. Vui lòng truy cập bookit.com để sử dụng tính năng này.',
-      [{ text: 'OK' }]
-    );
+  const handleFacebookLogin = () => {
+    navigation.navigate('SocialLoginWebView', { provider: 'facebook' });
   };
 
   return (
