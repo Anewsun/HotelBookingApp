@@ -183,7 +183,7 @@ const HomeScreen = () => {
               hotel={item}
               onPress={() => handlePressHotel(item)}
               isFavorite={favoriteIds.includes(item._id)}
-              onToggleFavorite={() => toggleFavorite(item._id)}
+              onToggleFavorite={() => toggleFavorite(String(item._id))}
               showDiscountBadge={true}
             />
           </View>

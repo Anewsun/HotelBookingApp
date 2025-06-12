@@ -20,7 +20,7 @@ export const FavoriteProvider = ({ children }) => {
 
       try {
         const data = await getFavorites();
-        setFavoriteIds(data.map(item => item._id));
+        setFavoriteIds(data.map(item => String(item._id)));
         setFavoriteHotels(data);
       } catch (error) {
         const err = error instanceof Error ? error : new Error(String(error));
@@ -48,19 +48,21 @@ export const FavoriteProvider = ({ children }) => {
   const toggleFavorite = async (hotelId) => {
     if (!isAuthenticated) return;
 
+    const hotelIdStr = String(hotelId);
+
     try {
       // Optimistic update
-      const newFavorites = favoriteIds.includes(hotelId)
-        ? favoriteIds.filter(id => id !== hotelId)
-        : [...favoriteIds, hotelId];
+      const newFavorites = favoriteIds.includes(hotelIdStr)
+      ? favoriteIds.filter(id => id !== hotelIdStr)
+      : [...favoriteIds, hotelIdStr];
 
       setFavoriteIds(newFavorites);
 
-      if (favoriteIds.includes(hotelId)) {
-        await removeFavorite(hotelId);
+      if (favoriteIds.includes(hotelIdStr)) {
+        await removeFavorite(hotelIdStr);
         await loadFavorites();
       } else {
-        await addFavorite(hotelId);
+        await addFavorite(hotelIdStr);
         await loadFavorites();
       }
 

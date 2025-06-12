@@ -28,6 +28,12 @@ const SearchResultScreen = () => {
     const [selectedSort, setSelectedSort] = useState(currentFilters?.sort || '-price');
     const [showSortOptions, setShowSortOptions] = useState(false);
     const [total, setTotal] = useState(0);
+    const [pagination, setPagination] = useState({
+        page: 1,
+        limit: 10,
+        total: 0,
+        totalPages: 1
+    });
 
     useEffect(() => {
         const fetchLocations = async () => {
@@ -50,7 +56,9 @@ const SearchResultScreen = () => {
             const combinedParams = {
                 ...searchParams,
                 ...currentFilters,
-                ...params
+                ...params,
+                page: pagination.page,
+                limit: pagination.limit
             };
 
             console.log('API Params:', combinedParams);
@@ -61,6 +69,11 @@ const SearchResultScreen = () => {
             } else {
                 setHotels(response.data);
                 setTotal(response.total || response.data.length);
+                setPagination(prev => ({
+                    ...prev,
+                    total: response.total,
+                    totalPages: response.pagination?.totalPages || Math.ceil(response.total / prev.limit)
+                }));
                 setError(response.data.length === 0 ? 'Không tìm thấy khách sạn phù hợp' : null);
             }
 
@@ -72,7 +85,7 @@ const SearchResultScreen = () => {
         } finally {
             setLoading(false);
         }
-    }, [searchParams, currentFilters]);
+    }, [searchParams, currentFilters, pagination.page, pagination.limit]);
 
     useEffect(() => {
         console.log('Route changed:', route.params);
@@ -97,7 +110,7 @@ const SearchResultScreen = () => {
         if (searchParams?.locationId && searchParams?.checkIn && searchParams?.checkOut) {
             fetchData();
         }
-    }, [searchParams, currentFilters]);
+    }, [searchParams, currentFilters, pagination.page]);
 
     useEffect(() => {
         if (route.params?.filters?.sort) {
@@ -202,6 +215,29 @@ const SearchResultScreen = () => {
             searchParams: searchParams
         });
     }
+
+    const handlePageChange = (newPage) => {
+        if (newPage >= 1 && newPage <= pagination.totalPages) {
+            setPagination(prev => ({ ...prev, page: newPage }));
+        }
+    };
+
+    const PaginationControls = () => (
+        <View style={styles.pagination}>
+            {Array.from({ length: pagination.totalPages }, (_, index) => (
+                <TouchableOpacity
+                    key={index + 1}
+                    onPress={() => handlePageChange(index + 1)}
+                    style={[
+                        styles.pageButton,
+                        pagination.page === index + 1 && styles.activePageButton
+                    ]}
+                >
+                    <Text style={styles.pageButtonText}>{index + 1}</Text>
+                </TouchableOpacity>
+            ))}
+        </View>
+    );
 
     if (!loading && (error || !hotels || total === 0)) {
         const isLocationError = [
@@ -319,13 +355,14 @@ const SearchResultScreen = () => {
                     <HotelCard
                         hotel={item}
                         isFavorite={favoriteIds.includes(item._id)}
-                        onFavoritePress={() => toggleFavorite(item._id)}
+                        onFavoritePress={() => toggleFavorite(String(item._id))}
                         onPress={() => navigateToHotelDetail(item._id)}
                     />
                 )}
                 numColumns={2}
                 columnWrapperStyle={styles.row}
                 contentContainerStyle={styles.listContainer}
+                ListFooterComponent={PaginationControls}
             />
 
             <Modal
@@ -532,6 +569,24 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         marginBottom: 10,
+    },
+    pagination: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        paddingTop: 10,
+    },
+    pageButton: {
+        margin: 5,
+        padding: 10,
+        borderRadius: 5,
+        backgroundColor: 'lightgray'
+    },
+    activePageButton: {
+        backgroundColor: '#1167B1'
+    },
+    pageButtonText: {
+        fontSize: 16,
+        color: 'black'
     },
 });
 

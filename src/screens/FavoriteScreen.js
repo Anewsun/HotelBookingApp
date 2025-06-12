@@ -42,7 +42,7 @@ const FavoriteScreen = () => {
                             hotel={item}
                             onPress={() => handlePressHotel(item)}
                             isFavorite={true}
-                            onToggleFavorite={() => toggleFavorite(item._id)}
+                            onToggleFavorite={() => toggleFavorite(String(item._id))}
                         />
                     )}
                     numColumns={2}
