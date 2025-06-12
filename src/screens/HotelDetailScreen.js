@@ -391,6 +391,12 @@ const HotelDetailScreen = () => {
                   price: selectedRoom.price,
                 },
                 hotel: hotel,
+                searchParams: {
+                  checkIn: roomSearchParams.checkIn.toISOString(),
+                  checkOut: roomSearchParams.checkOut.toISOString(),
+                  checkInTime: '14:00',
+                  checkOutTime: '12:00'
+                }
               });
             }
           }}

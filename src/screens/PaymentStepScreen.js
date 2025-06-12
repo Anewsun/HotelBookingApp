@@ -1,49 +1,38 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Switch, Image, TextInput } from 'react-native';
-import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { Stepper } from '../components/Stepper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../components/Header';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { formatDate } from '../utils/dateUtils';
 
+const parseDate = (dateString) => {
+    if (!dateString) return new Date();
+    if (typeof dateString === 'string' && dateString.includes('T')) {
+        return new Date(dateString);
+    }
+    if (typeof dateString === 'string') {
+        return new Date(dateString + 'T00:00:00');
+    }
+    if (dateString instanceof Date) {
+        return dateString;
+    }
+    return new Date();
+};
+
 const PaymentStepScreen = ({ navigation, route }) => {
     const { selectedRoom, hotel, searchParams } = route.params;
-    const [checkInDate, setCheckInDate] = useState(searchParams?.checkIn ? new Date(searchParams.checkIn) : new Date());
-    const [checkOutDate, setCheckOutDate] = useState(searchParams?.checkOut ? new Date(searchParams.checkOut) : new Date(Date.now() + 86400000));
-    const [showDatePicker, setShowDatePicker] = useState(null);
-    const [checkInTime, setCheckInTime] = useState('14:00');
-    const [checkOutTime, setCheckOutTime] = useState('12:00');
-    const [showTimePicker, setShowTimePicker] = useState(null);
+    const checkInDate = parseDate(searchParams?.checkIn);
+    const checkOutDate = parseDate(searchParams?.checkOut);
+    const checkInTime = searchParams?.checkInTime || '14:00';
+    const checkOutTime = searchParams?.checkOutTime || '12:00';
     const [specialRequests, setSpecialRequests] = useState({
         earlyCheckIn: false,
         lateCheckOut: false,
         additionalRequests: ''
     });
-    const isFormValid = checkInDate && checkOutDate && checkInTime && checkOutTime;
-
-    const handleDateConfirm = (date) => {
-        if (showDatePicker === 'checkIn') {
-            setCheckInDate(date);
-        } else {
-            setCheckOutDate(date);
-        }
-        setShowDatePicker(null);
-    };
-
-    const handleTimeConfirm = (time) => {
-        const hours = time.getHours().toString().padStart(2, '0');
-        const minutes = time.getMinutes().toString().padStart(2, '0');
-        const selectedTime = `${hours}:${minutes}`;
-
-        if (showTimePicker === 'checkIn') {
-            setCheckInTime(selectedTime);
-        } else {
-            setCheckOutTime(selectedTime);
-        }
-        setShowTimePicker(null);
-    };
-
+    const isFormValid = true;
+    
     return (
         <SafeAreaView style={styles.container}>
             <Header title="Đặt phòng & thanh toán" onBackPress={() => navigation.goBack()} showBackIcon={true} />
@@ -87,55 +76,26 @@ const PaymentStepScreen = ({ navigation, route }) => {
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Ngày đến</Text>
                     <View style={styles.datetimeContainer}>
-                        <TouchableOpacity
-                            style={styles.dateInput}
-                            onPress={() => setShowDatePicker('checkIn')}
-                        >
+                        <View style={styles.dateInput}>
                             <Text style={styles.dateTimeText}>{formatDate(checkInDate)}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.timeInput}
-                            onPress={() => setShowTimePicker('checkIn')}
-                        >
+                        </View>
+                        <View style={styles.timeInput}>
                             <Text style={styles.dateTimeText}>{checkInTime}</Text>
-                        </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
 
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Ngày trả phòng</Text>
                     <View style={styles.datetimeContainer}>
-                        <TouchableOpacity
-                            style={styles.dateInput}
-                            onPress={() => setShowDatePicker('checkOut')}
-                        >
+                        <View style={styles.dateInput}>
                             <Text style={styles.dateTimeText}>{formatDate(checkOutDate)}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.timeInput}
-                            onPress={() => setShowTimePicker('checkOut')}
-                        >
+                        </View>
+                        <View style={styles.timeInput}>
                             <Text style={styles.dateTimeText}>{checkOutTime}</Text>
-                        </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
-
-                <DateTimePickerModal
-                    isVisible={showDatePicker !== null || showTimePicker !== null}
-                    mode={showTimePicker !== null ? 'time' : 'date'}
-                    onConfirm={(date) => {
-                        if (showTimePicker !== null) {
-                            handleTimeConfirm(date);
-                        } else {
-                            handleDateConfirm(date);
-                        }
-                    }}
-                    onCancel={() => {
-                        setShowDatePicker(null);
-                        setShowTimePicker(null);
-                    }}
-                    minimumDate={showDatePicker === 'checkOut' && checkInDate ? checkInDate : new Date()}
-                />
 
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Yêu cầu khác</Text>
