@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Dimensions } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Dimensions, ActivityIndicator } from "react-native";
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import { getAmenityIcon } from '../utils/AmenityIcons';
 import { formatDate } from '../utils/dateUtils';
 import ImageView from "react-native-image-viewing";
+import { getAvailableRoomsByHotel } from '../services/hotelService';
 
 const { width: viewportWidth } = Dimensions.get('window');
 
@@ -11,16 +12,18 @@ const RoomTypeSelection = ({
   rooms = [],
   selectedRoomIndex = null,
   onSelectedRoomChange = () => { },
-  searchParams = null
+  searchParams = null,
+  hotelId
 }) => {
   const [expandedRooms, setExpandedRooms] = useState([]);
   const [showAllRooms, setShowAllRooms] = useState(false);
   const initialRoomCount = 2;
-  const displayedRooms = showAllRooms ? rooms : rooms.slice(0, initialRoomCount);
   const [localSelectedIndex, setLocalSelectedIndex] = useState(selectedRoomIndex);
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [currentRoomImages, setCurrentRoomImages] = useState([]);
+  const [filteredRooms, setFilteredRooms] = useState(rooms);
+  const [loading, setLoading] = useState(false);
 
   // Kiểm tra chế độ tìm kiếm
   const isSearchMode = searchParams?.checkIn && searchParams?.checkOut && searchParams?.capacity;
@@ -28,6 +31,42 @@ const RoomTypeSelection = ({
   useEffect(() => {
     setLocalSelectedIndex(selectedRoomIndex);
   }, [selectedRoomIndex]);
+
+  useEffect(() => {
+    if (searchParams) {
+      fetchFilteredRooms();
+    } else {
+      setFilteredRooms(rooms);
+    }
+  }, [searchParams, rooms]);
+
+  const fetchFilteredRooms = async () => {
+    try {
+      setLoading(true);
+      const formattedParams = {
+        checkIn: searchParams.checkIn.toISOString().split('T')[0],
+        checkOut: searchParams.checkOut.toISOString().split('T')[0],
+        capacity: searchParams.adults + searchParams.children
+      };
+      const response = await getAvailableRoomsByHotel(hotelId, formattedParams);
+      setFilteredRooms(response.data || []);
+    } catch (error) {
+      console.error('Error fetching filtered rooms:', error);
+      setFilteredRooms([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const displayedRooms = showAllRooms ? filteredRooms : filteredRooms.slice(0, initialRoomCount);
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#003366" />
+      </View>
+    );
+  }
 
   const handleRoomSelect = (index) => {
     if (!isSearchMode && rooms[index].status !== 'available') return;
@@ -457,6 +496,11 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     alignSelf: 'flex-start',
     marginBottom: 3,
+  },
+  loadingContainer: {
+    padding: 20,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
 });
 

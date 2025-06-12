@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { createBooking, getMyBookings, getBookingDetails, cancelBooking, retryPayment, forceZaloPayCallback, checkVNPayPaymentStatus, checkZaloPaymentStatus, confirmVNPayFromRawUrl as apiConfirmVNPayFromRawUrl } from '../services/bookingService';
 
@@ -12,7 +12,7 @@ export const BookingProvider = ({ children }) => {
     const [initialLoading, setInitialLoading] = useState(true);
     const [lastUpdated, setLastUpdated] = useState(null);
 
-    const fetchMyBookings = async () => {
+    const fetchMyBookings = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
@@ -26,7 +26,7 @@ export const BookingProvider = ({ children }) => {
             setLoading(false);
             setInitialLoading(false);
         }
-    };
+    }, []);
 
     const addBooking = async (bookingData) => {
         setLoading(true);
@@ -128,7 +128,7 @@ export const BookingProvider = ({ children }) => {
             setBookings([]);
             setLoading(false);
         }
-    }, [user?.id]);
+    }, [user?.id, fetchMyBookings]);
 
     return (
         <BookingContext.Provider

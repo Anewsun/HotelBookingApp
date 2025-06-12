@@ -41,6 +41,7 @@ const HotelDetailScreen = () => {
     adults: 1,
     children: 0
   });
+  const [searchParamsForRooms, setSearchParamsForRooms] = useState(null);
 
   const loadData = async (searchParams = roomSearchParams) => {
     try {
@@ -123,7 +124,7 @@ const HotelDetailScreen = () => {
       children: params.children || 0
     };
     setRoomSearchParams(safeParams);
-    loadData(safeParams);
+    setSearchParamsForRooms(safeParams);
   };
 
   const handleSubmitReview = async (data) => {
@@ -298,7 +299,8 @@ const HotelDetailScreen = () => {
                 rooms={availableRooms}
                 selectedRoomIndex={selectedRoomIndex}
                 onSelectedRoomChange={handleSelectedRoomChange}
-                searchParams={route.params.searchParams || null}
+                searchParams={searchParamsForRooms}
+                hotelId={hotelId}
               />
 
               <TouchableOpacity
