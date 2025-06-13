@@ -45,6 +45,8 @@ export const searchHotelsWithAvailableRooms = async (params) => {
         checkOut: params.checkOut,
         capacity: params.capacity,
         hotelName: params.hotelName,
+        minRating: params.minRating,
+        maxRating: params.maxRating,
         minPrice: params.minPrice,
         maxPrice: params.maxPrice,
         roomType: params.roomType,

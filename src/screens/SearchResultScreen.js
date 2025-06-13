@@ -108,9 +108,22 @@ const SearchResultScreen = () => {
     useEffect(() => {
         console.log('searchParams/currentFilters changed:', searchParams, currentFilters);
         if (searchParams?.locationId && searchParams?.checkIn && searchParams?.checkOut) {
-            fetchData();
+            setPagination(prev => ({ ...prev, page: 1 }));
         }
-    }, [searchParams, currentFilters, pagination.page]);
+    }, [searchParams, currentFilters]);
+
+    useEffect(() => {
+        if (!searchParams || !searchParams.locationId || !searchParams.checkIn || !searchParams.checkOut) {
+            return;
+        }
+
+        const delayDebounceFn = setTimeout(() => {
+            console.log('Fetching data...');
+            fetchData();
+        }, 300);
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [pagination.page, searchParams, currentFilters, fetchData]);
 
     useEffect(() => {
         if (route.params?.filters?.sort) {

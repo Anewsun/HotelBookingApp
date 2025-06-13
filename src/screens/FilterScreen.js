@@ -13,6 +13,8 @@ const FilterScreen = ({ navigation, route }) => {
   const [selectedRating, setSelectedRating] = useState(0);
   const [amenities, setAmenities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [minRating, setMinRating] = useState(0);
+  const [maxRating, setMaxRating] = useState(5);
 
   useEffect(() => {
     const fetchAmenities = async () => {
@@ -37,10 +39,11 @@ const FilterScreen = ({ navigation, route }) => {
         ...(route.params?.filters || {}),
         minPrice: priceRange.min,
         maxPrice: priceRange.max,
-        rating: selectedRating || 1,
         amenities: selectedRoomAmenities.length > 0 ? selectedRoomAmenities : undefined,
         roomType: selectedRoomType,
         sort: '-rating',
+        minRating: minRating > 0 ? minRating : undefined,
+        maxRating: maxRating < 5 ? maxRating : undefined,
       }
     });
     console.log('FilterScreen received:', route.params?.searchParams);
@@ -63,6 +66,8 @@ const FilterScreen = ({ navigation, route }) => {
     setSelectedRating(0);
     setSelectedRoomType(null);
     setSelectedRoomAmenities([]);
+    setMinRating(0);
+    setMaxRating(5);
   };
 
   if (loading) {
@@ -77,6 +82,7 @@ const FilterScreen = ({ navigation, route }) => {
     (selectedRating ? 1 : 0) +
     (priceRange.min > 0 || priceRange.max < 10000000 ? 1 : 0) +
     (selectedRoomType ? 1 : 0) +
+    (minRating > 0 || maxRating < 5 ? 1 : 0) +
     selectedRoomAmenities.length;
 
   return (
@@ -88,19 +94,30 @@ const FilterScreen = ({ navigation, route }) => {
       />
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
-        {/* <Text style={styles.sectionTitle}>Đánh giá sao</Text>
+        <Text style={styles.sectionTitle}>Đánh giá sao</Text>
         <View style={styles.ratingContainer}>
-          {[5, 4, 3, 2, 1].map(rating => (
-            <TouchableOpacity
-              key={rating}
-              style={[styles.ratingButton, selectedRating === rating && styles.selectedRating]}
-              onPress={() => setSelectedRating(prev => prev === rating ? 0 : rating)}
-            >
-              <Text style={styles.ratingText}>{rating}+</Text>
-              <Icon name="star" size={16} color="#FFD700" />
-            </TouchableOpacity>
-          ))}
-        </View> */}
+          <Text style={styles.ratingLabel}>Từ: {minRating}★</Text>
+          <Slider
+            minimumValue={0}
+            maximumValue={5}
+            step={0.5}
+            value={minRating}
+            onValueChange={setMinRating}
+            minimumTrackTintColor="#1E90FF"
+            maximumTrackTintColor="#D3D3D3"
+          />
+
+          <Text style={styles.ratingLabel}>Đến: {maxRating}★</Text>
+          <Slider
+            minimumValue={0}
+            maximumValue={5}
+            step={0.5}
+            value={maxRating}
+            onValueChange={setMaxRating}
+            minimumTrackTintColor="#1E90FF"
+            maximumTrackTintColor="#D3D3D3"
+          />
+        </View>
 
         {/* Lọc theo giá */}
         <Text style={styles.sectionTitle}>Khoảng giá (VND)</Text>
@@ -199,8 +216,6 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   ratingContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     marginBottom: 16,
   },
   ratingButton: {
@@ -217,6 +232,11 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     marginRight: 4,
+    color: '#333',
+  },
+  ratingLabel: {
+    fontSize: 16,
+    marginBottom: 5,
     color: '#333',
   },
   priceInputsContainer: {
