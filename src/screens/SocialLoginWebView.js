@@ -5,11 +5,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
 import { getMe } from '../services/authService';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BASE_API_URL } from '../../config';
 
 const SocialLoginWebView = ({ route, navigation }) => {
     const { provider } = route.params;
     const { login } = useAuth();
-    const authUrl = `http://10.0.2.2:3000/api/auth/${provider}`;
+    const authUrl = `${BASE_API_URL}/api/auth/${provider}`;
 
     const handleNavigationStateChange = async (navState) => {
         const { url } = navState;

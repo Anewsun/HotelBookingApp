@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
   },
   navText: {
-    fontSize: 10,
+    fontSize: 8,
     color: 'black',
     fontWeight: 'bold',
     marginTop: 5

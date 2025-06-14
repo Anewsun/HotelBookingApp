@@ -6,6 +6,7 @@ import { login as apiLogin, getMe } from '../services/authService';
 import { useAuth } from '../contexts/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getErrorMessage } from '../utils/errorHandler';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SignInScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -57,7 +58,7 @@ const SignInScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.nameApp}>BookIt</Text>
 
       <Text style={styles.title}>Chào mừng trở lại</Text>
@@ -95,14 +96,11 @@ const SignInScreen = ({ navigation }) => {
 
       <Text style={styles.orText}>HOẶC</Text>
       <SocialLogin onGooglePress={handleGoogleLogin} onFacebookPress={handleFacebookLogin} />
-      <Text style={styles.noteText}>
-        Chức năng đăng nhập MXH chỉ khả dụng trên web
-      </Text>
 
       <Text style={styles.footerText}>
         Chưa có tài khoản? <Text style={styles.registerText} onPress={() => navigation.navigate('SignUp')} >Đăng ký</Text>
       </Text>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -190,13 +188,6 @@ const styles = StyleSheet.create({
     color: '#1167B1',
     fontWeight: 'bold',
     fontSize: 17
-  },
-  noteText: {
-    textAlign: 'center',
-    marginTop: 8,
-    color: '#888',
-    fontStyle: 'italic',
-    fontSize: 14,
   },
 });
 
