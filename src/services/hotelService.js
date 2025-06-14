@@ -1,11 +1,9 @@
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const API_URL = 'https://hotel-management-backend-ofn4.onrender.com/api/hotels';
+import { BASE_API_URL } from '../../config';
 
 export const fetchHotels = async () => {
   try {
-    const response = await axios.get(API_URL);
+    const response = await axios.get(`${BASE_API_URL}/api/hotels`);
     return response.data.data;
   } catch (error) {
     console.error('Error fetching hotels:', error);
@@ -15,7 +13,7 @@ export const fetchHotels = async () => {
 
 export const fetchHotelById = async (hotelId) => {
   try {
-    const response = await axios.get(`${API_URL}/${hotelId}`);
+    const response = await axios.get(`${BASE_API_URL}/api/hotels/${hotelId}`);
     return response.data.data;
   } catch (error) {
     console.error('Error fetching hotel:', error);
@@ -25,7 +23,7 @@ export const fetchHotelById = async (hotelId) => {
 
 export const fetchAllAmenities = async () => {
   try {
-    const response = await fetch('https://hotel-management-backend-ofn4.onrender.com/api/amenities');
+    const response = await fetch(`${BASE_API_URL}/api/amenities`);
     const data = await response.json();
     return data.data;
   } catch (error) {
@@ -38,7 +36,7 @@ export const searchHotelsWithAvailableRooms = async (params) => {
   try {
     console.log('API call with params:', params);
 
-    const response = await axios.get(`${API_URL}/search`, {
+    const response = await axios.get(`${BASE_API_URL}/api/hotels/search`, {
       params: {
         locationName: params.locationName,
         checkIn: params.checkIn,
@@ -102,7 +100,7 @@ const convertSortParam = (sort) => {
 
 export const fetchDiscountedHotels = async (params = {}) => {
   try {
-    const response = await axios.get(`${API_URL}/discounts`, {
+    const response = await axios.get(`${BASE_API_URL}/api/hotels/discounts`, {
       params: {
         limit: params.limit || 8,
         sort: params.sort || '-highestDiscountPercent'
@@ -122,7 +120,7 @@ export const getAvailableRoomsByHotel = async (hotelId, params) => {
     tomorrow.setDate(tomorrow.getDate() + 1);
     const formatDate = (date) => date.toISOString().split('T')[0];
 
-    const response = await axios.get(`${API_URL}/${hotelId}/rooms/available`, {
+    const response = await axios.get(`${BASE_API_URL}/api/hotels/${hotelId}/rooms/available`, {
       params: {
         checkIn: params.checkIn || formatDate(today),
         checkOut: params.checkOut || formatDate(tomorrow),

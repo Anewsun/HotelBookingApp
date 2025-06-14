@@ -1,7 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const API_URL = 'https://hotel-management-backend-ofn4.onrender.com/api/chatbot';
+import { BASE_API_URL } from '../../config';
 
 const getAuthHeader = async () => {
     const token = await AsyncStorage.getItem('token');
@@ -14,7 +13,7 @@ const getAuthHeader = async () => {
 
 export const sendChatbotMessage = async (message, sessionId) => {
     const config = await getAuthHeader();
-    const response = await axios.post(`${API_URL}/message`, {
+    const response = await axios.post(`${BASE_API_URL}/api/chatbox/message`, {
         message,
         sessionId
     }, config);
@@ -24,7 +23,7 @@ export const sendChatbotMessage = async (message, sessionId) => {
 
 export const sendChatbotEvent = async (eventName, sessionId, parameters = {}) => {
     const config = await getAuthHeader();
-    return axios.post(`${API_URL}/event`, {
+    return axios.post(`${BASE_API_URL}/api/chatbox/event`, {
         eventName,
         sessionId,
         parameters
@@ -33,5 +32,5 @@ export const sendChatbotEvent = async (eventName, sessionId, parameters = {}) =>
 
 export const clearChatbotSession = async (sessionId) => {
     const config = await getAuthHeader();
-    return axios.delete(`${API_URL}/session/${sessionId}`, config);
+    return axios.delete(`${BASE_API_URL}/api/chatbox/session/${sessionId}`, config);
 };

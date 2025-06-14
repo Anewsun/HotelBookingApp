@@ -1,7 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const API_URL = 'https://hotel-management-backend-ofn4.onrender.com/api/';
+import { BASE_API_URL } from '../../config';
 
 const getToken = async () => {
     return await AsyncStorage.getItem('token');
@@ -9,7 +8,7 @@ const getToken = async () => {
 
 export const getPosts = async () => {
     try {
-        const response = await axios.get(`${API_URL}posts`);
+        const response = await axios.get(`${BASE_API_URL}/api/posts`);
         return response.data;
     } catch (error) {
         console.error('Error fetching posts:', error);
@@ -19,7 +18,7 @@ export const getPosts = async () => {
 
 export const getPostById = async (postId) => {
     try {
-        const response = await axios.get(`${API_URL}posts/${postId}`, {
+        const response = await axios.get(`${BASE_API_URL}/api/posts/${postId}`, {
             params: {
                 populate: 'userId,interactions.userId'
             }
@@ -35,7 +34,7 @@ export const addInteraction = async (postId, type, content) => {
     try {
         const token = await getToken();
         const response = await axios.post(
-            `${API_URL}posts/${postId}/interactions`,
+            `${BASE_API_URL}/api/posts/${postId}/interactions`,
             { type, content },
             {
                 headers: {
@@ -54,7 +53,7 @@ export const deleteInteraction = async (postId, interactionId) => {
     try {
         const token = await getToken();
         const response = await axios.delete(
-            `${API_URL}posts/${postId}/interactions/${interactionId}`,
+            `${BASE_API_URL}/api/posts/${postId}/interactions/${interactionId}`,
             {
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -71,7 +70,7 @@ export const deleteInteraction = async (postId, interactionId) => {
 export const getPostInteractions = async (postId) => {
     try {
         const token = await getToken();
-        const response = await axios.get(`${API_URL}posts/${postId}/interactions`, {
+        const response = await axios.get(`${BASE_API_URL}/api/posts/${postId}/interactions`, {
             headers: {
                 'Authorization': `Bearer ${token}`,
             },

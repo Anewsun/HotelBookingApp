@@ -1,7 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const API_URL = 'https://hotel-management-backend-ofn4.onrender.com/api';
+import { BASE_API_URL } from '../../config';
 
 export const uploadAvatar = async (file) => {
   const token = await AsyncStorage.getItem('token');
@@ -14,7 +13,7 @@ export const uploadAvatar = async (file) => {
   });
 
   try {
-    const response = await axios.patch(`${API_URL}/users/me/avatar`, formData, {
+    const response = await axios.patch(`${BASE_API_URL}/api/users/me/avatar`, formData, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'multipart/form-data',
@@ -46,7 +45,7 @@ const getAuthHeader = async () => {
 export const getFavorites = async () => {
   try {
     const config = await getAuthHeader();
-    const response = await axios.get(`${API_URL}/favorites`, config);
+    const response = await axios.get(`${BASE_API_URL}/api/favorites`, config);
     return response.data.data;
   } catch (error) {
     console.error('Error getting favorites:', error);
@@ -56,20 +55,20 @@ export const getFavorites = async () => {
 
 export const addFavorite = async (hotelId) => {
   const config = await getAuthHeader();
-  const res = await axios.post(`${API_URL}/favorites`, { hotelId }, config);
+  const res = await axios.post(`${BASE_API_URL}/api/favorites`, { hotelId }, config);
   return res.data.data;
 };
 
 export const removeFavorite = async (hotelId) => {
   const config = await getAuthHeader();
-  const res = await axios.delete(`${API_URL}/favorites/${hotelId}`, config);
+  const res = await axios.delete(`${BASE_API_URL}/api/favorites/${hotelId}`, config);
   return res.data.data;
 };
 
 export const updateMe = async (updateData) => {
   try {
     const token = await AsyncStorage.getItem('token');
-    const response = await axios.put(`${API_URL}/users/me`, updateData, {
+    const response = await axios.put(`${BASE_API_URL}/api/users/me`, updateData, {
       headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;
@@ -83,11 +82,11 @@ export const deactivateAccount = async (password, reason) => {
     const token = await AsyncStorage.getItem('token');
 
     const response = await axios.patch(
-      `${API_URL}/users/me/deactivate`,
+      `${BASE_API_URL}/api/users/me/deactivate`,
       { password, reason },
       {
         headers: { Authorization: `Bearer ${token}` },
-        timeout: 8000 // Timeout 8 giây
+        timeout: 8000
       }
     );
 

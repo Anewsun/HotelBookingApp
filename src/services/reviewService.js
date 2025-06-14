@@ -1,10 +1,9 @@
 import axios from 'axios';
-
-const API_URL = 'https://hotel-management-backend-ofn4.onrender.com/api/reviews/';
+import { BASE_API_URL } from '../../config';
 
 export const createReview = async (reviewData) => {
     try {
-        const response = await axios.post(API_URL, reviewData);
+        const response = await axios.post(`${BASE_API_URL}/api/reviews/`, reviewData);
         return response.data.data;
     } catch (error) {
         throw new Error(error.response?.data?.message || 'Tạo đánh giá thất bại');
@@ -13,7 +12,7 @@ export const createReview = async (reviewData) => {
 
 export const getReviewsByHotel = async (hotelId) => {
     try {
-        const response = await axios.get(`${API_URL}${hotelId}`);
+        const response = await axios.get(`${BASE_API_URL}/api/reviews/${hotelId}`);
         return response.data.data;
     } catch (error) {
         throw new Error(error.response?.data?.message || 'Lỗi tải đánh giá');
@@ -22,7 +21,7 @@ export const getReviewsByHotel = async (hotelId) => {
 
 export const updateReview = async (reviewId, updateData) => {
     try {
-        const response = await axios.put(`${API_URL}${reviewId}`, updateData);
+        const response = await axios.put(`${BASE_API_URL}/api/reviews/${reviewId}`, updateData);
         return response.data.data;
     } catch (error) {
         throw new Error(error.response?.data?.message || 'Cập nhật thất bại');
@@ -31,7 +30,7 @@ export const updateReview = async (reviewId, updateData) => {
 
 export const deleteReview = async (reviewId) => {
     try {
-        await axios.delete(`${API_URL}${reviewId}`);
+        await axios.delete(`${BASE_API_URL}/api/reviews/${reviewId}`);
     } catch (error) {
         throw new Error(error.response?.data?.message || 'Xóa thất bại');
     }

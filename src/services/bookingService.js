@@ -1,10 +1,9 @@
 import axios from 'axios';
-
-const API_URL = 'https://hotel-management-backend-ofn4.onrender.com/api/';
+import { BASE_API_URL } from '../../config';
 
 export const createBooking = async (bookingData) => {
     try {
-        const response = await axios.post(`${API_URL}bookings`, bookingData);
+        const response = await axios.post(`${BASE_API_URL}/api/bookings`, bookingData);
         return response.data;
     } catch (error) {
         throw new Error(error.response?.data?.message || 'Failed to create booking');
@@ -13,7 +12,7 @@ export const createBooking = async (bookingData) => {
 
 export const getMyBookings = async () => {
     try {
-        const response = await axios.get(`${API_URL}bookings/my-bookings`);
+        const response = await axios.get(`${BASE_API_URL}/api/bookings/my-bookings`);
         return response.data.data || response.data;
     } catch (error) {
         throw new Error(error.response?.data?.message || 'Request failed');
@@ -22,7 +21,7 @@ export const getMyBookings = async () => {
 
 export const getBookingDetails = async (bookingId) => {
     try {
-        const response = await axios.get(`${API_URL}bookings/${bookingId}`);
+        const response = await axios.get(`${BASE_API_URL}/api/bookings/${bookingId}`);
         return response.data.data || response.data;
     } catch (error) {
         throw new Error(error.response?.data?.message || 'Request failed');
@@ -31,7 +30,7 @@ export const getBookingDetails = async (bookingId) => {
 
 export const cancelBooking = async (bookingId) => {
     try {
-        const response = await axios.patch(`${API_URL}bookings/${bookingId}/cancel`);
+        const response = await axios.patch(`${BASE_API_URL}/api/bookings/${bookingId}/cancel`);
         return response.data.data || response.data;
     } catch (error) {
         throw new Error(error.response?.data?.message || 'Request failed');
@@ -40,7 +39,7 @@ export const cancelBooking = async (bookingId) => {
 
 export const retryPayment = async (bookingId, paymentMethod) => {
     try {
-        const response = await axios.post(`${API_URL}bookings/retry-payment`, { bookingId, paymentMethod });
+        const response = await axios.post(`${BASE_API_URL}/api/bookings/retry-payment`, { bookingId, paymentMethod });
         return response.data;
     } catch (error) {
         throw new Error(error.response?.data?.message || 'Request failed');
@@ -49,7 +48,7 @@ export const retryPayment = async (bookingId, paymentMethod) => {
 
 export const checkZaloPaymentStatus = async (transactionId) => {
     try {
-        const response = await axios.get(`${API_URL}bookings/payment-status/${transactionId}`);
+        const response = await axios.get(`${BASE_API_URL}/api/bookings/payment-status/${transactionId}`);
         return response.data;
     } catch (error) {
         throw new Error('ZaloPay: ' + (error.response?.data?.message || 'Lỗi kiểm tra trạng thái'));
@@ -58,7 +57,7 @@ export const checkZaloPaymentStatus = async (transactionId) => {
 
 export const checkVNPayPaymentStatus = async (transactionId) => {
     try {
-        const response = await axios.post(`${API_URL}bookings/confirm-payment`, {
+        const response = await axios.post(`${BASE_API_URL}/api/bookings/confirm-payment`, {
             transactionId,
             paymentMethod: 'vnpay',
         });
@@ -76,7 +75,7 @@ export const checkVNPayPaymentStatus = async (transactionId) => {
 
 export const forceZaloPayCallback = async (callbackData) => {
     try {
-        const response = await axios.post(`${API_URL}bookings/zalopay-callback`, callbackData);
+        const response = await axios.post(`${BASE_API_URL}/api/bookings/zalopay-callback`, callbackData);
         return response.data;
     } catch (error) {
         throw new Error('Gửi callback thất bại');
@@ -85,7 +84,7 @@ export const forceZaloPayCallback = async (callbackData) => {
 
 export const confirmVNPayFromRawUrl = async (queryString) => {
     try {
-        const response = await axios.get(`${API_URL}bookings/vnpay-return?${queryString}`);
+        const response = await axios.get(`${BASE_API_URL}/api/bookings/vnpay-return?${queryString}`);
 
         if (!response.data || typeof response.data !== 'object') {
             return { success: true, status: 'paid' };

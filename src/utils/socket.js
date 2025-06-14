@@ -1,5 +1,6 @@
 import { io } from 'socket.io-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BASE_API_URL } from '../../config';
 
 let socket = null;
 let isInitialized = false;
@@ -15,7 +16,7 @@ export const initSocket = async () => {
       socket.disconnect();
     }
 
-    socket = io('https://hotel-management-backend-ofn4.onrender.com', {
+    socket = io(`${BASE_API_URL}`, {
       auth: { token },
       transports: ['websocket'],
       reconnection: true,

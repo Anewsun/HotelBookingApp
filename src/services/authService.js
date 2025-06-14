@@ -1,9 +1,7 @@
 import axios from 'axios';
-import { Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import CookieManager from '@react-native-cookies/cookies';
-
-const API_URL = 'https://hotel-management-backend-ofn4.onrender.com/api/auth';
+import { BASE_API_URL } from '../../config';
 
 export const refreshToken = async () => {
     try {
@@ -16,7 +14,7 @@ export const refreshToken = async () => {
 
         // Gửi request kèm refreshToken trong cookies
         const response = await axios.post(
-            `${API_URL}/refresh-token`,
+            `${BASE_API_URL}/api/auth/refresh-token`,
             {},
             {
                 headers: {
@@ -41,7 +39,7 @@ export const getMe = async () => {
     if (!token) return null;
 
     try {
-        const response = await axios.get(`${API_URL}/me`, {
+        const response = await axios.get(`${BASE_API_URL}/api/auth/me`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         console.log("✅ getMe() thành công:", response.data);
@@ -55,10 +53,10 @@ export const getMe = async () => {
 
 export const register = async (name, email, password) => {
     try {
-        console.log("📤 Sending request to:", `${API_URL}/register`);
+        console.log("📤 Sending request to:", `${BASE_API_URL}/api/auth/register`);
         console.log("📦 Data:", { name, email, password });
 
-        const response = await axios.post(`${API_URL}/register`, { name, email, password });
+        const response = await axios.post(`${BASE_API_URL}/api/auth/register`, { name, email, password });
 
         console.log("✅ Response:", response.data);
         return response.data;
@@ -80,7 +78,7 @@ export const logout = async () => {
             return { success: false, message: "Bạn chưa đăng nhập" };
         }
 
-        const response = await axios.get(`${API_URL}/logout`, {
+        const response = await axios.get(`${BASE_API_URL}/api/auth/logout`, {
             headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -92,10 +90,10 @@ export const logout = async () => {
 };
 
 export const login = async (email, password) => {
-    const response = await axios.post(`${API_URL}/login`, { email, password });
+    const response = await axios.post(`${BASE_API_URL}/api/auth/login`, { email, password });
 
     // Đọc cookie từ response
-    const cookies = await CookieManager.get(API_URL);
+    const cookies = await CookieManager.get(BASE_API_URL);
     const refreshToken = cookies.refreshToken?.value;
 
     if (response.data.user?.status === 'rejected') {
@@ -111,7 +109,7 @@ export const login = async (email, password) => {
 
 // export const loginWithGoogle = async () => {
 //     try {
-//         const authUrl = `${API_URL}/google`;
+//         const authUrl = `${BASE_API_URL}/api/auth/google`;
 //         Linking.openURL(authUrl);
 //     } catch (error) {
 //         console.log("🔴 Lỗi Google Login:", error);
@@ -121,7 +119,7 @@ export const login = async (email, password) => {
 
 // export const loginWithFacebook = async () => {
 //     try {
-//         const response = await axios.get(`${API_URL}/facebook`);
+//         const response = await axios.get(`${BASE_API_URL}/api/auth/facebook`);
 //         return response.data;
 //     } catch (error) {
 //         throw error.response?.data || "Đăng nhập Facebook thất bại";
@@ -130,7 +128,7 @@ export const login = async (email, password) => {
 
 export const sendOTP = async (email) => {
     try {
-        const response = await axios.post(`${API_URL}/password/forgot`, { email });
+        const response = await axios.post(`${BASE_API_URL}/api/auth/password/forgot`, { email });
         return response.data;
     } catch (error) {
         throw error.response?.data || "Lỗi khi gửi email đặt lại mật khẩu";
@@ -139,7 +137,7 @@ export const sendOTP = async (email) => {
 
 export const verifyOTP = async (email, otp) => {
     try {
-        const response = await axios.post(`${API_URL}/password/verify-otp`, { email, otp });
+        const response = await axios.post(`${BASE_API_URL}/api/auth/password/verify-otp`, { email, otp });
         return response.data;
     } catch (error) {
         throw error.response?.data?.message || "Lỗi xác thực OTP";
@@ -148,7 +146,7 @@ export const verifyOTP = async (email, otp) => {
 
 export const resetPassword = async (email, otp, newPassword) => {
     try {
-        const response = await axios.post(`${API_URL}/password/reset`, { email, otp, password: newPassword });
+        const response = await axios.post(`${BASE_API_URL}/api/auth/password/reset`, { email, otp, password: newPassword });
         return response.data;
     } catch (error) {
         throw error.response?.data?.message || "Lỗi đặt lại mật khẩu";

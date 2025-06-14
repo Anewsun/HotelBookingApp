@@ -1,10 +1,9 @@
 import axios from 'axios';
-
-const API_URL = 'https://hotel-management-backend-ofn4.onrender.com/api/locations';
+import { BASE_API_URL } from '../../config';
 
 export const getLocations = async () => {
     try {
-        const response = await axios.get(API_URL);
+        const response = await axios.get(`${BASE_API_URL}/api/locations`);
         return response.data.data;
     } catch (error) {
         console.error('Error fetching locations:', error);
@@ -14,7 +13,7 @@ export const getLocations = async () => {
 
 export const getPopularLocations = async () => {
     try {
-        const response = await axios.get(`${API_URL}/popular`);
+        const response = await axios.get(`${BASE_API_URL}/api/locations/popular`);
         return response.data.data;
     } catch (error) {
         console.error('Error fetching popular locations:', error);
