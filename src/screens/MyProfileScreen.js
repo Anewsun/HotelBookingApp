@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, Alert, Image, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, Alert, Image, ActivityIndicator, ScrollView } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { updateMe, deactivateAccount } from '../services/userService';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -8,6 +8,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getErrorMessage } from '../utils/errorHandler';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const MyProfileScreen = () => {
     const navigation = useNavigation();
@@ -110,6 +111,32 @@ const MyProfileScreen = () => {
         }
     };
 
+    const getTierColor = (tier) => {
+        switch (tier) {
+            case 'Bronze':
+                return '#cd7f32';
+            case 'Silver':
+                return '#c0c0c0';
+            case 'Gold':
+                return '#ffd700';
+            default:
+                return '#cd7f32';
+        }
+    };
+
+    const getTierIcon = (tier) => {
+        switch (tier) {
+            case 'Bronze':
+                return '🥉';
+            case 'Silver':
+                return '🥈';
+            case 'Gold':
+                return '🥇';
+            default:
+                return '🥉';
+        }
+    };
+
     if (loading) {
         return (
             <View style={styles.container}>
@@ -129,157 +156,181 @@ const MyProfileScreen = () => {
         );
     }
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <Header
                 title="Thông tin cá nhân"
                 onBackPress={() => navigation.goBack()}
                 showBackIcon={true}
             />
 
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Thông tin cơ bản</Text>
-
-                <View style={styles.inputContainer}>
-                    <Feather name="user" size={20} color="#1167B1" style={styles.icon} />
-                    <TextInput
-                        style={styles.input}
-                        value={formData.name}
-                        onChangeText={(text) => setFormData({ ...formData, name: text })}
-                        placeholder="Họ và tên"
-                    />
-                </View>
-
-                {emailChanged && (
-                    <Text style={styles.warningText}>Email sẽ cần được xác thực lại sau khi thay đổi</Text>
-                )}
-
-                <View style={styles.inputContainer}>
-                    <Feather name="mail" size={20} color="#1167B1" style={styles.icon} />
-                    <TextInput
-                        style={styles.input}
-                        value={formData.email}
-                        onChangeText={handleEmailChange}
-                        placeholder="Email"
-                        keyboardType="email-address"
-                    />
-                </View>
-
-                <View style={styles.inputContainer}>
-                    <Feather name="phone" size={20} color="#1167B1" style={styles.icon} />
-                    <TextInput
-                        style={styles.input}
-                        value={formData.phone}
-                        onChangeText={(text) => setFormData({ ...formData, phone: text })}
-                        placeholder="Số điện thoại"
-                        keyboardType="phone-pad"
-                    />
-                </View>
-
-                <View style={styles.inputContainer}>
-                    <Feather name="map-pin" size={20} color="#1167B1" style={styles.icon} />
-                    <TextInput
-                        style={styles.input}
-                        value={formData.address}
-                        onChangeText={(text) => setFormData({ ...formData, address: text })}
-                        placeholder="Địa chỉ"
-                    />
-                </View>
-
-                <TouchableOpacity
-                    style={[styles.saveButton, loading && styles.disabledButton]}
-                    onPress={handleUpdateProfile}
-                    disabled={loading}
-                >
-                    {loading ? (
-                        <ActivityIndicator color="white" />
-                    ) : (
-                        <Text style={styles.saveButtonText}>Lưu thay đổi</Text>
-                    )}
-                </TouchableOpacity>
-            </View>
-
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Tùy chọn tài khoản</Text>
-                <TouchableOpacity
-                    style={styles.deactivateButton}
-                    onPress={() => setShowDeactivateModal(true)}
-                >
-                    <MaterialIcons name="warning" size={20} color="white" style={styles.icon} />
-                    <Text style={styles.deactivateText}>Vô hiệu hóa tài khoản</Text>
-                </TouchableOpacity>
-            </View>
-
-            <Modal
-                visible={showDeactivateModal}
-                transparent
-                animationType="fade"
+            <ScrollView
+                style={styles.container}
+                contentContainerStyle={{ paddingBottom: 20 }}
             >
-                <View style={styles.modalBackdrop}>
-                    <View style={styles.modalContent}>
-                        <MaterialIcons
-                            name="warning"
-                            size={40}
-                            color="#FF5252"
-                            style={styles.modalIcon}
-                        />
-                        <Text style={styles.modalTitle}>Xác nhận vô hiệu hóa tài khoản</Text>
-                        <Text style={styles.modalText}>
-                            Bạn có chắc muốn vô hiệu hóa tài khoản? Hành động này rất khó để hoàn tác.
-                        </Text>
 
-                        <View style={styles.modalInputContainer}>
-                            <TextInput
-                                style={styles.modalInput}
-                                secureTextEntry={!showPassword}
-                                placeholder="Nhập mật khẩu để xác nhận"
-                                value={password}
-                                onChangeText={setPassword}
-                            />
-                            <TouchableOpacity
-                                style={styles.eyeIcon}
-                                onPress={() => setShowPassword(!showPassword)}
-                            >
-                                <Feather
-                                    name={showPassword ? "eye" : "eye-off"}
-                                    size={20}
-                                    color="black"
-                                />
-                            </TouchableOpacity>
-                        </View>
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Thông tin cơ bản</Text>
 
+                    <View style={styles.inputContainer}>
+                        <Feather name="user" size={20} color="#1167B1" style={styles.icon} />
                         <TextInput
-                            style={styles.modalInput}
-                            placeholder="Lý do (tùy chọn)"
-                            value={reason}
-                            onChangeText={setReason}
-                            multiline
+                            style={styles.input}
+                            value={formData.name}
+                            onChangeText={(text) => setFormData({ ...formData, name: text })}
+                            placeholder="Họ và tên"
                         />
+                    </View>
 
-                        <View style={styles.modalButtons}>
-                            <TouchableOpacity
-                                style={styles.cancelButton}
-                                onPress={() => {
-                                    setShowDeactivateModal(false);
-                                    setPassword('');
-                                    setReason('');
-                                }}
-                            >
-                                <Text style={styles.cancelText}>Hủy</Text>
-                            </TouchableOpacity>
+                    {emailChanged && (
+                        <Text style={styles.warningText}>Email sẽ cần được xác thực lại sau khi thay đổi</Text>
+                    )}
 
-                            <TouchableOpacity
-                                title={loading ? "Đang xử lý..." : "Vô hiệu hóa tài khoản"}
-                                style={styles.confirmButton}
-                                onPress={handleDeactivate}
-                                disabled={loading}
-                            >
-                                <Text style={styles.confirmText}>Xác nhận vô hiệu hóa</Text>
-                            </TouchableOpacity>
+                    <View style={styles.inputContainer}>
+                        <Feather name="mail" size={20} color="#1167B1" style={styles.icon} />
+                        <TextInput
+                            style={styles.input}
+                            value={formData.email}
+                            onChangeText={handleEmailChange}
+                            placeholder="Email"
+                            keyboardType="email-address"
+                        />
+                    </View>
+
+                    <View style={styles.inputContainer}>
+                        <Feather name="phone" size={20} color="#1167B1" style={styles.icon} />
+                        <TextInput
+                            style={styles.input}
+                            value={formData.phone}
+                            onChangeText={(text) => setFormData({ ...formData, phone: text })}
+                            placeholder="Số điện thoại"
+                            keyboardType="phone-pad"
+                        />
+                    </View>
+
+                    <View style={styles.inputContainer}>
+                        <Feather name="map-pin" size={20} color="#1167B1" style={styles.icon} />
+                        <TextInput
+                            style={styles.input}
+                            value={formData.address}
+                            onChangeText={(text) => setFormData({ ...formData, address: text })}
+                            placeholder="Địa chỉ"
+                        />
+                    </View>
+
+                    <TouchableOpacity
+                        style={[styles.saveButton, loading && styles.disabledButton]}
+                        onPress={handleUpdateProfile}
+                        disabled={loading}
+                    >
+                        {loading ? (
+                            <ActivityIndicator color="white" />
+                        ) : (
+                            <Text style={styles.saveButtonText}>Lưu thay đổi</Text>
+                        )}
+                    </TouchableOpacity>
+                </View>
+
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Hạng thành viên</Text>
+
+                    <View style={styles.tierContainer}>
+                        <View style={[styles.tierCircle, { backgroundColor: getTierColor(user?.tier || 'Bronze') }]}>
+                            <Text style={styles.tierIcon}>{getTierIcon(user?.tier || 'Bronze')}</Text>
                         </View>
+
+                        <Text style={styles.tierTitle}>{user?.tier || 'Bronze'}</Text>
+
+                        <Text style={styles.tierDescription}>
+                            {user?.tier === 'Gold' ? 'Hạng thành viên cao nhất với nhiều ưu đãi' :
+                                user?.tier === 'Silver' ? 'Hạng thành viên trung cấp với ưu đãi tốt' :
+                                    'Hạng thành viên cơ bản'}
+                        </Text>
                     </View>
                 </View>
-            </Modal>
-        </View>
+
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Tùy chọn tài khoản</Text>
+                    <TouchableOpacity
+                        style={styles.deactivateButton}
+                        onPress={() => setShowDeactivateModal(true)}
+                    >
+                        <MaterialIcons name="warning" size={20} color="white" style={styles.icon} />
+                        <Text style={styles.deactivateText}>Vô hiệu hóa tài khoản</Text>
+                    </TouchableOpacity>
+                </View>
+
+                <Modal
+                    visible={showDeactivateModal}
+                    transparent
+                    animationType="fade"
+                >
+                    <View style={styles.modalBackdrop}>
+                        <View style={styles.modalContent}>
+                            <MaterialIcons
+                                name="warning"
+                                size={40}
+                                color="#FF5252"
+                                style={styles.modalIcon}
+                            />
+                            <Text style={styles.modalTitle}>Xác nhận vô hiệu hóa tài khoản</Text>
+                            <Text style={styles.modalText}>
+                                Bạn có chắc muốn vô hiệu hóa tài khoản? Hành động này rất khó để hoàn tác.
+                            </Text>
+
+                            <View style={styles.modalInputContainer}>
+                                <TextInput
+                                    style={styles.modalInput}
+                                    secureTextEntry={!showPassword}
+                                    placeholder="Nhập mật khẩu để xác nhận"
+                                    value={password}
+                                    onChangeText={setPassword}
+                                />
+                                <TouchableOpacity
+                                    style={styles.eyeIcon}
+                                    onPress={() => setShowPassword(!showPassword)}
+                                >
+                                    <Feather
+                                        name={showPassword ? "eye" : "eye-off"}
+                                        size={20}
+                                        color="black"
+                                    />
+                                </TouchableOpacity>
+                            </View>
+
+                            <TextInput
+                                style={styles.modalInput}
+                                placeholder="Lý do (tùy chọn)"
+                                value={reason}
+                                onChangeText={setReason}
+                                multiline
+                            />
+
+                            <View style={styles.modalButtons}>
+                                <TouchableOpacity
+                                    style={styles.cancelButton}
+                                    onPress={() => {
+                                        setShowDeactivateModal(false);
+                                        setPassword('');
+                                        setReason('');
+                                    }}
+                                >
+                                    <Text style={styles.cancelText}>Hủy</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    title={loading ? "Đang xử lý..." : "Vô hiệu hóa tài khoản"}
+                                    style={styles.confirmButton}
+                                    onPress={handleDeactivate}
+                                    disabled={loading}
+                                >
+                                    <Text style={styles.confirmText}>Xác nhận vô hiệu hóa</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+            </ScrollView>
+        </SafeAreaView>
     );
 }
 
@@ -287,7 +338,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f0f4ff',
-        paddingTop: 45
     },
     section: {
         backgroundColor: 'white',
@@ -455,6 +505,32 @@ const styles = StyleSheet.create({
         fontSize: 14,
         marginTop: 4,
         marginLeft: 32,
+    },
+    tierContainer: {
+        alignItems: 'center',
+        paddingVertical: 16,
+    },
+    tierCircle: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    tierIcon: {
+        fontSize: 32,
+    },
+    tierTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#1167B1',
+        marginBottom: 8,
+    },
+    tierDescription: {
+        fontSize: 14,
+        color: '#666',
+        textAlign: 'center',
     },
 });
 

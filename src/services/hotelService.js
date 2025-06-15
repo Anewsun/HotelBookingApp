@@ -36,6 +36,8 @@ export const searchHotelsWithAvailableRooms = async (params) => {
   try {
     console.log('API call with params:', params);
 
+    const amenitiesParam = params.amenities?.length ? params.amenities.join(',') : undefined;
+
     const response = await axios.get(`${BASE_API_URL}/api/hotels/search`, {
       params: {
         locationName: params.locationName,
@@ -47,8 +49,8 @@ export const searchHotelsWithAvailableRooms = async (params) => {
         maxRating: params.maxRating,
         minPrice: params.minPrice,
         maxPrice: params.maxPrice,
-        roomType: params.roomType,
-        amenities: params.amenities?.length ? params.amenities : undefined,
+        roomTypes: params.roomType,
+        amenities: amenitiesParam,
         sort: convertSortParam(params.sort || '-price'),
         page: params.page || 1,
         limit: params.limit || 10

@@ -7,7 +7,7 @@ export const getLocations = async () => {
         return response.data.data;
     } catch (error) {
         console.error('Error fetching locations:', error);
-        throw error;
+        return [];
     }
 };
 
@@ -18,5 +18,17 @@ export const getPopularLocations = async () => {
     } catch (error) {
         console.error('Error fetching popular locations:', error);
         throw error;
+    }
+};
+
+export const searchLocations = async (query, limit = 5) => {
+    try {
+        const response = await axios.get(`${BASE_API_URL}/api/locations/search`, {
+            params: { location: query, limit }
+        });
+        return response.data.data || [];
+    } catch (error) {
+        console.log('Search locations error:', error.message);
+        return [];
     }
 };

@@ -8,7 +8,7 @@ import { fetchAllAmenities } from '../services/hotelService';
 
 const FilterScreen = ({ navigation, route }) => {
   const [priceRange, setPriceRange] = useState({ min: 0, max: 10000000 });
-  const [selectedRoomType, setSelectedRoomType] = useState(null);
+  const [selectedRoomTypes, setSelectedRoomTypes] = useState([]);
   const [selectedRoomAmenities, setSelectedRoomAmenities] = useState([]);
   const [selectedRating, setSelectedRating] = useState(0);
   const [amenities, setAmenities] = useState([]);
@@ -40,7 +40,7 @@ const FilterScreen = ({ navigation, route }) => {
         minPrice: priceRange.min,
         maxPrice: priceRange.max,
         amenities: selectedRoomAmenities.length > 0 ? selectedRoomAmenities : undefined,
-        roomType: selectedRoomType,
+        roomTypes: selectedRoomTypes.length > 0 ? selectedRoomTypes.join(',') : undefined,
         sort: '-rating',
         minRating: minRating > 0 ? minRating : undefined,
         maxRating: maxRating < 5 ? maxRating : undefined,
@@ -50,7 +50,11 @@ const FilterScreen = ({ navigation, route }) => {
   };
 
   const selectRoomType = (type) => {
-    setSelectedRoomType(prev => prev === type ? null : type);
+    setSelectedRoomTypes(prev =>
+      prev.includes(type)
+        ? prev.filter(t => t !== type)
+        : [...prev, type]
+    );
   };
 
   const toggleRoomAmenity = (amenityId) => {
@@ -64,7 +68,7 @@ const FilterScreen = ({ navigation, route }) => {
   const resetFilters = () => {
     setPriceRange({ min: 0, max: 10000000 });
     setSelectedRating(0);
-    setSelectedRoomType(null);
+    setSelectedRoomType([]);
     setSelectedRoomAmenities([]);
     setMinRating(0);
     setMaxRating(5);
@@ -81,7 +85,7 @@ const FilterScreen = ({ navigation, route }) => {
   const activeFilterCount =
     (selectedRating ? 1 : 0) +
     (priceRange.min > 0 || priceRange.max < 10000000 ? 1 : 0) +
-    (selectedRoomType ? 1 : 0) +
+    (selectedRoomTypes.length > 0 ? 1 : 0) +
     (minRating > 0 || maxRating < 5 ? 1 : 0) +
     selectedRoomAmenities.length;
 
@@ -151,7 +155,10 @@ const FilterScreen = ({ navigation, route }) => {
           {['Standard', 'Superior', 'Deluxe', 'Suite', 'Family'].map(type => (
             <TouchableOpacity
               key={type}
-              style={[styles.roomTypeButton, selectedRoomType === type && styles.selectedRoomType]}
+              style={[
+                styles.roomTypeButton,
+                selectedRoomTypes.includes(type) && styles.selectedRoomType
+              ]}
               onPress={() => selectRoomType(type)}
             >
               <Text style={styles.roomTypeText}>{type}</Text>

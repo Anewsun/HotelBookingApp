@@ -1,18 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Alert, ScrollView, TouchableWithoutFeedback } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, Alert, ActivityIndicator, ScrollView, TouchableWithoutFeedback } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { useNavigation } from '@react-navigation/native';
-import { getLocations } from '../services/locationService';
+import { searchLocations } from '../services/locationService';
 import { formatDate } from '../utils/dateUtils';
+import { debounce } from 'lodash';
 
 const SearchBox = () => {
   const navigation = useNavigation();
   const [location, setLocation] = useState('');
   const [locationId, setLocationId] = useState(null);
-  const [locationsList, setLocationsList] = useState([]);
+  const [searchResults, setSearchResults] = useState([]);
   const [filteredLocations, setFilteredLocations] = useState([]);
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
 
   // State lưu ngày nhận - trả phòng
   const [checkInDate, setCheckInDate] = useState(new Date());
@@ -28,20 +30,6 @@ const SearchBox = () => {
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
   const [guestModalVisible, setGuestModalVisible] = useState(false);
-
-  useEffect(() => {
-    const fetchLocations = async () => {
-      try {
-        const data = await getLocations();
-        setLocationsList(data);
-        setFilteredLocations(data);
-      } catch (error) {
-        Alert.alert('Lỗi', 'Không thể tải danh sách địa điểm');
-      }
-    };
-
-    fetchLocations();
-  }, []);
 
   const totalGuests = () => adults + children;
 
@@ -96,22 +84,65 @@ const SearchBox = () => {
     setShowLocationDropdown(false);
   };
 
+  const searchLocationsDebounced = useCallback(
+    debounce(async (query) => {
+      if (!query || query.trim().length < 2) {
+        setSearchResults([]);
+        setShowLocationDropdown(false);
+        return;
+      }
+
+      try {
+        setIsSearching(true);
+        const data = await searchLocations(query);
+        setSearchResults(data);
+        setShowLocationDropdown(data.length > 0);
+      } catch (error) {
+        console.log('Search error:', error);
+        setSearchResults([]);
+        setShowLocationDropdown(false);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 500),
+    []
+  );
+
+  const handleLocationChange = (text) => {
+    setLocation(text);
+    setLocationId(null);
+    if (text.trim().length > 0) {
+      searchLocationsDebounced(text);
+    } else {
+      setSearchResults([]);
+      setShowLocationDropdown(false);
+    }
+  };
+
   return (
     <TouchableWithoutFeedback onPress={() => setShowLocationDropdown(false)} accessible={false} importantForAccessibility="no">
       <View style={styles.outerContainer}>
         <View style={styles.container}>
           <Text style={styles.label}>Địa điểm</Text>
-          <TouchableOpacity
-            style={styles.inputContainer}
-            onPress={() => setShowLocationDropdown(!showLocationDropdown)}
-          >
+          <View style={styles.inputContainer}>
             <Icon name="location" size={20} color="#888" />
-            <Text style={styles.input}>
-              {location || 'Chọn điểm đến'}
-            </Text>
-          </TouchableOpacity>
+            <TextInput
+              style={[styles.input, { flex: 1 }]}
+              placeholder="Nhập điểm đến"
+              value={location}
+              onChangeText={handleLocationChange}
+              onFocus={() => {
+                if (locationId) {
+                  setShowLocationDropdown(false);
+                } else if (searchResults.length > 0) {
+                  setShowLocationDropdown(true);
+                }
+              }}
+            />
+            {isSearching && <ActivityIndicator size="small" color="#888" />}
+          </View>
 
-          {showLocationDropdown && (
+          {showLocationDropdown && searchResults.length > 0 && (
             <View style={styles.dropdownWrapper}>
               <View
                 style={styles.dropdownContainer}
@@ -121,7 +152,7 @@ const SearchBox = () => {
                   style={styles.scrollView}
                   nestedScrollEnabled={true}
                 >
-                  {locationsList.map(item => (
+                  {searchResults.map(item => (
                     <TouchableOpacity
                       key={item._id}
                       style={styles.dropdownItem}
