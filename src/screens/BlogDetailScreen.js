@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, TextInput, FlatList, ActivityIndicator, Image, ScrollView, RefreshControl, TouchableOpacity, Dimensions } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useAuth } from '../contexts/AuthContext';
@@ -8,8 +8,8 @@ import Header from '../components/Header';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { formatDate } from '../utils/dateUtils';
-import RenderHtml from 'react-native-render-html';
 import sanitizeHtml from 'sanitize-html';
+import MemoizedHtmlContent from '../components/MemoizedHtmlContent';
 
 const BlogDetailScreen = ({ route }) => {
     const { postId } = route.params;
@@ -97,12 +97,14 @@ const BlogDetailScreen = ({ route }) => {
         }
     };
 
-    const cleanHtml = sanitizeHtml(post?.content || '', {
-        allowedTags: ['p', 'img', 'b', 'i', 'em', 'strong', 'br'],
-        allowedAttributes: {
-            img: ['src', 'alt', 'width', 'height']
-        }
-    });
+    const cleanHtml = useMemo(() => {
+        return sanitizeHtml(post?.content || '', {
+            allowedTags: ['p', 'img', 'b', 'i', 'em', 'strong', 'br'],
+            allowedAttributes: {
+                img: ['src', 'alt', 'width', 'height']
+            }
+        });
+    }, [post?.content]);
 
     if (loading && !post) {
         return (
@@ -163,15 +165,7 @@ const BlogDetailScreen = ({ route }) => {
                     )}
 
                     <View style={styles.htmlContentContainer}>
-                        <RenderHtml
-                            contentWidth={300}
-                            source={{ html: cleanHtml || '' }}
-                            tagsStyles={{
-                                img: styles.htmlImage,
-                                p: { marginVertical: 8 }
-                            }}
-                            imagesMaxWidth={Dimensions.get('window').width - 32}
-                        />
+                        <MemoizedHtmlContent rawHtml={post?.content} />
                     </View>
 
                     <View style={styles.interactionContainer}>

@@ -14,9 +14,8 @@ import { useNavigation } from '@react-navigation/native';
 const contactItems = [
     { icon: 'headset-mic', title: 'Chăm sóc khách hàng', content: 'Luôn hiện diện 24/7' },
     { icon: 'phone-android', title: 'WhatsApp', content: 'BookingITApp' },
-    { icon: 'language', title: 'Website', content: 'www.bookingit.com' },
+    { icon: 'language', title: 'Website', content: 'https://hotel-management-frontend-swart.vercel.app/' },
     { icon: 'facebook', title: 'Facebook', content: 'facebook.com/abc' },
-    { icon: 'history', title: 'Twitter', content: 'twitter.com/abc' },
     { icon: 'camera-alt', title: 'Instagram', content: 'instagram.com/abc' },
 ];
 

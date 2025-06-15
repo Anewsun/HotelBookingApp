@@ -13,22 +13,26 @@ export const uploadAvatar = async (file) => {
   });
 
   try {
-    const response = await axios.patch(`${BASE_API_URL}/api/users/me/avatar`, formData, {
+    const response = await fetch(`${BASE_API_URL}/api/users/me/avatar`, {
+      method: 'PATCH',
       headers: {
         Authorization: `Bearer ${token}`,
-        'Content-Type': 'multipart/form-data',
       },
+      body: formData,
     });
 
-    console.log("✅ Upload avatar thành công:", response.data);
-    return response.data.data.avatar;
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.log("❌ Upload avatar thất bại:", errorData);
+      throw new Error(errorData.message || "Upload thất bại");
+    }
+
+    const responseData = await response.json();
+    console.log("✅ Upload avatar thành công:", responseData);
+    return responseData.data.avatar;
   } catch (error) {
-    console.log("❌ Upload avatar thất bại:", {
-      message: error.message,
-      response: error.response?.data,
-      config: error.config,
-    });
-    throw error.response?.data?.message || "Lỗi upload avatar";
+    console.log("❌ Upload avatar lỗi:", error.message);
+    throw error;
   }
 };
 

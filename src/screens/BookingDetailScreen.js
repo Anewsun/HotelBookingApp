@@ -55,6 +55,12 @@ const BookingDetailScreen = () => {
         console.log('qrData:', qrData);
     }, [showQRModal, qrData]);
 
+    useEffect(() => {
+        if (booking) {
+            console.log('Booking room data:', booking.room);
+            console.log('Hotel ID:', getHotelId());
+        }
+    }, [booking]);
 
     const handleCancelBooking = async () => {
         Alert.alert(
@@ -115,6 +121,32 @@ const BookingDetailScreen = () => {
             </View>
         );
     }
+
+    const getHotelId = () => {
+        try {
+            if (!booking?.room?.hotelId) return null;
+
+            return typeof booking.room.hotelId === 'object'
+                ? booking.room.hotelId._id
+                : booking.room.hotelId;
+        } catch (error) {
+            console.error('Error getting hotelId:', error);
+            return null;
+        }
+    };
+
+    const navigateToHotelDetail = () => {
+        if (!booking?.room?.hotelId) {
+            Alert.alert("Lỗi", "Không tìm thấy thông tin khách sạn");
+            return;
+        }
+
+        navigation.navigate('Detail', {
+            hotelId: typeof booking.room.hotelId === 'object' ? booking.room.hotelId._id : booking.room.hotelId,
+            checkIn: booking.checkIn,
+            checkOut: booking.checkOut
+        });
+    };
 
     const getRoomImageSource = () => {
         try {
@@ -342,7 +374,7 @@ const BookingDetailScreen = () => {
                                 style={[styles.actionButton, { backgroundColor: '#F44336' }]}
                                 onPress={handleCancelBooking}
                             >
-                                <Text style={styles.actionButtonText}>Hủy đặt phòng</Text>
+                                <Text style={styles.actionButtonText}>Hủy đặt</Text>
                             </TouchableOpacity>
 
                             {booking.paymentStatus === 'pending' && (
@@ -422,6 +454,13 @@ const BookingDetailScreen = () => {
                         </>
                     )}
                 </View>
+
+                <TouchableOpacity
+                    style={[styles.actionButton, { backgroundColor: '#4CAF50' }]}
+                    onPress={navigateToHotelDetail}
+                >
+                    <Text style={styles.actionButtonText}>Xem khách sạn</Text>
+                </TouchableOpacity>
 
                 <Modal isVisible={showQRModal && !!qrData}>
                     <View style={styles.qrContainer}>
@@ -532,7 +571,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 8,
     },
     actionButtonText: {
-        fontSize: 16,
+        fontSize: 14,
         color: 'white',
         fontWeight: '600',
     },

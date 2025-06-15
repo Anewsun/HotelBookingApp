@@ -6,6 +6,7 @@ import { useFavorite } from '../contexts/FavoriteContext';
 const HotelCard = ({ hotel, onPress, showDiscountBadge = false }) => {
   const { favoriteIds, toggleFavorite } = useFavorite();
   const isFavorite = favoriteIds.includes(hotel._id);
+  const hasDiscount = hotel.lowestPrice > hotel.lowestDiscountedPrice;
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
@@ -30,20 +31,26 @@ const HotelCard = ({ hotel, onPress, showDiscountBadge = false }) => {
       <View style={styles.infoContainer}>
         <View style={styles.textContent}>
           <Text style={styles.name} numberOfLines={2}>{hotel.name}</Text>
-          <Text style={styles.location} numberOfLines={1}>
-            {hotel.locationDescription || hotel.address}
+          <Text style={styles.location} numberOfLines={2}>
+            {hotel.address}
           </Text>
         </View>
         <View style={styles.bottomContainer}>
           <View style={styles.priceColumn}>
-            {hotel.lowestPrice > hotel.lowestDiscountedPrice && (
-              <Text style={styles.originalPrice}>
-                {Intl.NumberFormat('vi-VN').format(hotel.lowestPrice)} VNĐ
+            {hasDiscount ? (
+              <>
+                <Text style={styles.originalPrice}>
+                  {formatPrice(hotel.lowestPrice)}
+                </Text>
+                <Text style={styles.discountedPrice}>
+                  {formatPrice(hotel.lowestDiscountedPrice)}
+                </Text>
+              </>
+            ) : (
+              <Text style={[styles.discountedPrice, { marginTop: 18 }]}>
+                {formatPrice(hotel.lowestDiscountedPrice)}
               </Text>
             )}
-            <Text style={styles.discountedPrice}>
-              {Intl.NumberFormat('vi-VN').format(hotel.lowestDiscountedPrice)} VNĐ
-            </Text>
           </View>
           <View style={styles.ratingContainer}>
             <Icon name="star" size={16} color="gold" />
@@ -55,13 +62,17 @@ const HotelCard = ({ hotel, onPress, showDiscountBadge = false }) => {
   );
 };
 
+const formatPrice = (price) => {
+  return `${Intl.NumberFormat('vi-VN').format(price)} VNĐ`;
+};
+
 const styles = StyleSheet.create({
   card: {
     backgroundColor: 'white',
     borderRadius: 10,
     overflow: 'hidden',
     width: 180,
-    height: 280,
+    height: 320,
     marginRight: 10,
     marginBottom: 10,
     shadowColor: '#000',
@@ -99,7 +110,7 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   infoContainer: {
-    padding: 10,
+    padding: 5,
     flex: 1,
     justifyContent: 'space-between',
   },
@@ -107,7 +118,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   name: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
     marginBottom: 5,
   },
@@ -125,12 +136,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   originalPrice: {
-    fontSize: 15,
+    fontSize: 14,
     color: 'gray',
     textDecorationLine: 'line-through',
+    marginBottom: 2,
   },
   discountedPrice: {
-    fontSize: 17,
+    fontSize: 13,
     fontWeight: 'bold',
     color: 'blue',
     marginTop: 2,

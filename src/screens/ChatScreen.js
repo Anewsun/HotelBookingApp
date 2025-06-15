@@ -35,9 +35,7 @@ const ChatScreen = ({ route }) => {
 
             setState(prev => ({
                 ...prev,
-                messages: pageNum === 1
-                    ? newMessages
-                    : [...prev.messages, ...newMessages],
+                messages: mergeMessages(prev.messages, newMessages),
                 hasMore: newMessages.length >= 20,
                 loading: false,
                 refreshing: false
@@ -128,13 +126,21 @@ const ChatScreen = ({ route }) => {
         };
     }, [initializeSocket]);
 
+    const mergeMessages = (oldMessages, newMessages) => {
+        const map = new Map();
+        [...oldMessages, ...newMessages].forEach(msg => {
+            map.set(msg._id, msg); // overwrite nếu bị trùng
+        });
+        return Array.from(map.values());
+    };
+
     const handleSend = async () => {
         if (!state.newMessage.trim()) return;
         try {
             const { data } = await sendMessage(userId, state.newMessage);
             setState(prev => ({
                 ...prev,
-                messages: [...prev.messages, data.data],
+                messages: mergeMessages(prev.messages, [data.data]),
                 newMessage: ''
             }));
             scrollToBottom();

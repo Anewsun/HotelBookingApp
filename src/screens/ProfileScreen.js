@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, StatusBar, StyleSheet, TouchableOpacity, FlatList, Modal, Alert } from 'react-native';
+import { View, Text, Image, StatusBar, StyleSheet, TouchableOpacity, FlatList, Modal, Alert, ActivityIndicator } from 'react-native';
 import Header from '../components/Header';
 import Feather from 'react-native-vector-icons/Feather';
 import BottomNav from '../components/BottomNav';
@@ -24,6 +24,7 @@ const ProfileScreen = () => {
     const [logoutModalVisible, setLogoutModalVisible] = useState(false);
     const [imageViewerVisible, setImageViewerVisible] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [loading, setLoading] = useState(false);
 
     const handleMenuPress = (item) => {
         if (item.action === 'logout') {
@@ -50,11 +51,14 @@ const ProfileScreen = () => {
 
             const selectedImage = response.assets[0];
             try {
+                setLoading(true);
                 await uploadAvatar(selectedImage);
                 await refreshUserData();
                 Alert.alert("Thành công", "Cập nhật ảnh đại diện thành công!");
             } catch (error) {
                 Alert.alert("Lỗi", error.message || "Không thể cập nhật avatar, thử lại sau.");
+            } finally {
+                setLoading(false);
             }
         });
     };
@@ -163,6 +167,12 @@ const ProfileScreen = () => {
             />
 
             <BottomNav />
+
+            {loading && (
+                <View style={styles.loadingOverlay}>
+                    <ActivityIndicator size="large" color="#1167B1" />
+                </View>
+            )}
         </SafeAreaView>
     );
 };
@@ -286,6 +296,22 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: 'white',
         fontWeight: 'bold',
+    },
+    loadingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0, 0, 0, 0.1)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 999,
+    },
+    loadingText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#1167B1',
+        backgroundColor: 'white',
+        padding: 12,
+        borderRadius: 10,
+        overflow: 'hidden',
     },
 });
 
