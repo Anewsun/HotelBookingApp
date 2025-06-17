@@ -13,7 +13,7 @@ const getAuthHeader = async () => {
 
 export const sendChatbotMessage = async (message, sessionId) => {
     const config = await getAuthHeader();
-    const response = await axios.post(`${BASE_API_URL}/api/chatbox/message`, {
+    const response = await axios.post(`${BASE_API_URL}/api/chatbot/message`, {
         message,
         sessionId
     }, config);
@@ -23,7 +23,7 @@ export const sendChatbotMessage = async (message, sessionId) => {
 
 export const sendChatbotEvent = async (eventName, sessionId, parameters = {}) => {
     const config = await getAuthHeader();
-    return axios.post(`${BASE_API_URL}/api/chatbox/event`, {
+    return axios.post(`${BASE_API_URL}/api/chatbot/event`, {
         eventName,
         sessionId,
         parameters
@@ -32,5 +32,5 @@ export const sendChatbotEvent = async (eventName, sessionId, parameters = {}) =>
 
 export const clearChatbotSession = async (sessionId) => {
     const config = await getAuthHeader();
-    return axios.delete(`${BASE_API_URL}/api/chatbox/session/${sessionId}`, config);
+    return axios.delete(`${BASE_API_URL}/api/chatbot/session/${sessionId}`, config);
 };

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useBooking } from '../contexts/BookingContext';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, CommonActions } from '@react-navigation/native';
 
 const ConfirmationScreen = ({ route }) => {
   const { transactionId, bookingId, paymentMethod: routePaymentMethod } = route.params;
@@ -150,9 +150,29 @@ const ConfirmationScreen = ({ route }) => {
     };
   }, []);
 
-  const handleViewBooking = () => {
-    navigation.navigate('BookingDetail', { bookingId });
-  };
+  const handleHomeNavigation = () => {
+  navigation.dispatch(
+    CommonActions.reset({
+      index: 0,
+      routes: [{ name: 'Home' }],
+    })
+  );
+};
+
+const handleBookingDetailNavigation = () => {
+  navigation.dispatch(
+    CommonActions.reset({
+      index: 1,
+      routes: [
+        { name: 'Home' },
+        { 
+          name: 'BookingDetail', 
+          params: { bookingId } 
+        },
+      ],
+    })
+  );
+};
 
   if (loading) {
     return (
@@ -182,15 +202,15 @@ const ConfirmationScreen = ({ route }) => {
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={[styles.button, styles.secondaryButton]}
-            onPress={() => navigation.navigate('Home')}
+            onPress={handleHomeNavigation}
           >
             <Text style={styles.secondaryButtonText}>Về trang chủ</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.button, styles.primaryButton]}
-            onPress={() => navigation.navigate('BookingDetail', { bookingId })}
+            onPress={handleBookingDetailNavigation}
           >
-            <Text style={styles.primaryButtonText}>Xem chi tiết đặt phòng</Text>
+            <Text style={styles.primaryButtonText}>Chi tiết đặt phòng</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -212,14 +232,14 @@ const ConfirmationScreen = ({ route }) => {
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={[styles.button, styles.secondaryButton]}
-          onPress={() => navigation.navigate('Home')}
+          onPress={handleHomeNavigation}
         >
           <Text style={styles.secondaryButtonText}>Về trang chủ</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.button, styles.primaryButton]}
-          onPress={handleViewBooking}
+          onPress={handleBookingDetailNavigation}
         >
           <Text style={styles.primaryButtonText}>Xem đơn đặt phòng</Text>
         </TouchableOpacity>

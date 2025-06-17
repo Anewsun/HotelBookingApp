@@ -24,19 +24,32 @@ const AddInformationScreen = ({ navigation, route }) => {
     const [guestName, setGuestName] = useState('');
     const [guestEmail, setGuestEmail] = useState('');
     const [guestPhone, setGuestPhone] = useState('');
+    const isPhoneValid = (phone) => /^\d{10}$/.test(phone);
 
     const isFormValid = () => {
-        const basicInfoValid = name.trim() && email.trim() && phone.trim();
+        const bookerInfoValid = name.trim() && email.trim() && isPhoneValid(phone);
 
         if (bookForOthers) {
-            return basicInfoValid && guestName.trim() && guestPhone.trim();
+            return bookerInfoValid &&
+                guestName.trim() &&
+                guestPhone && isPhoneValid(guestPhone);
         }
-        return basicInfoValid;
+        return bookerInfoValid;
     };
 
     const handleContinue = () => {
         if (!isFormValid()) {
-            Alert.alert('Thiếu thông tin', 'Vui lòng điền đầy đủ thông tin bắt buộc');
+            let message = 'Vui lòng điền đầy đủ thông tin bắt buộc:';
+            if (!name.trim()) message += '\n- Tên người đặt';
+            if (!email.trim()) message += '\n- Email người đặt';
+            if (!isPhoneValid(phone)) message += '\n- Số điện thoại người đặt (10 số)';
+
+            if (bookForOthers) {
+                if (!guestName.trim()) message += '\n- Tên khách';
+                if (!isPhoneValid(guestPhone)) message += '\n- Số điện thoại khách (10 số)';
+            }
+
+            Alert.alert('Thiếu thông tin', message);
             return;
         }
 
@@ -95,7 +108,7 @@ const AddInformationScreen = ({ navigation, route }) => {
 
                 <Text style={styles.sectionTitle}>Số điện thoại</Text>
                 <TextInput
-                    style={styles.input}
+                    style={[styles.input, !isPhoneValid(phone) && styles.invalidInput]}
                     value={phone}
                     onChangeText={setPhone}
                     placeholder="Nhập số điện thoại"
@@ -134,7 +147,7 @@ const AddInformationScreen = ({ navigation, route }) => {
 
                         <Text style={styles.sectionTitle}>Số điện thoại khách</Text>
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, !isPhoneValid(phone) && styles.invalidInput]}
                             value={guestPhone}
                             onChangeText={setGuestPhone}
                             placeholder="Nhập số điện thoại khách"
@@ -201,6 +214,9 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
     },
+    invalidInput: {
+        borderColor: 'red'
+    }
 });
 
 export default AddInformationScreen;

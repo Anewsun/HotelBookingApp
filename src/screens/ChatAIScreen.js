@@ -23,11 +23,15 @@ const ChatAIScreen = () => {
     const [quickReplies, setQuickReplies] = useState([]);
     const navigation = useNavigation();
 
+    const generateRandomId = () => {
+        return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    };
+
     useEffect(() => {
         if (user?._id) {
             setState(prev => ({
                 ...prev,
-                sessionId: `ai-session-${user._id}-${Date.now()}`,
+                sessionId: `ai-session-${user._id}-${generateRandomId()}`,
                 messages: [
                     {
                         _id: 'welcome-message',
@@ -42,8 +46,7 @@ const ChatAIScreen = () => {
 
     const onRefresh = () => {
         setState(prev => ({ ...prev, refreshing: true }));
-
-        const newSessionId = `ai-session-${user._id}-${Date.now()}`;
+        const newSessionId = `ai-session-${user._id}-${generateRandomId()}`;
 
         setState(prev => ({
             messages: [
