@@ -1,14 +1,15 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Modal } from 'react-native';
+import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Modal, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Icon2 from 'react-native-vector-icons/MaterialIcons';
 import HotelCard from '../components/HotelCard';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { searchHotelsWithAvailableRooms } from '../services/hotelService';
 import { useFavorite } from '../contexts/FavoriteContext';
-import { getLocations } from '../services/locationService';
+import { searchLocations } from '../services/locationService';
 import SortOptions from '../components/SortOptions';
+import { debounce } from 'lodash';
 
 const SearchResultScreen = () => {
     const route = useRoute();
@@ -19,13 +20,12 @@ const SearchResultScreen = () => {
     const [currentFilters, setCurrentFilters] = useState(route.params?.filters || null);
     const [location, setLocation] = useState(searchParams?.locationName || '');
     const [locationId, setLocationId] = useState(searchParams?.locationId || null);
-    const [searchTimeout, setSearchTimeout] = useState(null);
-    const [locationsList, setLocationsList] = useState([]);
-    const [filteredLocations, setFilteredLocations] = useState([]);
+    const [searchResults, setSearchResults] = useState([]);
     const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+    const [isSearchingLocation, setIsSearchingLocation] = useState(false);
     const { favoriteIds, toggleFavorite } = useFavorite();
     const navigation = useNavigation();
-    const [selectedSort, setSelectedSort] = useState(currentFilters?.sort || '-price');
+    const [selectedSort, setSelectedSort] = useState(currentFilters?.sort || 'price');
     const [showSortOptions, setShowSortOptions] = useState(false);
     const [total, setTotal] = useState(0);
     const [pagination, setPagination] = useState({
@@ -34,19 +34,6 @@ const SearchResultScreen = () => {
         total: 0,
         totalPages: 1
     });
-
-    useEffect(() => {
-        const fetchLocations = async () => {
-            try {
-                const data = await getLocations();
-                setLocationsList(data);
-                setFilteredLocations(data);
-            } catch (error) {
-                console.error('Error fetching locations:', error);
-            }
-        };
-        fetchLocations();
-    }, []);
 
     const fetchData = useCallback(async (params = {}) => {
         try {
@@ -61,6 +48,13 @@ const SearchResultScreen = () => {
                 limit: pagination.limit
             };
 
+            if (combinedParams.roomAmenities && typeof combinedParams.roomAmenities === 'string') {
+                combinedParams.roomAmenities = combinedParams.roomAmenities.split(',');
+            }
+            if (combinedParams.hotelAmenities && typeof combinedParams.hotelAmenities === 'string') {
+                combinedParams.hotelAmenities = combinedParams.hotelAmenities.split(',');
+            }
+
             console.log('API Params:', combinedParams);
             const response = await searchHotelsWithAvailableRooms(combinedParams);
             if (response.error) {
@@ -71,7 +65,7 @@ const SearchResultScreen = () => {
                 setTotal(response.total || response.data.length);
                 setPagination(prev => ({
                     ...prev,
-                    total: response.total,
+                    page: response.pagination?.currentPage || 1,
                     totalPages: response.pagination?.totalPages || Math.ceil(response.total / prev.limit)
                 }));
                 setError(response.data.length === 0 ? 'Không tìm thấy khách sạn phù hợp' : null);
@@ -131,23 +125,72 @@ const SearchResultScreen = () => {
         }
     }, [route.params?.filters]);
 
-    const handleLocationSearch = (text) => {
+    useFocusEffect(
+        useCallback(() => {
+            if (searchParams?.locationId && searchParams?.checkIn && searchParams?.checkOut) {
+                fetchData();
+            }
+        }, [searchParams, fetchData])
+    );
+
+    const searchLocationsDebounced = useCallback(
+        debounce(async (query) => {
+            if (!query || query.trim().length < 2) {
+                setSearchResults([]);
+                setShowLocationDropdown(false);
+                return;
+            }
+
+            try {
+                setIsSearchingLocation(true);
+                const data = await searchLocations(query);
+                setSearchResults(data);
+                setShowLocationDropdown(data.length > 0);
+            } catch (error) {
+                console.log('Search error:', error);
+                setSearchResults([]);
+                setShowLocationDropdown(false);
+            } finally {
+                setIsSearchingLocation(false);
+            }
+        }, 500),
+        []
+    );
+
+    const handleLocationChange = (text) => {
         setLocation(text);
-        if (text.length > 0) {
-            const filtered = locationsList.filter(item =>
-                item.name.toLowerCase().includes(text.toLowerCase())
-            );
-            setFilteredLocations(filtered);
+        setLocationId(null);
+        if (text.trim().length > 0) {
+            searchLocationsDebounced(text);
         } else {
-            setFilteredLocations(locationsList);
+            setSearchResults([]);
+            setShowLocationDropdown(false);
         }
-        setShowLocationDropdown(true);
     };
 
     const selectLocation = (selectedLocation) => {
         setLocation(selectedLocation.name);
         setLocationId(selectedLocation._id);
         setShowLocationDropdown(false);
+    };
+
+    const handleSearch = () => {
+        if (!locationId) {
+            Alert.alert('Lỗi', 'Vui lòng chọn địa điểm từ danh sách');
+            return;
+        }
+
+        const newSearchParams = {
+            ...searchParams,
+            locationName: location,
+            locationId: locationId
+        };
+
+        setSearchParams(newSearchParams);
+        fetchData({
+            ...newSearchParams,
+            ...(currentFilters || {}),
+        });
     };
 
     const handleSortChange = (sortValue) => {
@@ -162,65 +205,20 @@ const SearchResultScreen = () => {
             case 'price':
                 backendSortValue = 'price';
                 break;
+            case 'highestDiscountPercent':
+                backendSortValue = 'highestDiscountPercent';
+                break;
+            case '-highestDiscountPercent':
+                backendSortValue = '-highestDiscountPercent';
+                break;
             case '-price':
             default:
                 backendSortValue = '-price';
         }
 
         setSelectedSort(sortValue);
-        setCurrentFilters(prev => ({ ...prev, sort: sortValue }));
+        setCurrentFilters(prev => ({ ...prev, sort: backendSortValue }));
     };
-
-    const handleSearch = () => {
-        if (searchTimeout) {
-            clearTimeout(searchTimeout);
-        }
-
-        setSearchTimeout(
-            setTimeout(async () => {
-                try {
-                    if (!location) {
-                        Alert.alert('Lỗi', 'Vui lòng nhập địa điểm');
-                        return;
-                    }
-
-                    const isValidLocation = locationsList.some(
-                        loc => loc.name.toLowerCase() === location.toLowerCase()
-                    );
-
-                    if (!isValidLocation) {
-                        setError('Không tìm thấy khách sạn ở địa điểm du lịch này');
-                        setHotels([]);
-                        return;
-                    }
-
-                    const newSearchParams = {
-                        ...searchParams,
-                        locationName: location,
-                        locationId: locationId
-                    };
-
-                    setSearchParams(newSearchParams);
-                    //setLocation(location);
-                    await fetchData({
-                        ...newSearchParams,
-                        ...(currentFilters || {}),
-                    });
-
-                } catch (error) {
-                    console.error('Search error:', error);
-                }
-            }, 500)
-        );
-    };
-
-    if (loading) {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" />
-            </View>
-        );
-    }
 
     const navigateToHotelDetail = (hotelId) => {
         navigation.navigate('Detail', {
@@ -251,6 +249,14 @@ const SearchResultScreen = () => {
             ))}
         </View>
     );
+
+    if (loading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" />
+            </View>
+        );
+    }
 
     if (!loading && (error || !hotels || total === 0)) {
         const isLocationError = [
@@ -294,70 +300,76 @@ const SearchResultScreen = () => {
                 >
                     <Icon name="arrow-back" color="black" size={28} />
                 </TouchableOpacity>
-                <View style={styles.searchContainer}>
-                    <Icon name="search" size={20} color="#888" style={styles.searchIcon} />
-                    <TextInput
-                        placeholder="Tìm kiếm địa điểm"
-                        style={styles.searchInput}
-                        value={location}
-                        onChangeText={handleLocationSearch}
-                        onSubmitEditing={handleSearch}
-                        onFocus={() => setShowLocationDropdown(true)}
-                    />
-                    <TouchableOpacity onPress={handleSearch}>
-                        <Text style={styles.searchButtonText}>Tìm</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.filterButton}
-                        onPress={() => navigation.navigate('Filter', {
-                            searchParams: {
-                                ...searchParams,
-                                locationId,
-                                locationName: location
-                            },
-                            filters: currentFilters
-                        })}
-                    >
-                        <Icon name="options-outline" size={25} color="#FF385C" />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.sortButton}
-                        onPress={() => setShowSortOptions(true)}
-                    >
-                        <Icon name="swap-vertical" size={25} color="#FF385C" />
-                    </TouchableOpacity>
-                </View>
+
+                <TouchableWithoutFeedback
+                    onPress={() => {
+                        setShowLocationDropdown(false);
+                        Keyboard.dismiss();
+                    }}
+                >
+                    <View style={styles.searchContainer}>
+                        <View style={styles.searchInputContainer}>
+                            <Icon name="search" size={20} color="#888" style={styles.searchIcon} />
+                            <TextInput
+                                placeholder="Tìm kiếm"
+                                style={styles.searchInput}
+                                value={location}
+                                onChangeText={handleLocationChange}
+                                onSubmitEditing={handleSearch}
+                                onFocus={() => {
+                                    if (locationId) {
+                                        setShowLocationDropdown(false);
+                                    } else if (searchResults.length > 0) {
+                                        setShowLocationDropdown(true);
+                                    }
+                                }}
+                            />
+                            {isSearchingLocation && <ActivityIndicator size="small" color="#888" />}
+                            <TouchableOpacity onPress={handleSearch}>
+                                <Text style={styles.searchButtonText}>Tìm</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <TouchableOpacity
+                            style={styles.filterButton}
+                            onPress={() => navigation.navigate('Filter', {
+                                searchParams: {
+                                    ...searchParams,
+                                    locationId,
+                                    locationName: location
+                                },
+                                filters: currentFilters
+                            })}
+                        >
+                            <Icon name="options-outline" size={25} color="#FF385C" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.sortButton}
+                            onPress={() => setShowSortOptions(true)}
+                        >
+                            <Icon name="swap-vertical" size={25} color="#FF385C" />
+                        </TouchableOpacity>
+                    </View>
+                </TouchableWithoutFeedback>
             </View>
 
-            {showLocationDropdown && (
-                <Modal
-                    transparent
-                    visible={showLocationDropdown}
-                    onRequestClose={() => setShowLocationDropdown(false)}
-                >
-                    <TouchableOpacity
-                        style={styles.dropdownOverlay}
-                        activeOpacity={1}
-                        onPress={() => setShowLocationDropdown(false)}
-                    >
-                        <View style={styles.dropdownContainer}>
-                            <FlatList
-                                data={filteredLocations}
-                                keyExtractor={(item) => item._id}
-                                renderItem={({ item }) => (
-                                    <TouchableOpacity
-                                        style={styles.dropdownItem}
-                                        onPress={() => selectLocation(item)}
-                                    >
-                                        <Text style={styles.dropdownItemText}>{item.name}</Text>
-                                    </TouchableOpacity>
-                                )}
-                                ItemSeparatorComponent={() => <View style={styles.separator} />}
-                                keyboardShouldPersistTaps="handled"
-                            />
-                        </View>
-                    </TouchableOpacity>
-                </Modal>
+            {showLocationDropdown && searchResults.length > 0 && (
+                <View style={styles.dropdownWrapper}>
+                    <FlatList
+                        data={searchResults}
+                        keyExtractor={(item) => item._id}
+                        renderItem={({ item }) => (
+                            <TouchableOpacity
+                                style={styles.dropdownItem}
+                                onPress={() => selectLocation(item)}
+                            >
+                                <Text style={styles.dropdownItemText}>{item.name}</Text>
+                            </TouchableOpacity>
+                        )}
+                        ItemSeparatorComponent={() => <View style={styles.separator} />}
+                        keyboardShouldPersistTaps="always"
+                        style={styles.dropdownList}
+                    />
+                </View>
             )}
 
             <Text style={styles.countSearch}>{total} kết quả được tìm thấy</Text>
@@ -370,6 +382,7 @@ const SearchResultScreen = () => {
                         isFavorite={favoriteIds.includes(item._id)}
                         onFavoritePress={() => toggleFavorite(String(item._id))}
                         onPress={() => navigateToHotelDetail(item._id)}
+                        showDiscountBadge={true}
                     />
                 )}
                 numColumns={2}
@@ -436,31 +449,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         marginBottom: 15
     },
-    emptyContainer: {
-        flex: 1,
-        backgroundColor: '#F8F8F8',
-        paddingHorizontal: 20,
-    },
-    emptyContent: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingBottom: 100,
-    },
-    emptyTitle: {
-        fontSize: 22,
-        fontWeight: 'bold',
-        color: '#333',
-        marginTop: 20,
-        marginBottom: 10,
-    },
-    emptySubText: {
-        fontSize: 16,
-        color: '#666',
-        textAlign: 'center',
-        marginBottom: 30,
-        paddingHorizontal: 40,
-    },
     errorContainer: {
         flex: 1,
         backgroundColor: '#F8F8F8',
@@ -498,18 +486,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
     },
-    backButton: {
-        borderWidth: 1,
-        borderColor: '#FF385C',
-        paddingHorizontal: 30,
-        paddingVertical: 12,
-        borderRadius: 25,
-    },
-    backButtonText: {
-        color: '#FF385C',
-        fontSize: 16,
-        fontWeight: '600',
-    },
     searchContainer: {
         flexDirection: 'row',
         backgroundColor: '#FFF',
@@ -524,11 +500,17 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 3,
     },
+    searchInputContainer: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
     searchInput: {
         flex: 1,
         fontSize: 17,
         paddingVertical: 5,
         marginHorizontal: 10,
+        includeFontPadding: false,
     },
     loadingContainer: {
         flex: 1,
@@ -545,16 +527,25 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         paddingHorizontal: 10,
     },
-    dropdownOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        justifyContent: 'center',
-        padding: 20,
-    },
-    dropdownContainer: {
-        backgroundColor: '#fff',
+    dropdownWrapper: {
+        position: 'absolute',
+        top: 60,
+        left: 15,
+        right: 15,
+        zIndex: 1000,
+        backgroundColor: 'white',
         borderRadius: 10,
-        maxHeight: 300,
+        maxHeight: 200,
+        borderWidth: 1,
+        borderColor: '#ddd',
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+    },
+    dropdownList: {
+        padding: 10,
     },
     dropdownItem: {
         padding: 15,

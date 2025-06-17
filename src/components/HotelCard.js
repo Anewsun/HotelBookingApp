@@ -39,15 +39,15 @@ const HotelCard = ({ hotel, onPress, showDiscountBadge = false }) => {
           <View style={styles.priceColumn}>
             {hasDiscount ? (
               <>
-                <Text style={styles.originalPrice}>
+                <Text style={styles.originalPrice} numberOfLines={1}>
                   {formatPrice(hotel.lowestPrice)}
                 </Text>
-                <Text style={styles.discountedPrice}>
+                <Text style={styles.discountedPrice} numberOfLines={1}>
                   {formatPrice(hotel.lowestDiscountedPrice)}
                 </Text>
               </>
             ) : (
-              <Text style={[styles.discountedPrice, { marginTop: 18 }]}>
+              <Text style={styles.singlePrice} numberOfLines={1}>
                 {formatPrice(hotel.lowestDiscountedPrice)}
               </Text>
             )}
@@ -110,12 +110,14 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   infoContainer: {
-    padding: 5,
+    padding: 10,
     flex: 1,
     justifyContent: 'space-between',
   },
   textContent: {
     flex: 1,
+    minHeight: 10,
+    justifyContent: 'flex-start',
   },
   name: {
     fontSize: 15,
@@ -125,18 +127,19 @@ const styles = StyleSheet.create({
   location: {
     fontSize: 14,
     color: 'black',
-    marginBottom: 5,
   },
   bottomContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
+    minHeight: 40,
   },
   priceColumn: {
     flex: 1,
+    justifyContent: 'flex-end',
   },
   originalPrice: {
-    fontSize: 14,
+    fontSize: 13,
     color: 'gray',
     textDecorationLine: 'line-through',
     marginBottom: 2,
@@ -145,7 +148,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: 'bold',
     color: 'blue',
-    marginTop: 2,
+  },
+  singlePrice: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: 'blue',
+    marginTop: 15,
   },
   ratingContainer: {
     flexDirection: 'row',

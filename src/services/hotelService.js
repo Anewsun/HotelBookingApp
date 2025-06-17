@@ -36,25 +36,29 @@ export const searchHotelsWithAvailableRooms = async (params) => {
   try {
     console.log('API call with params:', params);
 
-    const amenitiesParam = params.amenities?.length ? params.amenities.join(',') : undefined;
+    const queryParams = {
+      locationName: params.locationName,
+      checkIn: params.checkIn,
+      checkOut: params.checkOut,
+      capacity: params.capacity,
+      minPrice: params.minPrice,
+      maxPrice: params.maxPrice,
+      minRating: params.minRating,
+      maxRating: params.maxRating,
+      roomTypes: params.roomTypes,
+      roomAmenities: Array.isArray(params.roomAmenities) 
+        ? params.roomAmenities.join(',')
+        : params.roomAmenities,
+      hotelAmenities: Array.isArray(params.hotelAmenities)
+        ? params.hotelAmenities.join(',')
+        : params.hotelAmenities,
+      sort: params.sort || 'price',
+      page: params.page || 1,
+      limit: params.limit || 10
+    };
 
     const response = await axios.get(`${BASE_API_URL}/api/hotels/search`, {
-      params: {
-        locationName: params.locationName,
-        checkIn: params.checkIn,
-        checkOut: params.checkOut,
-        capacity: params.capacity,
-        hotelName: params.hotelName,
-        minRating: params.minRating,
-        maxRating: params.maxRating,
-        minPrice: params.minPrice,
-        maxPrice: params.maxPrice,
-        roomTypes: params.roomType,
-        amenities: amenitiesParam,
-        sort: convertSortParam(params.sort || '-price'),
-        page: params.page || 1,
-        limit: params.limit || 10
-      },
+      params: queryParams,
       timeout: 10000
     });
 
@@ -78,25 +82,10 @@ export const searchHotelsWithAvailableRooms = async (params) => {
         error: 'Không tìm thấy địa điểm du lịch này'
       };
     }
-    // Các lỗi khác
     return {
       data: [],
       error: error.response?.data?.message || error.message || 'Lỗi khi tải dữ liệu'
     };
-  }
-};
-
-const convertSortParam = (sort) => {
-  switch (sort) {
-    case '-rating':
-      return '-rating';
-    case 'rating':
-      return 'rating';
-    case 'price':
-      return 'price';
-    case '-price':
-    default:
-      return '-price';
   }
 };
 

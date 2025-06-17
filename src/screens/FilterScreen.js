@@ -10,8 +10,10 @@ const FilterScreen = ({ navigation, route }) => {
   const [priceRange, setPriceRange] = useState({ min: 0, max: 10000000 });
   const [selectedRoomTypes, setSelectedRoomTypes] = useState([]);
   const [selectedRoomAmenities, setSelectedRoomAmenities] = useState([]);
-  const [selectedRating, setSelectedRating] = useState(0);
+  const [selectedHotelAmenities, setSelectedHotelAmenities] = useState([]);
   const [amenities, setAmenities] = useState([]);
+  const roomAmenities = amenities.filter(a => a.type === 'room');
+  const hotelAmenities = amenities.filter(a => a.type === 'hotel');
   const [loading, setLoading] = useState(true);
   const [minRating, setMinRating] = useState(0);
   const [maxRating, setMaxRating] = useState(5);
@@ -30,23 +32,24 @@ const FilterScreen = ({ navigation, route }) => {
     fetchAmenities();
   }, []);
 
-  const roomAmenities = amenities.filter(a => a.type === 'room');
-
   const handleApplyFilters = () => {
+    const selectedRoomAmenity = selectedRoomAmenities.length > 0 ? selectedRoomAmenities[0] : undefined;
+    const selectedHotelAmenity = selectedHotelAmenities.length > 0 ? selectedHotelAmenities[0] : undefined;
+
     navigation.navigate('SearchResult', {
       searchParams: route.params?.searchParams,
       filters: {
         ...(route.params?.filters || {}),
         minPrice: priceRange.min,
         maxPrice: priceRange.max,
-        amenities: selectedRoomAmenities.length > 0 ? selectedRoomAmenities : undefined,
+        roomAmenities: selectedRoomAmenities.join(','),
+        hotelAmenities: selectedHotelAmenities.join(','),
         roomTypes: selectedRoomTypes.length > 0 ? selectedRoomTypes.join(',') : undefined,
-        sort: '-rating',
         minRating: minRating > 0 ? minRating : undefined,
         maxRating: maxRating < 5 ? maxRating : undefined,
+        sort: '-rating'
       }
     });
-    console.log('FilterScreen received:', route.params?.searchParams);
   };
 
   const selectRoomType = (type) => {
@@ -65,10 +68,17 @@ const FilterScreen = ({ navigation, route }) => {
     );
   };
 
+  const toggleHotelAmenity = (amenityId) => {
+    setSelectedHotelAmenities(prev =>
+      prev.includes(amenityId)
+        ? prev.filter(id => id !== amenityId)
+        : [...prev, amenityId]
+    );
+  };
+
   const resetFilters = () => {
     setPriceRange({ min: 0, max: 10000000 });
-    setSelectedRating(0);
-    setSelectedRoomType([]);
+    setSelectedRoomTypes([]);
     setSelectedRoomAmenities([]);
     setMinRating(0);
     setMaxRating(5);
@@ -83,11 +93,11 @@ const FilterScreen = ({ navigation, route }) => {
   }
 
   const activeFilterCount =
-    (selectedRating ? 1 : 0) +
     (priceRange.min > 0 || priceRange.max < 10000000 ? 1 : 0) +
     (selectedRoomTypes.length > 0 ? 1 : 0) +
     (minRating > 0 || maxRating < 5 ? 1 : 0) +
-    selectedRoomAmenities.length;
+    selectedRoomAmenities.length +
+    selectedHotelAmenities.length;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -162,6 +172,23 @@ const FilterScreen = ({ navigation, route }) => {
               onPress={() => selectRoomType(type)}
             >
               <Text style={styles.roomTypeText}>{type}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={styles.sectionTitle}>Tiện nghi khách sạn</Text>
+        <View style={styles.amenitiesContainer}>
+          {hotelAmenities.map(item => (
+            <TouchableOpacity
+              key={item._id}
+              style={[
+                styles.amenityButton,
+                selectedHotelAmenities.includes(item._id) && styles.selectedAmenity
+              ]}
+              onPress={() => toggleHotelAmenity(item._id)}
+            >
+              {getAmenityIcon(item.icon)}
+              <Text style={styles.amenityText}>{item.name}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -271,8 +298,8 @@ const styles = StyleSheet.create({
   amenityButton: {
     width: '25%',
     alignItems: 'center',
-    padding: 12,
-    marginBottom: 8,
+    padding: 5,
+    marginBottom: 10,
     marginRight: '8%',
     borderWidth: 1,
     borderColor: '#ddd',
@@ -333,8 +360,8 @@ const styles = StyleSheet.create({
   },
   roomTypeButton: {
     width: '25%',
-    marginBottom: 8,
-    padding: 12,
+    marginBottom: 10,
+    padding: 10,
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,
