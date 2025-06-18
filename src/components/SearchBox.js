@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, Alert, ActivityIndicator, ScrollView, TouchableWithoutFeedback } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, Alert, ActivityIndicator, ScrollView, TouchableWithoutFeedback } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { useNavigation } from '@react-navigation/native';
@@ -12,11 +12,9 @@ const SearchBox = () => {
   const [location, setLocation] = useState('');
   const [locationId, setLocationId] = useState(null);
   const [searchResults, setSearchResults] = useState([]);
-  const [filteredLocations, setFilteredLocations] = useState([]);
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
 
-  // State lưu ngày nhận - trả phòng
   const [checkInDate, setCheckInDate] = useState(new Date());
   const [checkOutDate, setCheckOutDate] = useState(() => {
     const tomorrow = new Date();
@@ -26,12 +24,7 @@ const SearchBox = () => {
   const [dateModalVisible, setDateModalVisible] = useState(false);
   const [selectedDateType, setSelectedDateType] = useState('checkIn');
 
-  // State lưu số lượng khách
   const [adults, setAdults] = useState(1);
-  const [children, setChildren] = useState(0);
-  const [guestModalVisible, setGuestModalVisible] = useState(false);
-
-  const totalGuests = () => adults + children;
 
   const openDatePicker = (type) => {
     setSelectedDateType(type);
@@ -56,7 +49,7 @@ const SearchBox = () => {
   };
 
   const handleSearch = () => {
-    if (!locationId || !checkInDate || !checkOutDate || totalGuests() === 0) {
+    if (!locationId || !checkInDate || !checkOutDate || adults === 0) {
       Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin tìm kiếm');
       return;
     }
@@ -72,7 +65,7 @@ const SearchBox = () => {
         locationName: location,
         checkIn: checkInDate.toLocaleDateString('en-CA'),
         checkOut: checkOutDate.toLocaleDateString('en-CA'),
-        capacity: totalGuests(),
+        capacity: adults,
         fromSearch: true
       }
     });
@@ -167,29 +160,47 @@ const SearchBox = () => {
           )}
 
           <View style={styles.row}>
-            <View style={styles.column}>
+            <View style={[styles.column, { flex: 1, marginRight: 15 }]}>
               <Text style={styles.label}>Ngày đến</Text>
               <TouchableOpacity style={styles.inputContainer} onPress={() => openDatePicker('checkIn')}>
                 <Icon name="calendar" size={20} color="#888" />
-                <Text style={styles.input}>{formatDate(checkInDate)}</Text>
+                <Text style={styles.input} numberOfLines={1}>
+                  {formatDate(checkInDate)}
+                </Text>
               </TouchableOpacity>
             </View>
 
-            <View style={styles.column}>
+            <View style={[styles.column, { flex: 1, marginRight: 5 }]}>
               <Text style={styles.label}>Ngày trả phòng</Text>
               <TouchableOpacity style={styles.inputContainer} onPress={() => openDatePicker('checkOut')}>
                 <Icon name="calendar" size={20} color="#888" />
-                <Text style={styles.input}>{formatDate(checkOutDate)}</Text>
+                <Text style={styles.input} numberOfLines={1}>
+                  {formatDate(checkOutDate)}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
 
           <View style={styles.column}>
             <Text style={styles.label}>Số người</Text>
-            <TouchableOpacity style={styles.inputContainer} onPress={() => setGuestModalVisible(true)}>
-              <Icon name="person" size={20} color="#888" />
-              <Text style={styles.input}>{totalGuests()} khách</Text>
-            </TouchableOpacity>
+            <View style={[styles.inputContainer, { width: '50%' }]}>
+              <Icon name="people" size={20} color="#888" style={{ marginRight: 10 }} />
+              <View style={styles.counterContainer}>
+                <TouchableOpacity
+                  onPress={() => setAdults(Math.max(1, adults - 1))}
+                  style={styles.counterButton}
+                >
+                  <Text style={styles.counterText}>-</Text>
+                </TouchableOpacity>
+                <Text style={styles.counterValue}>{adults}</Text>
+                <TouchableOpacity
+                  onPress={() => setAdults(adults + 1)}
+                  style={styles.counterButton}
+                >
+                  <Text style={styles.counterText}>+</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
 
           <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
@@ -211,38 +222,6 @@ const SearchBox = () => {
           locale="vi"
           theme="light"
         />
-
-        <Modal visible={guestModalVisible} transparent animationType="slide">
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Chọn khách</Text>
-
-              {[{ label: "Người lớn", state: adults, setState: setAdults, note: "Từ 13 tuổi trở lên" },
-              { label: "Trẻ em", state: children, setState: setChildren, note: "Từ 2 - 12 tuổi" },
-              ].map(({ label, state, setState, note }) => (
-                <View key={label} style={styles.rowBetween}>
-                  <View>
-                    <Text style={styles.guestLabel}>{label}</Text>
-                    <Text style={styles.guestNote}>{note}</Text>
-                  </View>
-                  <View style={styles.counterContainer}>
-                    <TouchableOpacity onPress={() => setState(Math.max(0, state - 1))} style={styles.counterButton}>
-                      <Text style={styles.counterText}>-</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.counterValue}>{state}</Text>
-                    <TouchableOpacity onPress={() => setState(state + 1)} style={styles.counterButton}>
-                      <Text style={styles.counterText}>+</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              ))}
-
-              <TouchableOpacity style={styles.confirmButton} onPress={() => setGuestModalVisible(false)}>
-                <Text style={styles.confirmText}>Xác nhận</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
       </View>
     </TouchableWithoutFeedback>
   );
@@ -264,7 +243,7 @@ const styles = StyleSheet.create({
     padding: 15,
   },
   label: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '600',
     marginBottom: 5,
     color: '#333',
@@ -274,19 +253,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#f0f0f0',
     paddingHorizontal: 10,
-    paddingVertical: 10,
+    paddingVertical: 8,
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: '#ddd',
-    position: 'relative',
-    zIndex: 1,
+    flex: 1,
   },
   input: {
     marginLeft: 10,
     flex: 1,
     fontSize: 16,
     color: '#333',
+    minWidth: 120,
   },
   dropdownWrapper: {
     position: 'absolute',
@@ -332,6 +311,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 5,
+    gap: 8,
   },
   column: {
     flex: 1,
@@ -349,63 +329,33 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalContent: {
-    backgroundColor: '#FFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    paddingBottom: 30,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 15,
-  },
-  confirmButton: {
-    backgroundColor: '#1167B1',
-    paddingVertical: 12,
-    borderRadius: 30,
-    alignItems: 'center',
-    marginTop: 20,
-  },
   confirmText: {
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
   },
-  guestLabel: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  guestNote: {
-    fontSize: 16,
-    color: '#666',
-  },
   counterContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+  counterContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   counterButton: {
     backgroundColor: '#ddd',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 5,
-    marginHorizontal: 8,
-  },
-  counterText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   counterValue: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
+    minWidth: 20,
+    textAlign: 'center',
   },
 });
 
