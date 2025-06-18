@@ -3,7 +3,7 @@ import { ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getMe, refreshToken } from '../services/authService';
 import { jwtDecode } from "jwt-decode";
-import { initSocket, disconnectSocket, isSocketConnected, waitForSocketConnection } from '../utils/socket';
+import { initSocket, disconnectSocket, isSocketConnected } from '../utils/socket';
 
 export const AuthContext = createContext();
 
@@ -18,23 +18,6 @@ export const AuthProvider = ({ children }) => {
   const [isReady, setIsReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  const logout = useCallback(async () => {
-    try {
-      try {
-        if (isSocketConnected()) {
-          disconnectSocket();
-        }
-      } catch (error) {
-        console.log('Socket disconnect during logout:', error.message);
-      }
-      await AsyncStorage.multiRemove(['token', 'refreshToken', 'user']);
-      setUser(null);
-      setIsAuthenticated(false);
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  }, []);
 
   const refreshUserData = async () => {
     const token = await AsyncStorage.getItem('token');
@@ -125,6 +108,29 @@ export const AuthProvider = ({ children }) => {
       return false;
     }
   };
+
+  const logout = useCallback(async () => {
+    try {
+      const socketDisconnect = isSocketConnected()
+        ? Promise.race([
+          disconnectSocket(),
+          new Promise((_, reject) => setTimeout(() => reject('Socket timeout'), 1000))
+        ]).catch(e => console.log('Socket disconnect warning:', e))
+        : Promise.resolve();
+
+      await Promise.all([
+        socketDisconnect,
+        AsyncStorage.multiRemove(['token', 'refreshToken', 'user'])
+      ]);
+
+      setUser(null);
+      setIsAuthenticated(false);
+    } catch (error) {
+      console.error('Logout cleanup error:', error);
+      setUser(null);
+      setIsAuthenticated(false);
+    }
+  }, []);
 
   if (!isReady || isLoading) {
     return <ActivityIndicator size="large" style={{ flex: 1 }} />;

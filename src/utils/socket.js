@@ -58,11 +58,18 @@ export const getSocket = () => {
 };
 
 export const disconnectSocket = () => {
-  if (socket) {
-    socket.disconnect();
-    socket = null;
-    isInitialized = false;
-  }
+  return new Promise((resolve) => {
+    if (socket) {
+      socket.disconnect();
+      socket.once('disconnect', () => {
+        socket = null;
+        isInitialized = false;
+        resolve();
+      });
+    } else {
+      resolve();
+    }
+  });
 };
 
 export const waitForSocketConnection = async () => {

@@ -4,12 +4,13 @@ import Header from '../components/Header';
 import Feather from 'react-native-vector-icons/Feather';
 import BottomNav from '../components/BottomNav';
 import { launchImageLibrary } from 'react-native-image-picker';
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, CommonActions } from "@react-navigation/native";
 import { logout, getMe } from '../services/authService';
 import { uploadAvatar } from '../services/userService';
 import { useAuth } from '../contexts/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ImageView from "react-native-image-viewing";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const menuItems = [
     { title: 'Trang cá nhân của tôi', icon: 'user', screen: 'MyProfile' },
@@ -65,13 +66,21 @@ const ProfileScreen = () => {
 
     const handleLogout = async () => {
         try {
-            await logout().catch(err => console.log('API logout error:', err));
+            setLogoutModalVisible(false);
+            setLoading(true);
 
-            // LogOut từ context - cập nhật isAuthenticated thành false
+            try {
+                await logout();
+            } catch (apiError) {
+                console.log('API logout error (ignored):', apiError);
+            }
+
             await logoutContext();
+
         } catch (error) {
-            console.log('❌ Lỗi đăng xuất:', error);
-            Alert.alert('Lỗi', 'Không thể đăng xuất. Vui lòng thử lại.');
+            console.log('❌ Unexpected error:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
