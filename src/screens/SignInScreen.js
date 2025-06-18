@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert, Linking } from 'react-native';
 import InputField from '../components/InputField';
 import SocialLogin from '../components/SocialLogin';
-import { login as apiLogin, getMe } from '../services/authService';
+import { login as apiLogin, getMe, loginWithGoogle, loginWithFacebook } from '../services/authService';
 import { useAuth } from '../contexts/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getErrorMessage } from '../utils/errorHandler';
@@ -49,12 +49,20 @@ const SignInScreen = ({ navigation }) => {
     }
   };
 
-  const handleGoogleLogin = () => {
-    navigation.navigate('SocialLoginWebView', { provider: 'google' });
+  const handleGoogleLogin = async () => {
+    try {
+      await loginWithGoogle();
+    } catch (error) {
+      Alert.alert('Lỗi', error.message || 'Đăng nhập Google thất bại');
+    }
   };
 
-  const handleFacebookLogin = () => {
-    navigation.navigate('SocialLoginWebView', { provider: 'facebook' });
+  const handleFacebookLogin = async () => {
+    try {
+      await loginWithFacebook();
+    } catch (error) {
+      Alert.alert('Lỗi', error.message || 'Đăng nhập Facebook thất bại');
+    }
   };
 
   return (

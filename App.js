@@ -8,6 +8,7 @@ import AppNavigator from './src/navigation/AppNavigator';
 import { navigationRef } from './src/navigation/RootNavigation';
 import { BookingProvider } from './src/contexts/BookingContext';
 import { Linking } from 'react-native';
+import { handleOAuthRedirect } from './src/services/authService';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,26 +27,35 @@ const App = () => {
       console.log('Deep link received:', event.url);
       if (!event.url) return;
 
-      try {
-        const url = new URL(event.url);
-        const params = new URLSearchParams(url.search);
+      const url = new URL(event.url);
+      const params = new URLSearchParams(url.search);
 
-        if (url.pathname.includes('zalopay-return')) {
-          const status = params.get('status');
-          const apptransid = params.get('apptransid');
-          const bookingId = params.get('bookingId');
+      if (url.pathname.includes('zalopay-return')) {
+        const status = params.get('status');
+        const apptransid = params.get('apptransid');
+        const bookingId = params.get('bookingId');
 
-          if (status === '1' && apptransid) {
-            navigationRef.current?.navigate('Confirm', {
-              transactionId: apptransid,
-              bookingId: bookingId || ''
-            });
-          } else {
-            navigationRef.current?.navigate('Home');
-          }
+        if (status === '1' && apptransid) {
+          navigationRef.current?.navigate('Confirm', {
+            transactionId: apptransid,
+            bookingId: bookingId || ''
+          });
+        } else {
+          navigationRef.current?.navigate('Home');
         }
-      } catch (error) {
-        console.error('Error handling deep link:', error);
+        return;
+      }
+
+      if (url.pathname.includes('oauth')) {
+        handleOAuthRedirect(event.url)
+          .then(result => {
+            if (result.success) {
+              navigationRef.current?.navigate('OAuthRedirect');
+            }
+          })
+          .catch(error => {
+            console.error('OAuth error:', error);
+          });
       }
     };
 

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import CookieManager from '@react-native-cookies/cookies';
 import { BASE_API_URL } from '../../config';
@@ -107,24 +108,70 @@ export const login = async (email, password) => {
     return response.data;
 };
 
-// export const loginWithGoogle = async () => {
-//     try {
-//         const authUrl = `${BASE_API_URL}/api/auth/google`;
-//         Linking.openURL(authUrl);
-//     } catch (error) {
-//         console.log("🔴 Lỗi Google Login:", error);
-//         throw "Đăng nhập Google thất bại";
-//     }
-// };
+export const loginWithGoogle = async () => {
+    try {
+        const authUrl = `${BASE_API_URL}/api/auth/google?source=mobile`;
+        console.log("📤 Đang mở URL:", authUrl);
 
-// export const loginWithFacebook = async () => {
-//     try {
-//         const response = await axios.get(`${BASE_API_URL}/api/auth/facebook`);
-//         return response.data;
-//     } catch (error) {
-//         throw error.response?.data || "Đăng nhập Facebook thất bại";
-//     }
-// };
+        const canOpen = await Linking.canOpenURL(authUrl);
+        console.log("📌 Có thể mở URL:", canOpen);
+
+        if (canOpen) {
+            await Linking.openURL(authUrl);
+            return true;
+        }
+
+        console.warn("⚠️ Không thể mở URL:", authUrl);
+        return false;
+    } catch (error) {
+        console.error("Google login error:", error);
+        throw new Error("Không thể mở trình duyệt để đăng nhập Google");
+    }
+};
+
+export const loginWithFacebook = async () => {
+    try {
+        const authUrl = `${BASE_API_URL}/api/auth/facebook?source=mobile`;
+        const canOpen = await Linking.canOpenURL(authUrl);
+        if (canOpen) {
+            await Linking.openURL(authUrl);
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.error("Facebook login error:", error);
+        throw new Error("Không thể mở trình duyệt để đăng nhập Facebook");
+    }
+};
+
+export const handleOAuthRedirect = async (url) => {
+    try {
+        const parsedUrl = new URL(url);
+        if (parsedUrl.pathname.includes('/oauth')) {
+            const token = parsedUrl.searchParams.get('token');
+            const refreshToken = parsedUrl.searchParams.get('refreshToken');
+
+            if (token && refreshToken) {
+                await AsyncStorage.multiSet([
+                    ['token', token],
+                    ['refreshToken', refreshToken]
+                ]);
+
+                const userInfo = await getMe();
+                if (userInfo) {
+                    return {
+                        success: true,
+                        user: { ...userInfo, accessToken: token }
+                    };
+                }
+            }
+        }
+        return { success: false };
+    } catch (error) {
+        console.error("OAuth redirect error:", error);
+        throw error;
+    }
+};
 
 export const sendOTP = async (email) => {
     try {

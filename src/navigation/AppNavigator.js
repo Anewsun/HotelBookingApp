@@ -25,7 +25,7 @@ import BlogDetailScreen from '../screens/BlogDetailScreen';
 import ChatListScreen from '../screens/ChatListScreen';
 import ChatScreen from '../screens/ChatScreen';
 import ChatAIScreen from '../screens/ChatAIScreen';
-import SocialLoginWebView from '../screens/SocialLoginWebView';
+import OAuthRedirectScreen from '../screens/OAuthRedirectScreen';
 
 import { useAuth } from "../contexts/AuthContext";
 import { createStackNavigator } from "@react-navigation/stack";
@@ -41,7 +41,7 @@ const AuthStack = () => (
     <Stack.Screen name="VerifyCode" component={VerifyCodeScreen} />
     <Stack.Screen name="SendEmail" component={SendEmailScreen} />
     <Stack.Screen name="NewPassword" component={NewPasswordScreen} />
-    <Stack.Screen name="SocialLoginWebView" component={SocialLoginWebView} />
+    <Stack.Screen name="OAuthRedirect" component={OAuthRedirectScreen} />
   </Stack.Navigator>
 );
 
