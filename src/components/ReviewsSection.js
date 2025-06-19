@@ -187,6 +187,7 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: "bold",
         marginBottom: 10,
+        color: 'black'
     },
     noReviewsText: {
         fontSize: 16,
@@ -199,21 +200,22 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
     ratingLeft: {
-        flex: 1.2,
+        flex: 1.1,
         alignItems: 'flex-start',
         justifyContent: 'center',
     },
     ratingRight: {
-        flex: 1.8,
+        flex: 1.9,
         justifyContent: 'center',
     },
     averageRating: {
-        fontSize: 35,
+        fontSize: 25,
         fontWeight: 'bold',
+        color: 'black'
     },
     reviewCount: {
-        fontSize: 14,
-        color: "#555",
+        fontSize: 15,
+        color: "black",
     },
     starRow: {
         flexDirection: 'row',
@@ -224,6 +226,7 @@ const styles = StyleSheet.create({
     starNumber: {
         fontSize: 16,
         marginRight: 5,
+        color: 'black'
     },
     barWithCount: {
         flexDirection: 'row',
@@ -244,8 +247,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFD700',
     },
     countText: {
-        fontSize: 14,
-        color: "#555",
+        fontSize: 12,
+        color: "black",
         flexShrink: 1,
     },
     reviewItem: {
@@ -277,7 +280,8 @@ const styles = StyleSheet.create({
     },
     name: {
         fontWeight: "bold",
-        fontSize: 15
+        fontSize: 15,
+        color: 'black'
     },
     actions: {
         flexDirection: 'row',
@@ -293,7 +297,8 @@ const styles = StyleSheet.create({
     titleText: {
         fontWeight: "bold",
         marginTop: 5,
-        fontSize: 16
+        fontSize: 16,
+        color: 'black'
     },
     ratingStars: {
         flexDirection: 'row',
