@@ -16,7 +16,7 @@ const ChatListScreen = ({ navigation }) => {
     const socketRef = useRef(null);
 
     const loadConversations = useCallback(async () => {
-        if (!isAuthenticated) return;
+        if (!isAuthenticated || !user) return;
 
         try {
             const { data } = await getConversations();
@@ -35,7 +35,7 @@ const ChatListScreen = ({ navigation }) => {
             const socket = getSocket();
             socketRef.current = socket;
 
-            socket.emit('join', user.id);
+            socket.emit('join', user._id);
 
             const handleNewMessage = () => {
                 loadConversations();
@@ -49,11 +49,11 @@ const ChatListScreen = ({ navigation }) => {
         } catch (error) {
             console.error('Socket setup failed:', error);
         }
-    }, [user.id, isAuthenticated, loadConversations]);
+    }, [user?._id, isAuthenticated, loadConversations]);
 
     useFocusEffect(
         useCallback(() => {
-            if (!isAuthenticated) return;
+            if (!isAuthenticated || !user) return;
 
             let cleanup;
             const init = async () => {
@@ -71,7 +71,7 @@ const ChatListScreen = ({ navigation }) => {
                     socketRef.current.off('newMessage');
                 }
             };
-        }, [loadConversations, setupSocket, isAuthenticated])
+        }, [loadConversations, setupSocket, isAuthenticated, user])
     );
 
     const aiIcon = (

@@ -57,19 +57,27 @@ export const getSocket = () => {
   return socket;
 };
 
-export const disconnectSocket = () => {
-  return new Promise((resolve) => {
-    if (socket) {
+export const disconnectSocket = async () => {
+  if (!socket) return;
+
+  try {
+    await new Promise((resolve) => {
       socket.disconnect();
-      socket.once('disconnect', () => {
-        socket = null;
-        isInitialized = false;
-        resolve();
-      });
-    } else {
-      resolve();
-    }
-  });
+      socket.once('disconnect', resolve);
+      setTimeout(resolve, 1000);
+    });
+  } finally {
+    forceDisconnect();
+  }
+};
+
+export const forceDisconnect = () => {
+  if (socket) {
+    socket.removeAllListeners();
+    socket.disconnect();
+    socket = null;
+    isInitialized = false;
+  }
 };
 
 export const waitForSocketConnection = async () => {

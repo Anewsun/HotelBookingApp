@@ -35,9 +35,10 @@ const ChatAIScreen = () => {
                 messages: [
                     {
                         _id: 'welcome-message',
-                        message: "Xin chào! Tôi là trợ lý ảo của bạn. Tôi có thể giúp gì cho bạn?",
+                        text: "Xin chào! Tôi là trợ lý ảo của bạn. Tôi có thể giúp gì cho bạn?",
                         createdAt: new Date().toISOString(),
-                        senderId: { _id: 'ai' }
+                        senderId: { _id: 'ai' },
+                        isBot: true
                     }
                 ]
             }));
@@ -52,9 +53,10 @@ const ChatAIScreen = () => {
             messages: [
                 {
                     _id: 'welcome-message-' + Date.now(),
-                    message: "Xin chào! Tôi là trợ lý ảo của bạn. Tôi có thể giúp gì cho bạn?",
+                    text: "Xin chào! Tôi là trợ lý ảo của bạn. Tôi có thể giúp gì cho bạn?",
                     createdAt: new Date().toISOString(),
-                    senderId: { _id: 'ai' }
+                    senderId: { _id: 'ai' },
+                    isBot: true
                 }
             ],
             refreshing: false,
@@ -69,9 +71,10 @@ const ChatAIScreen = () => {
 
         const userMessage = {
             _id: Date.now().toString(),
-            message: state.newMessage,
+            text: state.newMessage,
             createdAt: new Date().toISOString(),
-            senderId: { _id: user._id }
+            senderId: { _id: user._id },
+            isBot: false
         };
         addMessage(userMessage);
 
@@ -80,22 +83,91 @@ const ChatAIScreen = () => {
         try {
             const response = await sendChatbotMessage(state.newMessage, state.sessionId);
 
+            const botResponse = {
+                _id: Date.now().toString() + '-ai',
+                createdAt: new Date().toISOString(),
+                senderId: { _id: 'ai' },
+                isBot: true,
+                text: response.responseText,
+                ...(response.richContent ? { richContent: response.richContent } : {})
+            };
+
+            addMessage(botResponse);
+
             if (response.parameters && response.parameters.fields) {
                 handleParameters(response.parameters.fields);
             }
 
-            addMessage({
-                _id: Date.now().toString() + '-ai',
-                message: response.responseText,
-                createdAt: new Date().toISOString(),
-                senderId: { _id: 'ai' }
-            });
-
         } catch (error) {
             Alert.alert('Lỗi', 'Không thể kết nối với trợ lý AI');
             console.error('Chatbot error:', error);
+
+            addMessage({
+                _id: 'error-' + Date.now(),
+                text: 'Đã xảy ra lỗi khi kết nối với trợ lý AI',
+                createdAt: new Date().toISOString(),
+                senderId: { _id: 'ai' },
+                isBot: true
+            });
         } finally {
             setState(prev => ({ ...prev, isTyping: false }));
+        }
+    };
+
+    const handleButtonPress = (link) => {
+        if (link.includes('/hoteldetail/')) {
+            try {
+                let hotelId = '';
+                let checkIn = '';
+                let checkOut = '';
+                let capacity = '2';
+                let roomType = '';
+
+                const [pathPart, queryPart] = link.split('?');
+
+                const pathParts = pathPart.split('/');
+                const hotelIndex = pathParts.indexOf('hoteldetail');
+                if (hotelIndex !== -1 && pathParts.length > hotelIndex + 1) {
+                    hotelId = pathParts[hotelIndex + 1];
+                }
+
+                if (queryPart) {
+                    const queryParams = queryPart.split('&');
+                    queryParams.forEach(param => {
+                        const [key, value] = param.split('=');
+                        switch (key) {
+                            case 'checkIn':
+                                checkIn = value;
+                                break;
+                            case 'checkOut':
+                                checkOut = value;
+                                break;
+                            case 'capacity':
+                                capacity = value;
+                                break;
+                            case 'roomType':
+                                roomType = value;
+                                break;
+                        }
+                    });
+                }
+
+                navigation.navigate('Detail', {
+                    hotelId,
+                    checkIn,
+                    checkOut,
+                    capacity,
+                    roomType
+                });
+            } catch (error) {
+                console.error('Error parsing hotel detail link:', error);
+                Alert.alert('Lỗi', 'Không thể mở chi tiết khách sạn');
+            }
+        } else {
+            Linking.openURL(link).catch(err => {
+                Alert.alert('Lỗi', 'Không thể mở liên kết');
+                console.error('Failed to open URL:', err);
+            });
         }
     };
 
@@ -141,6 +213,26 @@ const ChatAIScreen = () => {
         }
     };
 
+    const renderRichContent = (richContent) => {
+        return richContent.map((card, index) => (
+            <View key={index} style={styles.richContentCard}>
+                {card.title && <Text style={styles.richContentTitle}>{card.title}</Text>}
+                {card.subtitle && <Text style={styles.richContentSubtitle}>{card.subtitle}</Text>}
+                {card.text && card.text.map((line, idx) => (
+                    <Text key={idx} style={styles.richContentText}>{line}</Text>
+                ))}
+                {card.button && (
+                    <TouchableOpacity
+                        style={styles.richContentButton}
+                        onPress={() => handleButtonPress(card.button.link)}
+                    >
+                        <Text style={styles.richContentButtonText}>{card.button.text}</Text>
+                    </TouchableOpacity>
+                )}
+            </View>
+        ));
+    };
+
     return (
         <SafeAreaView style={styles.safeArea}>
             <Header title="Trợ lý ảo AI" onBackPress={() => navigation.goBack()} showBackIcon={true} />
@@ -156,6 +248,7 @@ const ChatAIScreen = () => {
                                 message={item}
                                 isSender={isSender}
                                 showDate={false}
+                                renderRichContent={item.richContent ? () => renderRichContent(item.richContent) : null}
                             />
                         );
                     }}
@@ -171,14 +264,17 @@ const ChatAIScreen = () => {
                     ListHeaderComponent={
                         state.isTyping && (
                             <View style={styles.typingContainer}>
-                                <ActivityIndicator size="small" color="#666" />
+                                <View style={styles.typingDots}>
+                                    <View style={[styles.typingDot, { backgroundColor: '#4A90E2' }]} />
+                                    <View style={[styles.typingDot, { backgroundColor: '#4A90E2', marginHorizontal: 4 }]} />
+                                    <View style={[styles.typingDot, { backgroundColor: '#4A90E2' }]} />
+                                </View>
                                 <Text style={styles.typingText}>Đang soạn tin nhắn...</Text>
                             </View>
                         )
                     }
                 />
 
-                {/* Hiển thị quick replies nếu có */}
                 {quickReplies.length > 0 && (
                     <View style={styles.quickRepliesContainer}>
                         {quickReplies.map((reply, index) => (
@@ -262,10 +358,19 @@ const styles = StyleSheet.create({
         padding: 10,
         marginLeft: 10
     },
+    typingDots: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    typingDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+    },
     typingText: {
         marginLeft: 8,
         color: '#666',
-        fontStyle: 17
+        fontSize: 17
     },
     quickRepliesContainer: {
         flexDirection: 'row',
@@ -285,6 +390,47 @@ const styles = StyleSheet.create({
     quickReplyText: {
         fontSize: 16,
         color: '#1976D2',
+    },
+    richContentCard: {
+        backgroundColor: '#FFF',
+        borderRadius: 8,
+        padding: 12,
+        marginTop: 8,
+        borderWidth: 1,
+        borderColor: '#EEE',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
+    },
+    richContentTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 4,
+        color: '#333',
+    },
+    richContentSubtitle: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 8,
+    },
+    richContentText: {
+        fontSize: 14,
+        color: '#333',
+        marginBottom: 4,
+    },
+    richContentButton: {
+        backgroundColor: '#4A90E2',
+        borderRadius: 25,
+        padding: 8,
+        marginTop: 8,
+        alignItems: 'center',
+    },
+    richContentButtonText: {
+        color: '#FFF',
+        fontSize: 14,
+        fontWeight: '500',
     },
 });
 

@@ -114,18 +114,19 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setIsAuthenticated(false);
 
-      if (isSocketConnected()) {
-        await disconnectSocket().catch(e =>
-          console.log('Socket disconnect warning:', e)
-        );
+      try {
+        await disconnectSocket();
+      } catch (e) {
+        console.log('Socket disconnect error (non-critical):', e);
+        forceDisconnect();
       }
 
       await AsyncStorage.multiRemove(['token', 'refreshToken', 'user']);
 
     } catch (error) {
-      console.error('Logout cleanup error:', error);
-      setUser(null);
-      setIsAuthenticated(false);
+      console.error('Logout error:', error);
+      forceDisconnect();
+      await AsyncStorage.clear();
     }
   }, []);
 
