@@ -74,25 +74,20 @@ export const register = async (name, email, password) => {
 export const logout = async () => {
     try {
         const token = await AsyncStorage.getItem("token");
-        if (!token) {
-            console.log("🚫 Không có token để đăng xuất");
-            return { success: true };
-        }
+        if (!token) return { success: true };
 
         try {
-            const response = await axios.post(`${BASE_API_URL}/api/auth/logout`, {}, {
+            await axios.post(`${BASE_API_URL}/api/auth/logout`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            return response.data;
         } catch (postError) {
-            console.log("Logout không thành công.", postError);
+            console.log("Logout API call failed (non-critical):", postError);
         }
+
+        return { success: true };
     } catch (error) {
-        console.log("❌ Lỗi API logout:", error.response?.data || error);
-        return {
-            success: true,
-            message: error.response?.data?.message || "Đã xử lý đăng xuất phía client"
-        };
+        console.log("Logout error:", error);
+        return { success: true };
     }
 };
 

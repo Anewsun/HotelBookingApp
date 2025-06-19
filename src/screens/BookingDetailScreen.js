@@ -50,6 +50,19 @@ const BookingDetailScreen = () => {
         fetchBookingDetails();
     }, [bookingId]);
 
+    const getHotelId = () => {
+        try {
+            if (!booking?.room?.hotelId) return null;
+
+            return typeof booking.room.hotelId === 'object'
+                ? booking.room.hotelId._id
+                : booking.room.hotelId;
+        } catch (error) {
+            console.error('Error getting hotelId:', error);
+            return null;
+        }
+    };
+
     useEffect(() => {
         console.log('showQRModal:', showQRModal);
         console.log('qrData:', qrData);
@@ -121,19 +134,6 @@ const BookingDetailScreen = () => {
             </View>
         );
     }
-
-    const getHotelId = () => {
-        try {
-            if (!booking?.room?.hotelId) return null;
-
-            return typeof booking.room.hotelId === 'object'
-                ? booking.room.hotelId._id
-                : booking.room.hotelId;
-        } catch (error) {
-            console.error('Error getting hotelId:', error);
-            return null;
-        }
-    };
 
     const navigateToHotelDetail = () => {
         if (!booking?.room?.hotelId) {

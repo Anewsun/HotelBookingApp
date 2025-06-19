@@ -112,9 +112,10 @@ const ProfileScreen = () => {
                     setImageViewerVisible(true);
                 }}>
                     <Image
-                        source={{
-                            uri: user?.avatar?.url || require('../assets/images/default-avatar.jpg')
-                        }}
+                        source={user?.avatar?.url
+                            ? { uri: user.avatar.url }
+                            : require('../assets/images/default-avatar.jpg')
+                        }
                         style={styles.profileImage}
                     />
                 </TouchableOpacity>
