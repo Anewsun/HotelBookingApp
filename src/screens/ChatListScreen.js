@@ -12,10 +12,12 @@ import { useFocusEffect } from '@react-navigation/native';
 
 const ChatListScreen = ({ navigation }) => {
     const [conversations, setConversations] = useState([]);
-    const { user } = useAuth();
+    const { user, isAuthenticated } = useAuth();
     const socketRef = useRef(null);
 
     const loadConversations = useCallback(async () => {
+        if (!isAuthenticated || !user) return;
+
         try {
             const { data } = await getConversations();
             console.log('Conversations data:', data.data);
@@ -23,15 +25,17 @@ const ChatListScreen = ({ navigation }) => {
         } catch (error) {
             console.error('Error loading conversations:', error);
         }
-    }, []);
+    }, [isAuthenticated]);
 
     const setupSocket = useCallback(async () => {
+        if (!isAuthenticated || !user) return;
+
         try {
             await initSocket();
             const socket = getSocket();
             socketRef.current = socket;
 
-            socket.emit('join', user.id);
+            socket.emit('join', user._id);
 
             const handleNewMessage = () => {
                 loadConversations();
@@ -45,12 +49,13 @@ const ChatListScreen = ({ navigation }) => {
         } catch (error) {
             console.error('Socket setup failed:', error);
         }
-    }, [user.id, loadConversations]);
+    }, [user?._id, isAuthenticated, loadConversations]);
 
     useFocusEffect(
         useCallback(() => {
-            let cleanup;
+            if (!isAuthenticated || !user) return;
 
+            let cleanup;
             const init = async () => {
                 await loadConversations();
                 cleanup = await setupSocket();
@@ -66,7 +71,7 @@ const ChatListScreen = ({ navigation }) => {
                     socketRef.current.off('newMessage');
                 }
             };
-        }, [loadConversations, setupSocket])
+        }, [loadConversations, setupSocket, isAuthenticated, user])
     );
 
     const aiIcon = (

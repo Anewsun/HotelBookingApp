@@ -111,24 +111,22 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(async () => {
     try {
-      const socketDisconnect = isSocketConnected()
-        ? Promise.race([
-          disconnectSocket(),
-          new Promise((_, reject) => setTimeout(() => reject('Socket timeout'), 1000))
-        ]).catch(e => console.log('Socket disconnect warning:', e))
-        : Promise.resolve();
-
-      await Promise.all([
-        socketDisconnect,
-        AsyncStorage.multiRemove(['token', 'refreshToken', 'user'])
-      ]);
-
       setUser(null);
       setIsAuthenticated(false);
+
+      try {
+        await disconnectSocket();
+      } catch (e) {
+        console.log('Socket disconnect error (non-critical):', e);
+        forceDisconnect();
+      }
+
+      await AsyncStorage.multiRemove(['token', 'refreshToken', 'user']);
+
     } catch (error) {
-      console.error('Logout cleanup error:', error);
-      setUser(null);
-      setIsAuthenticated(false);
+      console.error('Logout error:', error);
+      forceDisconnect();
+      await AsyncStorage.clear();
     }
   }, []);
 

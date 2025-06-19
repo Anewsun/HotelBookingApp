@@ -6,6 +6,7 @@ import {
     StyleSheet,
     ScrollView,
     SafeAreaView,
+    Linking,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import Header from '../components/Header';
@@ -27,9 +28,27 @@ const ContactUsScreen = () => {
         setExpandedItem(expandedItem === title ? null : title);
     };
 
+    const handleLinkPress = (url) => {
+        Linking.openURL(url).catch(err => console.error('Failed to open URL:', err));
+    };
+
+    const renderContent = (content, title) => {
+        if (title === 'Website') {
+            return (
+                <Text
+                    style={[styles.itemContent, styles.linkText]}
+                    onPress={() => handleLinkPress(content)}
+                >
+                    {content}
+                </Text>
+            );
+        }
+        return <Text style={styles.itemContent}>{content}</Text>;
+    };
+
     return (
         <SafeAreaView style={styles.container}>
-            <Header title="Thông tin về chúng tôi" onBackPress={() => navigation.goBack()} showBackIcon={true}/>
+            <Header title="Thông tin về chúng tôi" onBackPress={() => navigation.goBack()} showBackIcon={true} />
 
             <ScrollView>
                 {contactItems.map((item) => (
@@ -47,9 +66,7 @@ const ContactUsScreen = () => {
                                 color="#000"
                             />
                         </View>
-                        {expandedItem === item.title && (
-                            <Text style={styles.itemContent}>{item.content}</Text>
-                        )}
+                        {expandedItem === item.title && renderContent(item.content, item.title)}
                     </TouchableOpacity>
                 ))}
             </ScrollView>
@@ -85,6 +102,10 @@ const styles = StyleSheet.create({
         paddingLeft: 56,
         fontSize: 26,
         color: 'black'
+    },
+    linkText: {
+        color: 'blue',
+        textDecorationLine: 'underline',
     },
 });
 

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { formatTime, formatDate } from '../utils/dateUtils';
 
-const ChatBubble = memo(({ message, isSender, showDate }) => {
+const ChatBubble = memo(({ message, isSender, showDate, renderRichContent }) => {
     const isAI = message.senderId._id === 'ai';
 
     return (
@@ -24,7 +24,9 @@ const ChatBubble = memo(({ message, isSender, showDate }) => {
                     isSender ? styles.senderBubble :
                         isAI ? styles.aiBubble : styles.receiverBubble
                 ]}>
-                    <Text style={styles.messageText}>{message.message}</Text>
+                    {message.text && <Text style={styles.messageText}>{message.text}</Text>}
+                    {message.message && <Text style={styles.messageText}>{message.message}</Text>}
+                    {renderRichContent && renderRichContent()}
                     <View style={styles.statusContainer}>
                         <Text style={styles.time}>
                             {formatTime(message.createdAt)}
