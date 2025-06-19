@@ -250,18 +250,6 @@ const RoomTypeSelection = ({
                     <Text style={styles.detailsText}>Số lượng khách tối đa: {room.capacity}</Text>
                   </View>
                 </View>
-
-                {room.discountPercent > 0 && (
-                  <View style={styles.promotionContainer}>
-                    <Text style={styles.detailsTitle}>Khuyến mãi</Text>
-                    <Text style={styles.detailsText}>
-                      Giảm giá: <Text style={styles.discount}>{room.discountPercent}%</Text>
-                    </Text>
-                    <Text style={styles.detailsText}>
-                      Thời gian: {formatDate(room.discountStartDate)} đến {formatDate(room.discountEndDate)}
-                    </Text>
-                  </View>
-                )}
               </View>
             )}
           </View>
@@ -423,12 +411,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
-  },
-  promotionContainer: {
-    backgroundColor: "#e0f7fa",
-    padding: 12,
-    borderRadius: 15,
-    marginBottom: 15,
   },
   discount: {
     fontSize: 14,

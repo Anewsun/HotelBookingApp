@@ -203,8 +203,13 @@ const BookingDetailScreen = () => {
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Thông tin đặt phòng</Text>
                     <DetailRow
+                        icon="building"
+                        label="Khách sạn"
+                        value={booking.room?.hotelId?.name || 'Không có thông tin'}
+                    />
+                    <DetailRow
                         icon="hotel"
-                        label="Phòng"
+                        label="Loại phòng"
                         value={booking.room?.roomType || 'Không có thông tin'}
                     />
                     <DetailRow
@@ -310,7 +315,7 @@ const BookingDetailScreen = () => {
                     />
                     <DetailRow
                         icon="check-circle"
-                        label="Phương thức thanh toán"
+                        label="Phương thức"
                         value={
                             booking.paymentMethod === 'vnpay' ? 'VNPay' :
                                 booking.paymentMethod === 'zalopay' ? 'ZaloPay' : 'Tiền mặt'
@@ -361,7 +366,9 @@ const BookingDetailScreen = () => {
                         <View style={styles.detailRow}>
                             <Icon name="exclamation-triangle" size={18} color="#F44336" style={styles.rowIcon} />
                             <Text style={[styles.rowValue, { flex: 1, color: '#F44336' }]}>
-                                {booking.cancellationReason}
+                                {booking.cancellationReason === 'auto_timeout_unpaid'
+                                    ? 'Quá thời hạn thanh toán'
+                                    : booking.cancellationReason}
                             </Text>
                         </View>
                     </View>
@@ -543,6 +550,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 8,
+        minHeight: 24,
     },
     rowIcon: {
         width: 24,
@@ -550,7 +558,7 @@ const styles = StyleSheet.create({
     },
     rowLabel: {
         fontWeight: '600',
-        width: 120,
+        width: 150,
         color: '#555',
     },
     rowValue: {

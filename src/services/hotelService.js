@@ -34,8 +34,6 @@ export const fetchAllAmenities = async () => {
 
 export const searchHotelsWithAvailableRooms = async (params) => {
   try {
-    console.log('API call with params:', params);
-
     const queryParams = {
       locationName: params.locationName,
       checkIn: params.checkIn,
@@ -45,7 +43,7 @@ export const searchHotelsWithAvailableRooms = async (params) => {
       maxPrice: params.maxPrice,
       minRating: params.minRating,
       maxRating: params.maxRating,
-      roomTypes: params.roomTypes,
+      roomType: params.roomTypes?.join(','),
       roomAmenities: Array.isArray(params.roomAmenities) 
         ? params.roomAmenities.join(',')
         : params.roomAmenities,
@@ -57,34 +55,37 @@ export const searchHotelsWithAvailableRooms = async (params) => {
       limit: params.limit || 10
     };
 
+    Object.keys(queryParams).forEach(key => {
+      if (queryParams[key] === undefined || queryParams[key] === '') {
+        delete queryParams[key];
+      }
+    });
+
     const response = await axios.get(`${BASE_API_URL}/api/hotels/search`, {
       params: queryParams,
       timeout: 10000
     });
 
-    console.log('API response:', response.data);
-
-    if (response.data && response.data.success) {
+    if (response.data?.success) {
       return {
         data: response.data.data || [],
         total: response.data.total || 0,
-        pagination: response.data.pagination || { currentPage: 1, totalPages: 1 },
+        pagination: response.data.pagination || { 
+          currentPage: 1, 
+          totalPages: 1 
+        },
       };
     }
     return {
       data: [],
-      error: 'Không tìm thấy khách sạn phù hợp'
+      error: response.data?.message || 'Không tìm thấy khách sạn phù hợp'
     };
   } catch (error) {
-    if (error.response?.status === 404) {
-      return {
-        data: [],
-        error: 'Không tìm thấy địa điểm du lịch này'
-      };
-    }
     return {
       data: [],
-      error: error.response?.data?.message || error.message || 'Lỗi khi tải dữ liệu'
+      error: error.response?.data?.message || 
+            error.message || 
+            'Lỗi khi tải dữ liệu'
     };
   }
 };

@@ -44,7 +44,7 @@ const FilterScreen = ({ navigation, route }) => {
         maxPrice: priceRange.max,
         roomAmenities: selectedRoomAmenities.join(','),
         hotelAmenities: selectedHotelAmenities.join(','),
-        roomTypes: selectedRoomTypes.length > 0 ? selectedRoomTypes.join(',') : undefined,
+        roomTypes: selectedRoomTypes,
         minRating: minRating > 0 ? minRating : undefined,
         maxRating: maxRating < 5 ? maxRating : undefined,
         sort: '-rating'

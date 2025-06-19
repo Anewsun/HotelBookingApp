@@ -390,7 +390,7 @@ const HotelDetailScreen = () => {
               navigation.navigate('PaymentStep', {
                 selectedRoom: {
                   ...selectedRoom,
-                  price: selectedRoom.price,
+                  price: priceToUse,
                 },
                 hotel: hotel,
                 searchParams: {
@@ -599,12 +599,12 @@ const styles = StyleSheet.create({
     marginLeft: 5
   },
   policyLabel: {
-    fontSize: 15,
+    fontSize: 12,
     color: '#fff',
     fontWeight: '500',
   },
   policyValue: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: 'bold',
     color: '#1a3e8c',
     textAlign: 'right',

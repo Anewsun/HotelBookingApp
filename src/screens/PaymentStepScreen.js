@@ -35,7 +35,7 @@ const PaymentStepScreen = ({ navigation, route }) => {
     
     return (
         <SafeAreaView style={styles.container}>
-            <Header title="Đặt phòng & thanh toán" onBackPress={() => navigation.goBack()} showBackIcon={true} />
+            <Header title="Thông tin phòng" onBackPress={() => navigation.goBack()} showBackIcon={true} />
             <Stepper steps={['Đặt phòng', 'Thông tin', 'Xác nhận']} currentStep={1} />
 
             <ScrollView style={styles.scrollContainer}>
@@ -68,7 +68,7 @@ const PaymentStepScreen = ({ navigation, route }) => {
 
                         <View style={styles.infoRow}>
                             <Icon name="attach-money" size={20} color="#1167B1" />
-                            <Text style={styles.price}>{selectedRoom?.price ? selectedRoom.price.toLocaleString('vi-VN') : '0'} VNĐ/ngày</Text>
+                            <Text style={styles.price}>{selectedRoom?.price ? selectedRoom.price.toLocaleString('vi-VN') : '0'} VNĐ/đêm</Text>
                         </View>
                     </View>
                 </View>
